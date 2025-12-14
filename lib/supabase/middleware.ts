@@ -40,7 +40,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protected routes
-  const protectedRoutes = ['/dashboard', '/cycle', '/portfolio', '/settings']
+  const protectedRoutes = ['/dashboard', '/cycle', '/portfolio', '/settings', '/admin']
   const isProtectedRoute = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
   )
@@ -50,6 +50,25 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/login'
     url.searchParams.set('redirect', request.nextUrl.pathname)
     return NextResponse.redirect(url)
+  }
+
+  // Admin routes require superadmin role
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+
+  if (isAdminRoute && user) {
+    // Fetch user profile to check role
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'superadmin') {
+      // Not a superadmin, redirect to dashboard
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   // Redirect logged-in users away from auth pages

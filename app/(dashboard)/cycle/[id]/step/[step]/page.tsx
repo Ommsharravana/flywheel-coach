@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getEffectiveUserId } from '@/lib/supabase/effective-user';
 import { Cycle, FLYWHEEL_STEPS } from '@/lib/types/cycle';
 import { FlywheelNavigator } from '@/components/flywheel/FlywheelNavigator';
 import { ProblemDiscovery } from '@/components/steps/ProblemDiscovery';
@@ -25,11 +26,10 @@ export default async function StepPage({ params }: StepPageProps) {
   const stepNumber = parseInt(step, 10);
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Get effective user ID (respects impersonation)
+  const effectiveUserId = await getEffectiveUserId();
 
-  if (!user) {
+  if (!effectiveUserId) {
     redirect('/login');
   }
 
@@ -38,12 +38,12 @@ export default async function StepPage({ params }: StepPageProps) {
     redirect(`/cycle/${id}`);
   }
 
-  // Fetch the cycle
+  // Fetch the cycle using effective user ID
   const { data: rawCycleData, error } = await supabase
     .from('cycles')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUserId)
     .single();
 
   if (error || !rawCycleData) {

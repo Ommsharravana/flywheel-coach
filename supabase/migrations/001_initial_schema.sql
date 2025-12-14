@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users table
 CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
   name TEXT,
   avatar_url TEXT,
@@ -24,7 +24,7 @@ CREATE TABLE users (
 
 -- Cycles (One per flywheel journey)
 CREATE TABLE cycles (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   name TEXT,
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'completed', 'abandoned')),
@@ -41,7 +41,7 @@ CREATE TABLE cycles (
 -- ============================================
 
 CREATE TABLE problems (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cycle_id UUID REFERENCES cycles(id) ON DELETE CASCADE,
 
   -- 5 Questions answers
@@ -67,7 +67,7 @@ CREATE TABLE problems (
 -- ============================================
 
 CREATE TABLE contexts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cycle_id UUID REFERENCES cycles(id) ON DELETE CASCADE,
 
   -- Who has it
@@ -96,7 +96,7 @@ CREATE TABLE contexts (
 
 -- Interviews conducted during context discovery
 CREATE TABLE interviews (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   context_id UUID REFERENCES contexts(id) ON DELETE CASCADE,
   interviewee_name TEXT,
   interviewee_role TEXT,
@@ -111,7 +111,7 @@ CREATE TABLE interviews (
 -- ============================================
 
 CREATE TABLE value_assessments (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cycle_id UUID REFERENCES cycles(id) ON DELETE CASCADE,
 
   -- Desperate User Test
@@ -142,7 +142,7 @@ CREATE TABLE value_assessments (
 -- ============================================
 
 CREATE TABLE workflow_classifications (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cycle_id UUID REFERENCES cycles(id) ON DELETE CASCADE,
 
   workflow_type TEXT CHECK (workflow_type IN (
@@ -163,7 +163,7 @@ CREATE TABLE workflow_classifications (
 -- ============================================
 
 CREATE TABLE prompts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cycle_id UUID REFERENCES cycles(id) ON DELETE CASCADE,
 
   generated_prompt TEXT,
@@ -180,7 +180,7 @@ CREATE TABLE prompts (
 -- ============================================
 
 CREATE TABLE builds (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cycle_id UUID REFERENCES cycles(id) ON DELETE CASCADE,
 
   lovable_project_url TEXT,
@@ -199,7 +199,7 @@ CREATE TABLE builds (
 -- ============================================
 
 CREATE TABLE impact_assessments (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cycle_id UUID REFERENCES cycles(id) ON DELETE CASCADE,
 
   -- Adoption
@@ -239,14 +239,14 @@ CREATE TABLE impact_assessments (
 -- ============================================
 
 CREATE TABLE conversations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cycle_id UUID REFERENCES cycles(id) ON DELETE CASCADE,
   step INT NOT NULL,
   started_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE messages (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
   role TEXT CHECK (role IN ('user', 'assistant', 'system')),
   content TEXT NOT NULL,
@@ -258,7 +258,7 @@ CREATE TABLE messages (
 -- ============================================
 
 CREATE TABLE badges (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   badge_type TEXT NOT NULL,
   badge_name TEXT NOT NULL,
@@ -267,7 +267,7 @@ CREATE TABLE badges (
 
 -- Skill progress tracking
 CREATE TABLE skill_progress (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   skill_area TEXT NOT NULL, -- 'problem_discovery', 'context_discovery', etc.
   level INT DEFAULT 1,

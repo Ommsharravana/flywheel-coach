@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getEffectiveUser } from '@/lib/supabase/effective-user';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -23,31 +24,33 @@ interface UserProfile {
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
+  // Get effective user (respects impersonation)
+  const effectiveUser = await getEffectiveUser();
+
+  if (!effectiveUser) {
     redirect('/login');
   }
 
-  // Get user profile from public.users table
+  // Get user profile from public.users table (using effective user ID)
   const { data: profileData } = await supabase
     .from('users')
     .select('*')
-    .eq('id', user.id)
+    .eq('id', effectiveUser.id)
     .single();
 
   const profile = profileData as UserProfile | null;
 
-  // Get stats
+  // Get stats for effective user
   const { count: cycleCount } = await supabase
     .from('cycles')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id);
+    .eq('user_id', effectiveUser.id);
 
   const { count: completedCount } = await supabase
     .from('cycles')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUser.id)
     .eq('status', 'completed');
 
   return (
@@ -75,13 +78,13 @@ export default async function SettingsPage() {
           {/* Avatar and Name */}
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-2xl font-bold text-stone-900">
-              {(profile?.name || user.email)?.[0]?.toUpperCase() || 'U'}
+              {(profile?.name || effectiveUser.email)?.[0]?.toUpperCase() || 'U'}
             </div>
             <div>
               <div className="text-lg font-semibold text-stone-100">
-                {profile?.name || 'Learner'}
+                {profile?.name || effectiveUser.name || 'Learner'}
               </div>
-              <div className="text-sm text-stone-400">{user.email}</div>
+              <div className="text-sm text-stone-400">{effectiveUser.email}</div>
               <Badge variant="outline" className="mt-1 text-amber-400 border-amber-500/50">
                 {profile?.role || 'learner'}
               </Badge>
@@ -103,7 +106,7 @@ export default async function SettingsPage() {
       </Card>
 
       {/* Edit Profile Form */}
-      <SettingsForm profile={profile} userId={user.id} />
+      <SettingsForm profile={profile} userId={effectiveUser.id} />
 
       {/* Institution Info (Read Only) */}
       <Card className="glass-card">
@@ -180,12 +183,12 @@ export default async function SettingsPage() {
         <CardContent className="space-y-4">
           <div>
             <Label className="text-stone-400">Email</Label>
-            <div className="mt-1 text-stone-200">{user.email}</div>
+            <div className="mt-1 text-stone-200">{effectiveUser.email}</div>
           </div>
           <div>
             <Label className="text-stone-400">Account Created</Label>
             <div className="mt-1 text-stone-200">
-              {new Date(profile?.created_at || user.created_at).toLocaleDateString('en-US', {
+              {new Date(profile?.created_at || new Date()).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'

@@ -18,7 +18,7 @@ export type Database = {
           institution: string
           department: string | null
           year_of_study: number | null
-          role: 'learner' | 'facilitator' | 'admin'
+          role: 'learner' | 'facilitator' | 'admin' | 'superadmin'
           onboarding_completed: boolean
           language: 'en' | 'ta'
           created_at: string

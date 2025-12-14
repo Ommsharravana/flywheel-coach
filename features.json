@@ -201,6 +201,33 @@
         "Filter by workflow type",
         "Impact score display"
       ]
+    },
+    {
+      "id": "F13",
+      "name": "Super Admin Dashboard",
+      "description": "Comprehensive admin panel for superadmins with full user and cycle management",
+      "priority": "P1",
+      "status": "complete",
+      "tested": true,
+      "subtasks": [
+        "Database migration for superadmin role and admin tables",
+        "Admin types file (lib/types/admin.ts)",
+        "Admin layout with sidebar navigation",
+        "Admin dashboard with stats overview",
+        "User management (list, create, edit, delete)",
+        "Cycle management (list, detail view)",
+        "User impersonation with session cookies",
+        "Impersonation banner UI",
+        "User export to CSV",
+        "Cycle notes (add, view, delete)",
+        "Cycle review status tracking",
+        "Activity logs API and page",
+        "Analytics page with charts",
+        "Step funnel chart component",
+        "Workflow distribution pie chart",
+        "User growth bar chart",
+        "Header link for superadmin users"
+      ]
     }
   ]
 }

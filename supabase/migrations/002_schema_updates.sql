@@ -43,7 +43,7 @@ ALTER TABLE prompts ADD COLUMN IF NOT EXISTS copied_at TIMESTAMPTZ;
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS impacts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   cycle_id UUID REFERENCES cycles(id) ON DELETE CASCADE,
   users_reached INT,
   time_saved_minutes INT,

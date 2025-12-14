@@ -14,13 +14,24 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { User } from '@supabase/supabase-js'
+import { Shield } from 'lucide-react'
 
-interface HeaderProps {
-  user?: User | null
+// Simplified user type that works with both auth user and effective user (impersonation)
+interface HeaderUser {
+  id: string
+  email?: string | null
+  user_metadata?: {
+    name?: string | null
+    avatar_url?: string | null
+  }
 }
 
-export function Header({ user }: HeaderProps) {
+interface HeaderProps {
+  user?: HeaderUser | null
+  role?: 'learner' | 'facilitator' | 'admin' | 'superadmin' | null
+}
+
+export function Header({ user, role }: HeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -89,6 +100,14 @@ export function Header({ user }: HeaderProps) {
               <NavLink href="/settings" active={pathname === '/settings'}>
                 Settings
               </NavLink>
+              {role === 'superadmin' && (
+                <NavLink href="/admin" active={pathname.startsWith('/admin')}>
+                  <span className="flex items-center gap-1.5">
+                    <Shield className="h-3.5 w-3.5" />
+                    Admin
+                  </span>
+                </NavLink>
+              )}
             </nav>
           )}
 
@@ -100,7 +119,7 @@ export function Header({ user }: HeaderProps) {
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 rounded-full p-1 transition-all hover:bg-stone-800/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50">
                       <Avatar className="h-8 w-8 ring-2 ring-amber-500/30">
-                        <AvatarImage src={user.user_metadata?.avatar_url} />
+                        <AvatarImage src={user.user_metadata?.avatar_url || undefined} />
                         <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-600 text-stone-950 font-semibold text-sm">
                           {user.email?.charAt(0).toUpperCase()}
                         </AvatarFallback>
@@ -125,6 +144,17 @@ export function Header({ user }: HeaderProps) {
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
                       <Link href="/settings">Settings</Link>
                     </DropdownMenuItem>
+                    {role === 'superadmin' && (
+                      <>
+                        <DropdownMenuSeparator className="bg-stone-800" />
+                        <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
+                          <Link href="/admin" className="flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-amber-400" />
+                            <span>Admin Panel</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator className="bg-stone-800" />
                     <DropdownMenuItem
                       onClick={handleSignOut}

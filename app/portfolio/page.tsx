@@ -72,11 +72,23 @@ export default function PortfolioPage() {
         return;
       }
 
+      // Check for impersonation - use impersonated user's ID if active
+      let effectiveUserId = user.id;
+      try {
+        const impersonationRes = await fetch('/api/admin/impersonate');
+        const impersonationData = await impersonationRes.json();
+        if (impersonationData.isImpersonating && impersonationData.targetUser?.id) {
+          effectiveUserId = impersonationData.targetUser.id;
+        }
+      } catch {
+        // Ignore impersonation check errors
+      }
+
       // Load all cycles with related data
       const { data: cyclesData, error } = await supabase
         .from('cycles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveUserId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

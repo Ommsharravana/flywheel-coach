@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getEffectiveUser } from '@/lib/supabase/effective-user'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -20,17 +21,19 @@ const flywheelSteps = [
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
+  // Get effective user (respects impersonation)
+  const effectiveUser = await getEffectiveUser()
+
+  if (!effectiveUser) {
     redirect('/login')
   }
 
-  // Get user's cycles
+  // Get user's cycles using effective user ID
   const { data } = await supabase
     .from('cycles')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', effectiveUser.id)
     .order('created_at', { ascending: false })
 
   const cycles = data as Cycle[] | null
@@ -45,7 +48,7 @@ export default async function DashboardPage() {
           <FlywheelLogo size="lg" animate />
           <div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-stone-100">
-              Welcome back, {user.user_metadata?.name || 'Learner'}!
+              Welcome back, {effectiveUser.name || 'Learner'}!
             </h1>
             <p className="mt-1 text-stone-400">
               {activeCycle

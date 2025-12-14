@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 
 export const metadata: Metadata = {
   title: "Flywheel Coach | AI-Powered Problem-to-Impact Learning",
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-background antialiased">
+        <ImpersonationBanner />
         {children}
         <Toaster />
       </body>
