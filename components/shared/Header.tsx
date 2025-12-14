@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -23,6 +24,12 @@ export function Header({ user }: HeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [mounted, setMounted] = useState(false)
+
+  // Prevent hydration mismatch with Radix UI
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -74,7 +81,7 @@ export function Header({ user }: HeaderProps) {
           {user && !isAuthPage && (
             <nav className="hidden md:flex items-center gap-1">
               <NavLink href="/dashboard" active={pathname === '/dashboard'}>
-                Dashboard
+                Home
               </NavLink>
               <NavLink href="/portfolio" active={pathname === '/portfolio'}>
                 Portfolio
@@ -88,44 +95,51 @@ export function Header({ user }: HeaderProps) {
           {/* Auth / User Menu */}
           <div className="flex items-center gap-3">
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 rounded-full p-1 transition-all hover:bg-stone-800/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50">
-                    <Avatar className="h-8 w-8 ring-2 ring-amber-500/30">
-                      <AvatarImage src={user.user_metadata?.avatar_url} />
-                      <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-600 text-stone-950 font-semibold text-sm">
-                        {user.email?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56 bg-stone-900 border-stone-800 text-stone-100"
-                >
-                  <div className="px-3 py-2">
-                    <p className="text-sm font-medium">{user.user_metadata?.name || 'Learner'}</p>
-                    <p className="text-xs text-stone-400 truncate">{user.email}</p>
-                  </div>
-                  <DropdownMenuSeparator className="bg-stone-800" />
-                  <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
-                    <Link href="/dashboard">Dashboard</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
-                    <Link href="/portfolio">Portfolio</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
-                    <Link href="/settings">Settings</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-stone-800" />
-                  <DropdownMenuItem
-                    onClick={handleSignOut}
-                    className="cursor-pointer text-rose-400 hover:bg-stone-800 hover:text-rose-300 focus:bg-stone-800"
+              mounted ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 rounded-full p-1 transition-all hover:bg-stone-800/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50">
+                      <Avatar className="h-8 w-8 ring-2 ring-amber-500/30">
+                        <AvatarImage src={user.user_metadata?.avatar_url} />
+                        <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-600 text-stone-950 font-semibold text-sm">
+                          {user.email?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 bg-stone-900 border-stone-800 text-stone-100"
                   >
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <div className="px-3 py-2">
+                      <p className="text-sm font-medium">{user.user_metadata?.name || 'Learner'}</p>
+                      <p className="text-xs text-stone-400 truncate">{user.email}</p>
+                    </div>
+                    <DropdownMenuSeparator className="bg-stone-800" />
+                    <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
+                      <Link href="/dashboard">Home</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
+                      <Link href="/portfolio">Portfolio</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
+                      <Link href="/settings">Settings</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-stone-800" />
+                    <DropdownMenuItem
+                      onClick={handleSignOut}
+                      className="cursor-pointer text-rose-400 hover:bg-stone-800 hover:text-rose-300 focus:bg-stone-800"
+                    >
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                // Static placeholder during SSR to prevent hydration mismatch
+                <div className="flex items-center gap-2 rounded-full p-1">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 ring-2 ring-amber-500/30" />
+                </div>
+              )
             ) : !isAuthPage ? (
               <div className="flex items-center gap-3">
                 <Button
