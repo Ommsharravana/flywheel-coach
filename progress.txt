@@ -790,3 +790,113 @@
 - User App: https://flywheel-coach.vercel.app
 - Admin Panel: https://flywheel-coach.vercel.app/admin
 - Superadmin: director@jkkn.ac.in can access /admin after login
+
+---
+
+## 2025-12-14 - Session 17
+
+**Worked On:** Fix Impersonation System - Effective User Pattern
+
+**Problem:**
+- Impersonation cookie was being set by admin, but never actually used
+- All dashboard pages used auth user ID instead of impersonated user ID
+- Admin couldn't view user's data when impersonating
+
+**Done:**
+1. **Created effective-user.ts helper** (`/lib/supabase/effective-user.ts`)
+   - `getEffectiveUser()` - Returns impersonated user or auth user
+   - `getEffectiveUserId()` - Returns just the ID
+   - `isImpersonating()` - Boolean check
+   - Reads `impersonated_user` httpOnly cookie set by admin
+
+2. **Updated all dashboard pages to use effective user:**
+   - `/app/(dashboard)/layout.tsx` - User context for header
+   - `/app/(dashboard)/dashboard/page.tsx` - Cycle queries
+   - `/app/(dashboard)/portfolio/page.tsx` - Portfolio stats
+   - `/app/(dashboard)/settings/page.tsx` - User profile display
+   - `/app/(dashboard)/cycle/new/page.tsx` - Create cycle for user
+   - `/app/(dashboard)/cycle/[id]/page.tsx` - Cycle detail access
+   - `/app/(dashboard)/cycle/[id]/step/[step]/page.tsx` - Step access
+
+3. **Fixed Header component type issue:**
+   - Created simplified `HeaderUser` interface
+   - Works with both auth user and effective user (impersonated)
+   - Fixed avatar_url null handling
+
+4. **Fixed activity logging consistency:**
+   - Changed `target_type`/`target_id` to `entity_type`/`entity_id`
+   - Matches database schema column names
+
+**How I Tested:**
+- `npm run build` - All routes compile successfully
+- No TypeScript errors
+- Committed and pushed to origin
+
+**Current State:** Complete - Impersonation now works end-to-end
+
+**Files Created:**
+- `/lib/supabase/effective-user.ts`
+
+**Files Modified:**
+- `/app/(dashboard)/layout.tsx`
+- `/app/(dashboard)/dashboard/page.tsx`
+- `/app/(dashboard)/portfolio/page.tsx`
+- `/app/(dashboard)/settings/page.tsx`
+- `/app/(dashboard)/cycle/new/page.tsx`
+- `/app/(dashboard)/cycle/[id]/page.tsx`
+- `/app/(dashboard)/cycle/[id]/step/[step]/page.tsx`
+- `/components/shared/Header.tsx`
+- `/app/api/admin/users/route.ts`
+- `/app/api/admin/users/[id]/route.ts`
+
+**Deployment:**
+- Pushed to origin main
+- Vercel auto-deploying to production
+
+---
+
+## 2025-12-14 - Session 18
+
+**Worked On:** Testing & Fixing Impersonation Banner Visibility
+
+**Problem:**
+- ImpersonationBanner component existed but wasn't rendered in dashboard layout
+- Banner had same z-index (z-50) as Header, causing visibility issues
+
+**Done:**
+1. **Tested impersonation flow with browser automation:**
+   - Logged in as Test User (superadmin)
+   - Called impersonate API for Demo Learner
+   - Dashboard correctly showed Demo Learner's data ("Welcome back, Demo Learner!")
+   - Stats showed 0 cycles (Demo Learner's data, not Test User's)
+   - Avatar showed "D" instead of "TU"
+
+2. **Fixed ImpersonationBanner not showing:**
+   - Added import and render of `<ImpersonationBanner />` to dashboard layout
+   - Changed z-index from `z-50` to `z-[60]` to appear above header
+
+3. **Tested end impersonation:**
+   - Called DELETE /api/admin/impersonate
+   - Dashboard returned to Test User's data
+   - Banner disappeared correctly
+   - Stats showed 1 cycle, step 5 (Test User's data)
+
+**How I Tested:**
+- Browser automation (Playwright MCP) through full flow:
+  1. Login as superadmin (Test User)
+  2. Start impersonation → Banner visible, user data changes
+  3. End impersonation → Banner gone, original user data restored
+- Screenshots saved:
+  - `dashboard-after-zindex-fix.png` - Shows amber banner with "Impersonating: Demo Learner"
+  - `dashboard-after-end-impersonation.png` - Shows Test User's dashboard, no banner
+- `npm run build` - All routes compile successfully
+
+**Current State:** Complete - Impersonation feature fully tested and working
+
+**Files Modified:**
+- `/app/(dashboard)/layout.tsx` - Added ImpersonationBanner import and render
+- `/components/admin/ImpersonationBanner.tsx` - Changed z-index from z-50 to z-[60]
+
+**Next Session Should:**
+- Deploy updated code to production
+- Test impersonation on production with real users

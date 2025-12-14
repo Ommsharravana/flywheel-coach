@@ -97,7 +97,7 @@ export function ImpersonationBanner() {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-black px-4 py-2">
+    <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-black px-4 py-2">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 flex-shrink-0" />

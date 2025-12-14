@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getEffectiveUser, isImpersonating } from '@/lib/supabase/effective-user'
 import { Header } from '@/components/shared/Header'
+import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner'
 import { redirect } from 'next/navigation'
 
 interface ProfileRow {
@@ -51,6 +52,7 @@ export default async function DashboardLayout({
       <div className="fixed inset-0 gradient-mesh" />
       <div className="fixed inset-0 noise-bg" />
 
+      <ImpersonationBanner />
       <Header user={displayUser} role={profile?.role} />
 
       <main className={`relative z-10 pb-8 px-4 sm:px-6 lg:px-8 ${impersonating ? 'pt-32' : 'pt-20'}`}>
