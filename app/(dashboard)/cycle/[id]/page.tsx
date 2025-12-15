@@ -5,7 +5,7 @@ import { FlywheelNavigator, FlywheelProgress } from '@/components/flywheel/Flywh
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowRight, Clock, Home, RotateCcw, Target } from 'lucide-react';
+import { ArrowRight, CheckCircle, Clock, Home, RotateCcw, Target, Trophy } from 'lucide-react';
 import { Cycle } from '@/lib/types/cycle';
 import { CycleActions } from './CycleActions';
 
@@ -98,17 +98,29 @@ export default async function CyclePage({ params }: CyclePageProps) {
               {cycle.name}
             </h1>
             <p className="text-stone-400 mt-1">
-              Started {new Date(cycle.createdAt).toLocaleDateString()}
+              {cycle.status === 'completed'
+                ? `Completed ${cycle.completedAt ? new Date(cycle.completedAt).toLocaleDateString() : ''}`
+                : `Started ${new Date(cycle.createdAt).toLocaleDateString()}`
+              }
             </p>
           </div>
           <div className="flex items-center gap-3">
             <CycleActions cycleId={id} />
-            <Link href={`/cycle/${id}/step/${cycle.currentStep}`}>
-              <Button className="bg-amber-500 hover:bg-amber-600 text-stone-900 font-semibold">
-                Continue to {currentStepName}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            {cycle.status === 'completed' ? (
+              <Link href="/dashboard">
+                <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold">
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link href={`/cycle/${id}/step/${cycle.currentStep}`}>
+                <Button className="bg-amber-500 hover:bg-amber-600 text-stone-900 font-semibold">
+                  Continue to {currentStepName}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -133,47 +145,85 @@ export default async function CyclePage({ params }: CyclePageProps) {
 
           {/* Current Step Info */}
           <div className="space-y-6">
-            <Card className="glass-card border-amber-500/30">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center">
-                    <Target className="w-6 h-6 text-amber-400" />
+            {cycle.status === 'completed' ? (
+              <Card className="glass-card border-emerald-500/30">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center">
+                      <Trophy className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl text-emerald-400">
+                        Cycle Complete!
+                      </CardTitle>
+                      <CardDescription>You shipped it!</CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-xl text-amber-400">
-                      Step {cycle.currentStep}: {currentStepName}
-                    </CardTitle>
-                    <CardDescription>Currently in progress</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-stone-300 mb-4">
+                    Congratulations! You've completed the full Problem-to-Impact Flywheel.
+                    Your solution is live and making an impact. Ready to solve the next problem?
+                  </p>
+                  <div className="space-y-3">
+                    <Link href={`/cycle/${id}/step/8`}>
+                      <Button variant="outline" className="w-full">
+                        View Impact Results
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard">
+                      <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Start New Cycle
+                      </Button>
+                    </Link>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-stone-300 mb-4">
-                  {cycle.currentStep === 1 &&
-                    'Discover a problem worth solving by answering 5 key questions and crafting your problem statement.'}
-                  {cycle.currentStep === 2 &&
-                    'Understand who experiences this problem, when it happens, and how painful it is.'}
-                  {cycle.currentStep === 3 &&
-                    'Apply the Desperate User Test to validate real demand for your solution.'}
-                  {cycle.currentStep === 4 &&
-                    'Classify your solution into one of 10 workflow types for optimal building.'}
-                  {cycle.currentStep === 5 &&
-                    'Generate a Lovable-ready prompt based on everything you\'ve learned.'}
-                  {cycle.currentStep === 6 &&
-                    'Build your solution using Lovable AI with the generated prompt.'}
-                  {cycle.currentStep === 7 &&
-                    'Deploy your solution and get it live for users.'}
-                  {cycle.currentStep === 8 &&
-                    'Measure impact and discover new problems for the next cycle.'}
-                </p>
-                <Link href={`/cycle/${id}/step/${cycle.currentStep}`}>
-                  <Button className="w-full bg-amber-500 hover:bg-amber-600 text-stone-900">
-                    Continue Step
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="glass-card border-amber-500/30">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center">
+                      <Target className="w-6 h-6 text-amber-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl text-amber-400">
+                        Step {cycle.currentStep}: {currentStepName}
+                      </CardTitle>
+                      <CardDescription>Currently in progress</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-stone-300 mb-4">
+                    {cycle.currentStep === 1 &&
+                      'Discover a problem worth solving by answering 5 key questions and crafting your problem statement.'}
+                    {cycle.currentStep === 2 &&
+                      'Understand who experiences this problem, when it happens, and how painful it is.'}
+                    {cycle.currentStep === 3 &&
+                      'Apply the Desperate User Test to validate real demand for your solution.'}
+                    {cycle.currentStep === 4 &&
+                      'Classify your solution into one of 10 workflow types for optimal building.'}
+                    {cycle.currentStep === 5 &&
+                      'Generate a Lovable-ready prompt based on everything you\'ve learned.'}
+                    {cycle.currentStep === 6 &&
+                      'Build your solution using Lovable AI with the generated prompt.'}
+                    {cycle.currentStep === 7 &&
+                      'Deploy your solution and get it live for users.'}
+                    {cycle.currentStep === 8 &&
+                      'Measure impact and discover new problems for the next cycle.'}
+                  </p>
+                  <Link href={`/cycle/${id}/step/${cycle.currentStep}`}>
+                    <Button className="w-full bg-amber-500 hover:bg-amber-600 text-stone-900">
+                      Continue Step
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Quick Stats */}
             <Card className="glass-card">
@@ -184,15 +234,26 @@ export default async function CyclePage({ params }: CyclePageProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-4 bg-stone-800/50 rounded-lg">
                     <div className="text-2xl font-bold text-amber-400">
-                      {Math.max(0, cycle.currentStep - 1)}
+                      {cycle.status === 'completed' ? 8 : Math.max(0, cycle.currentStep - 1)}
                     </div>
                     <div className="text-sm text-stone-400">Steps Complete</div>
                   </div>
                   <div className="text-center p-4 bg-stone-800/50 rounded-lg">
-                    <div className="text-2xl font-bold text-stone-100">
-                      <Clock className="w-6 h-6 inline" />
-                    </div>
-                    <div className="text-sm text-stone-400">In Progress</div>
+                    {cycle.status === 'completed' ? (
+                      <>
+                        <div className="text-2xl font-bold text-emerald-400">
+                          <CheckCircle className="w-6 h-6 inline" />
+                        </div>
+                        <div className="text-sm text-stone-400">Completed</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-2xl font-bold text-stone-100">
+                          <Clock className="w-6 h-6 inline" />
+                        </div>
+                        <div className="text-sm text-stone-400">In Progress</div>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>
