@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { isAllowedEmail } from '@/lib/auth/domain-check'
 
 // Placeholder values for build time - will be replaced with actual values at runtime
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
@@ -36,9 +37,16 @@ export async function GET(request: Request) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error) {
+    if (!error && data.user) {
+      // Check if email is from allowed domain (@jkkn.ac.in)
+      if (!isAllowedEmail(data.user.email)) {
+        // Sign out the user immediately
+        await supabase.auth.signOut()
+        return NextResponse.redirect(`${origin}/login?error=invalid_domain`)
+      }
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

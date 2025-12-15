@@ -1,20 +1,32 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
+import { getDomainErrorMessage } from '@/lib/auth/domain-check'
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  // Handle error messages from OAuth callback
+  useEffect(() => {
+    const error = searchParams.get('error')
+    if (error === 'invalid_domain') {
+      toast.error(getDomainErrorMessage())
+    } else if (error === 'auth_callback_error') {
+      toast.error('Authentication failed. Please try again.')
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -163,5 +175,22 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full max-w-md">
+        <div className="glass-card rounded-2xl p-8 animate-pulse">
+          <div className="h-8 bg-stone-700 rounded mb-4"></div>
+          <div className="h-12 bg-stone-700 rounded mb-6"></div>
+          <div className="h-10 bg-stone-700 rounded mb-4"></div>
+          <div className="h-10 bg-stone-700 rounded"></div>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
