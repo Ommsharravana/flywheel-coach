@@ -1052,3 +1052,42 @@
 - F11: AI Coach ✅
 - F12: Portfolio ✅
 - F13: Super Admin Dashboard ✅ (including impersonation)
+
+---
+
+## 2025-12-15 - Session 21
+
+**Worked On:** Bug Fix - Step 8 Infinite Loop
+
+**Issue Reported:**
+User reported that Step 8 (Impact Discovery) "keeps repeating" when clicking continue/submit.
+
+**Root Cause Analysis (First Principles):**
+1. User completes Step 8 → clicks "Complete Cycle"
+2. ImpactDiscovery.tsx updates cycle status to 'completed'
+3. Redirects to `/cycle/[id]` (overview page)
+4. **BUG:** Overview page only checked `cycle.currentStep` (still 8)
+5. **Never checked `cycle.status === 'completed'`**
+6. Shows "Continue to Step 8" button
+7. User clicks → goes back to Step 8 → infinite loop!
+
+**Fix Applied:**
+Updated `/app/(dashboard)/cycle/[id]/page.tsx` with 5 status checks:
+1. Header date: "Completed [date]" vs "Started [date]"
+2. Header button: "Back to Dashboard" vs "Continue to [Step X]"
+3. Card: "Cycle Complete!" celebration vs "Continue Step"
+4. Stats: 8/8 steps vs X-1 steps complete
+5. Status indicator: Green checkmark "Completed" vs Clock "In Progress"
+
+**Commit:** 0bcbcf2
+
+**How I Tested:**
+- npm run build - passed
+- Deployed to Vercel production
+- Verified active cycle shows "Continue to Problem Discovery" (correct)
+- Code review confirms completed cycles will show "Cycle Complete!" UI
+
+**Current State:** FIXED - Deployed to production
+
+**Files Changed:**
+- `app/(dashboard)/cycle/[id]/page.tsx` (+113 -52 lines)
