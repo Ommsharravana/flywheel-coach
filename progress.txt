@@ -897,6 +897,158 @@
 - `/app/(dashboard)/layout.tsx` - Added ImpersonationBanner import and render
 - `/components/admin/ImpersonationBanner.tsx` - Changed z-index from z-50 to z-[60]
 
+**Commit:**
+- `43dfb81` - fix: add ImpersonationBanner to dashboard and fix z-index
+
+**Decisions Made:**
+- Used z-[60] for banner (arbitrary value) to ensure it's above header's z-50
+- Banner renders in dashboard layout, not admin layout (shows when viewing any page as impersonated user)
+- Impersonation uses httpOnly cookie (`impersonated_user`) for security
+
+**Known Issues/Blockers:**
+- None - impersonation is fully working
+
 **Next Session Should:**
-- Deploy updated code to production
-- Test impersonation on production with real users
+1. Push to origin and verify Vercel auto-deploys
+2. Test impersonation on production with director@jkkn.ac.in
+3. Consider adding impersonation to admin route group too (currently only dashboard)
+4. Optional: Add more admin activity logging for impersonation actions
+
+---
+
+## 2025-12-15 - Session 19
+
+**Worked On:** Production Testing of Impersonation Feature
+
+**Problem Found:**
+- Impersonation works correctly (API, cookie, data flow)
+- But ImpersonationBanner not visible on production due to **z-index deployment issue**
+
+**Testing Details:**
+1. **Logged in to production** as director@jkkn.ac.in (superadmin)
+2. **Navigated to /admin/users** - User list loaded correctly (3 users)
+3. **Started impersonation** of Test User via user detail page Impersonate button
+4. **API returned 200 OK** - "Now impersonating Test User" toast appeared
+5. **Checked impersonation status API** - Confirmed:
+   - `isImpersonating: true`
+   - `admin: { email: "director@jkkn.ac.in", name: "Director" }`
+   - `targetUser: { email: "test@flywheel.coach", name: "Test User" }`
+   - `expiresAt: 4 hours from start`
+6. **ImpersonationBanner in DOM** - Confirmed element exists with:
+   - `position: fixed`
+   - `top: 0px`
+   - `height: 48px`
+   - `backgroundColor: amber-500`
+   - Text: "Impersonating: Test User (logged in as Director) 3h 58m remaining"
+
+**Root Cause of Banner Not Showing:**
+- Production has `z-50` in banner CSS
+- Local has `z-[60]` (the fix I committed)
+- **Vercel serving cached build** - The z-index fix from commit `43dfb81` hasn't been deployed yet
+- Header (also z-50) renders on top of banner, blocking it
+- Playwright error confirmed: "header intercepts pointer events"
+
+**Evidence:**
+- JavaScript evaluate showed banner `className: "fixed top-0 left-0 right-0 z-50 bg-amber-500"`
+- Should be `z-[60]` per local fix
+- Push status: "Everything up-to-date" - code is pushed, just not deployed
+
+**Ended Impersonation:**
+- Called DELETE /api/admin/impersonate via page.evaluate
+- Successfully ended session
+
+**Current State:** PARTIAL - Impersonation logic works, but banner visibility blocked by Vercel cache
+
+**Action Required:**
+1. **Trigger Vercel redeploy** - Either wait for cache expiry or manually redeploy in Vercel dashboard
+2. After redeploy, banner should appear with z-[60]
+
+**Files Not Changed This Session:**
+- All fixes were already committed in Session 18
+- This was a testing session only
+
+**Verification Checklist:**
+- [x] Impersonation API works (start/end)
+- [x] Cookie is set correctly
+- [x] Effective user system returns correct data
+- [x] Dashboard shows impersonated user's name (Ommsharravana in this case)
+- [x] Banner exists in DOM with correct content
+- [ ] Banner visually appears above header ← **BLOCKED by Vercel cache**
+
+**Next Session Should:**
+1. Verify Vercel has redeployed with latest changes
+2. Re-test banner visibility on production
+3. If still not working, investigate Vercel build settings or trigger manual redeploy
+
+---
+
+## 2025-12-15 - Session 20
+
+**Worked On:** Production Verification - Impersonation Banner z-index Fix
+
+**Done:**
+1. **Created comprehensive Playwright test script** (`test-impersonation.js`)
+   - Handles full impersonation flow: login → user detail → dialog → confirmation
+   - Captures screenshots at each step
+   - Detects banner visibility and content
+
+2. **Ran Vercel production redeploy** (`vercel --prod`)
+   - Fresh deployment to ensure z-[60] fix is live
+
+3. **Successfully tested end-to-end impersonation:**
+   - Logged in as director@jkkn.ac.in (superadmin)
+   - Navigated to /admin/users → clicked View Details on maghimma
+   - Clicked Impersonate button → Dialog opened
+   - Clicked "Start Impersonation" → API returned 200 OK
+   - Redirected to /dashboard
+
+4. **Verified banner visibility:**
+   - Banner IS VISIBLE at top of page
+   - z-[60] fix confirmed working (banner above header)
+   - Content: "Impersonating: maghimma (logged in as Director) 3h 59m remaining"
+   - End Impersonation button present
+
+**Test Output:**
+```
+11. Impersonate API POST response:
+    Status: 200
+    Body: {"success":true,"message":"Now impersonating maghimma"...}
+12. Current URL: https://flywheel-coach.vercel.app/dashboard
+14. SUCCESS: Impersonation banner IS VISIBLE!
+    Banner text: Impersonating: maghimma(logged in as Director)3h 59m remainingEnd Impersonation
+```
+
+**Screenshots Saved:**
+- `user-detail-page.png` - User detail page with Impersonate button
+- `impersonate-dialog.png` - Confirmation dialog
+- `after-impersonate.png` - Dashboard with amber banner visible at top
+
+**Current State:** COMPLETE - All features verified working on production
+
+**Verification Checklist:**
+- [x] Impersonation API works (start/end)
+- [x] Cookie is set correctly
+- [x] Effective user system returns correct data
+- [x] Dashboard shows impersonated user's name
+- [x] Banner exists in DOM with correct content
+- [x] **Banner visually appears above header (z-[60] working)**
+
+**Production URLs:**
+- App: https://flywheel-coach.vercel.app
+- Admin: https://flywheel-coach.vercel.app/admin
+
+**All 14 Features Complete (F00-F13):**
+- F00: Project Setup ✅
+- F01: Authentication ✅
+- F02: Dashboard ✅
+- F03: Flywheel Navigator ✅
+- F04: Problem Discovery ✅
+- F05: Context Discovery ✅
+- F06: Value Discovery ✅
+- F07: Workflow Classifier ✅
+- F08: Prompt Generator ✅
+- F09: Build Tracker ✅
+- F10: Impact Dashboard ✅
+- F11: AI Coach ✅
+- F12: Portfolio ✅
+- F13: Super Admin Dashboard ✅ (including impersonation)
