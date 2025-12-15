@@ -1091,3 +1091,49 @@ Updated `/app/(dashboard)/cycle/[id]/page.tsx` with 5 status checks:
 
 **Files Changed:**
 - `app/(dashboard)/cycle/[id]/page.tsx` (+113 -52 lines)
+
+---
+
+## 2025-12-15 - Session 22
+
+**Worked On:** Google OAuth Setup for Local Development
+
+**Done:**
+1. **Created .env.local** with local Supabase and Google OAuth credentials
+2. **Configured Supabase** with Google environment variables for local dev
+3. **Verified OAuth flow** - Successfully logged in via Google
+4. **User guided through Google Cloud Console** setup:
+   - Created OAuth credentials
+   - Added redirect URIs for local Supabase callback
+   - Tested end-to-end flow
+
+**How I Tested:**
+- Next.js logs showed successful OAuth flow:
+  - `GET /login 200`
+  - `GET /auth/callback?code=... 307` (redirect)
+  - `GET /dashboard 200`
+- User tested with their Google account
+
+**Security:**
+- Added `GOOGLE_CREDENTIALS.txt` to `.gitignore` (contains secrets)
+- Domain restriction enforced: Only @jkkn.ac.in emails allowed
+- `lib/auth/domain-check.ts` validates email domain
+
+**Commit:** f86dc0c
+
+**Current State:** Complete - Google OAuth working locally
+
+**Files Created:**
+- `.env.local` - Local credentials (not committed)
+- `lib/auth/domain-check.ts` - Domain validation
+
+**Files Modified:**
+- `app/(auth)/login/page.tsx` - OAuth error handling
+- `app/auth/callback/route.ts` - Domain check integration
+- `supabase/config.toml` - Redirect URLs
+- `.gitignore` - Exclude credentials file
+
+**Next Session Should:**
+- Configure production OAuth (Vercel + production Supabase)
+- Add Google credentials to Vercel environment variables
+- Test production OAuth flow
