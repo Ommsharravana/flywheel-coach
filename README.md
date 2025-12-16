@@ -1,4 +1,4 @@
-# Flywheel Coach
+# JKKN Solution Studio
 
 An AI-guided practice platform for the **Problem-to-Impact Flywheel** - teaching users to find problems worth solving and validate solutions through 8 structured steps.
 

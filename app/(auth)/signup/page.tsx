@@ -82,7 +82,7 @@ export default function SignupPage() {
             Start Your Journey
           </h1>
           <p className="mt-2 text-stone-400">
-            Create your Flywheel Coach account
+            Create your JKKN Solution Studio account
           </p>
         </div>
 

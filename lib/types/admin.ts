@@ -1,4 +1,4 @@
-// Admin-specific types for Flywheel Coach Super Admin Dashboard
+// Admin-specific types for JKKN Solution Studio Super Admin Dashboard
 
 export type UserRole = 'learner' | 'facilitator' | 'admin' | 'superadmin';
 

@@ -73,7 +73,7 @@ Build:
 `;
     }
 
-    const systemPrompt = `You are an AI Coach for the Flywheel Coach application. Your role is to guide users through the 8-step Problem-to-Impact Flywheel methodology.
+    const systemPrompt = `You are an AI Coach for the JKKN Solution Studio application. Your role is to guide users through the 8-step Problem-to-Impact Flywheel methodology.
 
 Your persona:
 - Friendly, encouraging, and practical

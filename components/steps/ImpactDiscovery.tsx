@@ -149,7 +149,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
         const { error: cycleError } = await supabase.from('cycles').insert({
           id: newCycleId,
           user_id: user.id,
-          name: 'New Flywheel Cycle',
+          name: 'New Cycle',
           status: 'active',
           current_step: 1,
           created_at: new Date().toISOString(),

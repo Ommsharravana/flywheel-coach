@@ -82,7 +82,7 @@ function LoginContent() {
             Welcome Back
           </h1>
           <p className="mt-2 text-stone-400">
-            Continue your flywheel journey
+            Continue your Solution Studio journey
           </p>
         </div>
 
@@ -165,7 +165,7 @@ function LoginContent() {
 
         {/* Footer */}
         <p className="mt-6 text-center text-sm text-stone-400">
-          New to Flywheel Coach?{' '}
+          New to JKKN Solution Studio?{' '}
           <Link
             href="/signup"
             className="font-medium text-amber-400 hover:text-amber-300"

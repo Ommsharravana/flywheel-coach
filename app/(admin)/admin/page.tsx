@@ -88,7 +88,7 @@ export default async function AdminDashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-display font-bold text-stone-100">Dashboard</h1>
-        <p className="text-stone-400">Overview of Flywheel Coach activity</p>
+        <p className="text-stone-400">Overview of Solution Studio activity</p>
       </div>
 
       {/* Stats Grid */}

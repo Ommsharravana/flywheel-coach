@@ -20,7 +20,7 @@ export default async function NewCyclePage() {
   const { error } = await (supabase.from('cycles') as any).insert({
     id: cycleId,
     user_id: effectiveUserId,
-    name: 'New Flywheel Cycle',
+    name: 'New Cycle',
     status: 'active',
     current_step: 1,
   });

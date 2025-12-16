@@ -293,7 +293,7 @@ export default function PortfolioPage() {
                 No cycles yet
               </h3>
               <p className="text-stone-500 mb-6">
-                Start your first Flywheel cycle to discover problems worth solving.
+                Start your first cycle to discover problems worth solving.
               </p>
               <Button
                 onClick={() => router.push('/cycle/new')}

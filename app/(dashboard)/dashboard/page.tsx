@@ -52,8 +52,8 @@ export default async function DashboardPage() {
             </h1>
             <p className="mt-1 text-stone-400">
               {activeCycle
-                ? `You're on Step ${activeCycle.current_step} of your flywheel journey.`
-                : 'Ready to start your next flywheel cycle?'
+                ? `You're on Step ${activeCycle.current_step} of your cycle.`
+                : 'Ready to start your next cycle?'
               }
             </p>
           </div>
@@ -124,7 +124,7 @@ export default async function DashboardPage() {
         <div className="glass-card rounded-2xl p-6 sm:p-8 text-center">
           <div className="mx-auto max-w-md">
             <h2 className="font-display text-xl font-semibold text-stone-100">
-              Start a New Flywheel Cycle
+              Start a New Cycle
             </h2>
             <p className="mt-2 text-stone-400">
               Begin your journey from problem discovery to impact measurement.

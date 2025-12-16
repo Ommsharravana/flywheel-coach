@@ -1,4 +1,4 @@
-# Flywheel Coach - Project Instructions
+# JKKN Solution Studio - Project Instructions
 
 ## Framework Reference
 **CRITICAL:** The complete Problem-to-Impact Flywheel framework is at:

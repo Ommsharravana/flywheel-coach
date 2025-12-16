@@ -81,9 +81,9 @@ export function Header({ user, role }: HeaderProps) {
               </div>
             </div>
             <span className="font-display text-xl font-bold tracking-tight text-stone-100">
-              Flywheel
+              JKKN
               <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
-                Coach
+                {' '}Solution Studio
               </span>
             </span>
           </Link>

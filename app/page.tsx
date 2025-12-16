@@ -68,7 +68,7 @@ export default function Home() {
 
             {/* Trust badge */}
             <p className="mt-8 text-sm text-stone-500">
-              Powered by JKKN Institutions • AI Validation Cell
+              JKKN Solution Studio • Powered by JKKN Institutions
             </p>
           </div>
 
@@ -191,7 +191,7 @@ export default function Home() {
               Ready to Start Solving Real Problems?
             </h2>
             <p className="mt-4 text-stone-400">
-              Join JKKN learners who are building AI-powered solutions that make a difference.
+              Join JKKN Learners who are building AI-powered solutions that make a difference.
               Your first flywheel cycle is just a click away.
             </p>
             <div className="mt-10">
@@ -212,7 +212,7 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <FlywheelLogo size="sm" />
               <span className="text-sm text-stone-500">
-                Flywheel Coach by JKKN AI Validation Cell
+                JKKN Solution Studio • JKKN Institutions
               </span>
             </div>
             <div className="flex gap-6 text-sm text-stone-500">

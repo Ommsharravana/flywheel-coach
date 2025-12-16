@@ -57,7 +57,7 @@ export default async function StepPage({ params }: StepPageProps) {
   const cycle: Cycle = {
     id: cycleData.id,
     userId: cycleData.user_id,
-    name: cycleData.name || 'Flywheel Cycle',
+    name: cycleData.name || 'Cycle',
     status: cycleData.status,
     currentStep: cycleData.current_step,
     impactScore: cycleData.impact_score,

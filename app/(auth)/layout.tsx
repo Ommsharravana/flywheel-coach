@@ -19,9 +19,9 @@ export default function AuthLayout({
         <Link href="/" className="group flex items-center gap-3">
           <FlywheelLogo size="sm" />
           <span className="font-display text-lg font-bold tracking-tight text-stone-100">
-            Flywheel
+            JKKN
             <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
-              Coach
+              {' '}Solution Studio
             </span>
           </span>
         </Link>
@@ -34,7 +34,7 @@ export default function AuthLayout({
 
       {/* Footer */}
       <footer className="relative z-10 py-6 text-center text-sm text-stone-500">
-        <p>JKKN Institutions • AI Validation Cell</p>
+        <p>JKKN Solution Studio • JKKN Institutions</p>
       </footer>
     </div>
   )
