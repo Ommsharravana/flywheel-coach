@@ -21,6 +21,7 @@ export type Database = {
           role: 'learner' | 'facilitator' | 'admin' | 'superadmin'
           onboarding_completed: boolean
           language: 'en' | 'ta'
+          active_event_id: string | null
           created_at: string
           updated_at: string
         }
@@ -35,6 +36,7 @@ export type Database = {
           role?: 'learner' | 'facilitator' | 'admin'
           onboarding_completed?: boolean
           language?: 'en' | 'ta'
+          active_event_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -49,6 +51,51 @@ export type Database = {
           role?: 'learner' | 'facilitator' | 'admin'
           onboarding_completed?: boolean
           language?: 'en' | 'ta'
+          active_event_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      events: {
+        Row: {
+          id: string
+          slug: string
+          name: string
+          description: string | null
+          start_date: string
+          end_date: string
+          is_active: boolean
+          banner_color: string | null
+          config: Json | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          name: string
+          description?: string | null
+          start_date: string
+          end_date: string
+          is_active?: boolean
+          banner_color?: string | null
+          config?: Json | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          name?: string
+          description?: string | null
+          start_date?: string
+          end_date?: string
+          is_active?: boolean
+          banner_color?: string | null
+          config?: Json | null
+          created_by?: string | null
           created_at?: string
           updated_at?: string
         }

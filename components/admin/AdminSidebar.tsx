@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Shield,
   BarChart3,
+  Trophy,
 } from 'lucide-react';
 
 const navItems = [
@@ -18,6 +19,11 @@ const navItems = [
     label: 'Dashboard',
     href: '/admin',
     icon: LayoutDashboard,
+  },
+  {
+    label: 'Events',
+    href: '/admin/events',
+    icon: Trophy,
   },
   {
     label: 'Users',

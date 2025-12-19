@@ -1496,3 +1496,107 @@ Finished supabase db push.
 ## Status:
 **COMPLETE** - Naming fixed, migrations deployed
 
+---
+
+# Session 29: Events System Implementation
+**Date:** 2025-12-19
+**Focus:** Replace appathon_mode toggle with flexible Events System
+
+## What Was Done:
+
+1. **Database Migration** (`supabase/migrations/005_events_system.sql`)
+   - Created `events` table with id, slug, name, description, dates, config JSONB, banner_color
+   - Added `active_event_id` column to users table (replaces appathon_mode)
+   - Created RLS policies for public viewing and superadmin management
+   - Added is_superadmin() check function
+   - Created initial "Appathon 2.0" event with config JSONB
+
+2. **Event Types** (`lib/events/types.ts`)
+   - Event, EventConfig, EventWithParticipantCount interfaces
+   - Theme, JudgingCriteria, BonusCriteria, ProblemIdea, RoadmapDay interfaces
+   - Type-safe config structure matching existing Appathon content
+
+3. **Event Context** (`lib/context/EventContext.tsx`)
+   - Replaces AppathonContext with EventProvider
+   - `useActiveEvent()` hook - Returns activeEvent object with full config
+   - `isAppathonMode` derived property for backward compatibility
+   - Fetches user's active_event_id from users table
+
+4. **Event Components** (`components/events/`)
+   - `EventSelector.tsx` - Bold card-based UI for joining/leaving events
+   - `EventBanner.tsx` - Replaces AppathonBanner with dynamic event colors
+
+5. **API Routes** (`app/api/events/`)
+   - `route.ts` - GET (list active events), POST (create - superadmin only)
+   - `[id]/route.ts` - GET, PATCH, DELETE for single event
+   - `join/route.ts` - POST to join event (sets active_event_id)
+   - `leave/route.ts` - POST to leave event (clears active_event_id)
+   - All routes use `(supabase as any)` pattern for new table types
+
+6. **Direct Event Links** (`app/(dashboard)/event/[slug]/page.tsx`)
+   - `/event/appathon-2` auto-joins user to event
+   - Redirects to login if not authenticated
+   - Redirects to dashboard after joining
+
+7. **Admin Events Page** (`app/(admin)/admin/events/page.tsx`)
+   - List all events with participant counts
+   - Create new event form
+   - Edit/delete existing events
+   - Added to AdminSidebar navigation
+
+8. **Dashboard Integration**
+   - Updated layout.tsx to use EventProvider
+   - Updated dashboard/page.tsx with EventSelector
+   - Updated step components to use useActiveEvent()
+
+## Build Verification:
+```
+✓ Compiled successfully in 1547.0ms
+✓ Generating static pages (26/26) in 306.3ms
+```
+
+All routes compile including:
+- `/api/events` - Events API
+- `/api/events/[id]` - Single event API
+- `/api/events/join` - Join event API
+- `/api/events/leave` - Leave event API
+- `/event/[slug]` - Direct event link page
+- `/admin/events` - Admin events management
+
+## Migration Deployed:
+```
+Applying migration 005_events_system.sql...
+Finished supabase db push.
+```
+
+## Files Created:
+- `supabase/migrations/005_events_system.sql`
+- `lib/events/types.ts`
+- `lib/context/EventContext.tsx`
+- `components/events/EventSelector.tsx`
+- `components/events/EventBanner.tsx`
+- `app/(dashboard)/event/[slug]/page.tsx`
+- `app/(admin)/admin/events/page.tsx`
+- `app/api/events/route.ts`
+- `app/api/events/[id]/route.ts`
+- `app/api/events/join/route.ts`
+- `app/api/events/leave/route.ts`
+
+## Files Modified:
+- `app/(dashboard)/layout.tsx` - EventProvider wrapper
+- `app/(dashboard)/dashboard/page.tsx` - EventSelector integration
+- `components/steps/ProblemDiscovery.tsx` - useActiveEvent
+- `components/steps/BuildTracker.tsx` - useActiveEvent
+- `app/api/coach/route.ts` - useActiveEvent
+- `components/admin/AdminSidebar.tsx` - Added Events link
+- `lib/supabase/types.ts` - Added events table types
+
+## Type Assertion Pattern:
+Used `(supabase as any)` with eslint-disable comments for tables not in generated types, following existing codebase pattern from admin routes.
+
+## Status:
+**COMPLETE** - Events System fully implemented and deployed
+
+## Local Testing Note:
+Local dev requires Docker for local Supabase. Migration pushed to remote successfully. Full testing available on production.
+

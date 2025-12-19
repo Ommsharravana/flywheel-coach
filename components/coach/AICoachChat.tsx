@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Bot, Loader2, Send, Sparkles, User, X, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
-import { useAppathonMode } from '@/lib/context/AppathonContext';
+import { useAppathonMode } from '@/lib/context/EventContext';
 
 interface Message {
   id: string;

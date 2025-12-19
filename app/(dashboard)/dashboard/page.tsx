@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { FlywheelLogo } from '@/components/shared/FlywheelLogo'
+import { EventSelector } from '@/components/events/EventSelector'
 import { Database } from '@/lib/supabase/types'
 
 type Cycle = Database['public']['Tables']['cycles']['Row']
@@ -42,6 +43,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Events Section - First thing users see */}
+      <EventSelector />
+
       {/* Welcome Section */}
       <div className="glass-card rounded-2xl p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">

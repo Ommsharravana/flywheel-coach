@@ -10,7 +10,7 @@ import { Check, ChevronRight, ExternalLink, Hammer, Save, Trophy, Upload } from 
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import { useAppathonMode } from '@/lib/context/AppathonContext';
+import { useAppathonMode } from '@/lib/context/EventContext';
 import { BuildRoadmap } from '@/components/appathon/BuildRoadmap';
 
 interface BuildTrackerProps {

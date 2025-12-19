@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import { useAppathonMode } from '@/lib/context/AppathonContext';
+import { useAppathonMode } from '@/lib/context/EventContext';
 import { ProblemIdeasPanel } from '@/components/appathon/ProblemIdeasPanel';
 import { JudgingCriteria } from '@/components/appathon/JudgingCriteria';
 

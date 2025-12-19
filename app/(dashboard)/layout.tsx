@@ -2,13 +2,14 @@ import { createClient } from '@/lib/supabase/server'
 import { getEffectiveUser, isImpersonating } from '@/lib/supabase/effective-user'
 import { Header } from '@/components/shared/Header'
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner'
-import { AppathonBanner } from '@/components/appathon/AppathonBanner'
-import { AppathonProvider } from '@/lib/context/AppathonContext'
+import { EventBanner } from '@/components/events/EventBanner'
+import { EventProvider } from '@/lib/context/EventContext'
 import { redirect } from 'next/navigation'
+import type { Event } from '@/lib/events/types'
 
 interface ProfileRow {
   role: 'learner' | 'facilitator' | 'admin' | 'superadmin';
-  appathon_mode: boolean | null;
+  active_event_id: string | null;
 }
 
 export default async function DashboardLayout({
@@ -34,21 +35,36 @@ export default async function DashboardLayout({
   // Fetch user role for admin link (always use auth user's role for admin access)
   const { data: profileData } = await supabase
     .from('users')
-    .select('role, appathon_mode')
+    .select('role, active_event_id')
     .eq('id', authUser.id)
     .single()
 
   const profile = profileData as unknown as ProfileRow | null;
 
-  // Fetch effective user's appathon mode (may differ if impersonating)
+  // Fetch effective user's active event (may differ if impersonating)
   const { data: effectiveProfileData } = await supabase
     .from('users')
-    .select('appathon_mode')
+    .select('active_event_id')
     .eq('id', effectiveUser.id)
     .single()
 
-  const effectiveProfile = effectiveProfileData as { appathon_mode: boolean | null } | null;
-  const isAppathonMode = effectiveProfile?.appathon_mode ?? false;
+  const effectiveProfile = effectiveProfileData as { active_event_id: string | null } | null;
+  const activeEventId = effectiveProfile?.active_event_id ?? null;
+
+  // Fetch the active event if user is in one
+  let activeEvent: Event | null = null;
+  if (activeEventId) {
+    const { data: eventData } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', activeEventId)
+      .eq('is_active', true)
+      .single()
+
+    if (eventData) {
+      activeEvent = eventData as unknown as Event;
+    }
+  }
 
   // Create a user object compatible with Header
   const displayUser = {
@@ -61,25 +77,25 @@ export default async function DashboardLayout({
 
   // Calculate top padding based on banners shown
   const hasImpersonation = impersonating;
-  const hasAppathon = isAppathonMode;
+  const hasEvent = activeEvent !== null;
   let topPadding = 'pt-20';
-  if (hasImpersonation && hasAppathon) {
+  if (hasImpersonation && hasEvent) {
     topPadding = 'pt-40';
   } else if (hasImpersonation) {
     topPadding = 'pt-32';
-  } else if (hasAppathon) {
+  } else if (hasEvent) {
     topPadding = 'pt-28';
   }
 
   return (
-    <AppathonProvider isAppathonMode={isAppathonMode}>
+    <EventProvider activeEvent={activeEvent}>
       <div className="relative min-h-screen">
         {/* Background effects */}
         <div className="fixed inset-0 gradient-mesh" />
         <div className="fixed inset-0 noise-bg" />
 
         <ImpersonationBanner />
-        {isAppathonMode && <AppathonBanner />}
+        <EventBanner />
         <Header user={displayUser} role={profile?.role} />
 
         <main className={`relative z-10 pb-8 px-4 sm:px-6 lg:px-8 ${topPadding}`}>
@@ -88,6 +104,6 @@ export default async function DashboardLayout({
           </div>
         </main>
       </div>
-    </AppathonProvider>
+    </EventProvider>
   )
 }
