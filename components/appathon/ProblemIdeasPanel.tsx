@@ -21,16 +21,14 @@ import {
   Trophy,
   Star,
   ChevronDown,
-  ChevronRight,
   Zap,
-  FileText,
-  Lightbulb,
+  ArrowRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ProblemIdeasPanelProps {
-  onSelectProblem?: (problem: string, lovablePrompt?: string, fullStatement?: string) => void;
+  onSelectProblem?: (problem: ProblemIdea, themeId: AppathonThemeId) => void;
 }
 
 // Theme colors - neon accents for each category
@@ -80,20 +78,10 @@ const DIFFICULTY_CONFIG = {
   Hard: { bars: 3, color: 'bg-rose-500', text: 'text-rose-400', label: 'Advanced' },
 };
 
-// Placeholder key colors for visual distinction
-const PLACEHOLDER_COLORS: Record<string, string> = {
-  WHO: 'text-sky-400 bg-sky-500/10 border-sky-500/30',
-  PROBLEM: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
-  CAUSE: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-  IMPACT: 'text-violet-400 bg-violet-500/10 border-violet-500/30',
-};
-
 export function ProblemIdeasPanel({ onSelectProblem }: ProblemIdeasPanelProps) {
   const [selectedTheme, setSelectedTheme] = useState<AppathonThemeId>('healthcare');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showCriteria, setShowCriteria] = useState(false);
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
-  const [templateValues, setTemplateValues] = useState<Record<string, Record<string, string>>>({});
 
   const themeColors = THEME_COLORS[selectedTheme];
   const currentTheme = APPATHON_THEMES.find((t) => t.id === selectedTheme);
@@ -107,60 +95,11 @@ export function ProblemIdeasPanel({ onSelectProblem }: ProblemIdeasPanelProps) {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleCopyStatement = (cardId: string, problem: ProblemIdea) => {
-    const values = templateValues[cardId] || {};
-    let statement = problem.template.statement;
-
-    problem.template.placeholders.forEach(p => {
-      const value = values[p.key] || p.example;
-      statement = statement.replace(`[${p.key}]`, value);
-    });
-
-    navigator.clipboard.writeText(statement);
-    setCopiedId(`${cardId}-statement`);
-    toast.success('Problem statement copied!');
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleSelectProblem = (problem: ProblemIdea, cardId: string) => {
+  const handleSelectProblem = (problem: ProblemIdea) => {
     if (onSelectProblem) {
-      const values = templateValues[cardId] || {};
-      let statement = problem.template.statement;
-
-      problem.template.placeholders.forEach(p => {
-        const value = values[p.key] || p.example;
-        statement = statement.replace(`[${p.key}]`, value);
-      });
-
-      onSelectProblem(problem.problem, problem.lovablePrompt, statement);
+      onSelectProblem(problem, selectedTheme);
+      toast.success('Problem selected! Fill in the template →');
     }
-  };
-
-  const updateTemplateValue = (cardId: string, key: string, value: string) => {
-    setTemplateValues(prev => ({
-      ...prev,
-      [cardId]: {
-        ...(prev[cardId] || {}),
-        [key]: value,
-      },
-    }));
-  };
-
-  const getFilledStatement = (cardId: string, problem: ProblemIdea) => {
-    const values = templateValues[cardId] || {};
-    let statement = problem.template.statement;
-
-    problem.template.placeholders.forEach(p => {
-      const value = values[p.key] || p.example;
-      statement = statement.replace(`[${p.key}]`, value);
-    });
-
-    return statement;
-  };
-
-  const toggleExpanded = (cardId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpandedCard(expandedCard === cardId ? null : cardId);
   };
 
   return (
@@ -178,7 +117,7 @@ export function ProblemIdeasPanel({ onSelectProblem }: ProblemIdeasPanelProps) {
                   PROBLEM IDEAS
                 </h3>
                 <p className="text-[10px] text-stone-500 uppercase tracking-widest">
-                  Appathon 2.0
+                  Select one to customize →
                 </p>
               </div>
             </div>
@@ -200,10 +139,7 @@ export function ProblemIdeasPanel({ onSelectProblem }: ProblemIdeasPanelProps) {
               return (
                 <button
                   key={theme.id}
-                  onClick={() => {
-                    setSelectedTheme(theme.id);
-                    setExpandedCard(null);
-                  }}
+                  onClick={() => setSelectedTheme(theme.id)}
                   className={`
                     flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg
                     text-xs font-medium transition-all duration-200
@@ -272,7 +208,7 @@ export function ProblemIdeasPanel({ onSelectProblem }: ProblemIdeasPanelProps) {
         )}
       </AnimatePresence>
 
-      {/* Problem Cards */}
+      {/* Problem Cards - Simple list with select button */}
       <Card className="border-2 border-stone-800 bg-stone-950/80">
         <CardContent className="p-2 space-y-1.5 max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-stone-700">
           <AnimatePresence mode="wait">
@@ -287,7 +223,6 @@ export function ProblemIdeasPanel({ onSelectProblem }: ProblemIdeasPanelProps) {
               {problems.map((problem, idx) => {
                 const difficulty = DIFFICULTY_CONFIG[problem.difficulty];
                 const cardId = `${selectedTheme}-${idx}`;
-                const isExpanded = expandedCard === cardId;
                 const isCopied = copiedId === cardId;
 
                 return (
@@ -299,35 +234,22 @@ export function ProblemIdeasPanel({ onSelectProblem }: ProblemIdeasPanelProps) {
                     className={`
                       relative group rounded-lg overflow-hidden
                       border-2 transition-all duration-200
-                      ${isExpanded
-                        ? `${themeColors.border} ${themeColors.bg}`
-                        : 'border-stone-800 hover:border-stone-700'
-                      }
+                      border-stone-800 hover:border-stone-700 hover:bg-stone-900/30
                     `}
                   >
                     {/* Difficulty indicator strip */}
                     <div className={`absolute left-0 top-0 bottom-0 w-1 ${difficulty.color}`} />
 
-                    {/* Main row - always visible */}
-                    <div
-                      className="pl-3 pr-2 py-2.5 cursor-pointer"
-                      onClick={(e) => toggleExpanded(cardId, e)}
-                    >
+                    {/* Main row */}
+                    <div className="pl-3 pr-2 py-2.5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <ChevronRight
-                              className={`w-4 h-4 text-stone-500 transition-transform duration-200 flex-shrink-0 ${
-                                isExpanded ? 'rotate-90' : ''
-                              }`}
-                            />
-                            <h4 className="text-sm font-medium text-stone-200 leading-tight">
-                              {problem.problem}
-                            </h4>
-                          </div>
+                          <h4 className="text-sm font-medium text-stone-200 leading-tight">
+                            {problem.problem}
+                          </h4>
 
                           {/* Meta row */}
-                          <div className="flex items-center gap-2 mt-1.5 ml-6">
+                          <div className="flex items-center gap-2 mt-1.5">
                             <span className="text-[10px] text-stone-500">
                               → {problem.target}
                             </span>
@@ -351,17 +273,15 @@ export function ProblemIdeasPanel({ onSelectProblem }: ProblemIdeasPanelProps) {
                           </div>
                         </div>
 
-                        {/* Quick actions (always visible) */}
+                        {/* Actions */}
                         <div className="flex items-center gap-1">
                           {problem.lovablePrompt && (
                             <Button
                               size="sm"
                               variant="ghost"
                               className={`h-7 w-7 p-0 ${themeColors.text} hover:${themeColors.bg}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCopyPrompt(problem, idx);
-                              }}
+                              onClick={() => handleCopyPrompt(problem, idx)}
+                              title="Copy Lovable prompt"
                             >
                               {isCopied ? (
                                 <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -370,140 +290,17 @@ export function ProblemIdeasPanel({ onSelectProblem }: ProblemIdeasPanelProps) {
                               )}
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            className={`h-7 px-2 text-[10px] font-bold ${themeColors.bg} ${themeColors.text} ${themeColors.border} border hover:brightness-110`}
+                            onClick={() => handleSelectProblem(problem)}
+                          >
+                            Select
+                            <ArrowRight className="w-3 h-3 ml-1" />
+                          </Button>
                         </div>
                       </div>
                     </div>
-
-                    {/* Expanded Template Section */}
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="border-t border-dashed border-stone-700"
-                        >
-                          <div className="p-3 space-y-3">
-                            {/* Template header */}
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-3.5 h-3.5 text-stone-500" />
-                              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
-                                Problem Statement Template
-                              </span>
-                              <div className="flex-1 border-t border-dashed border-stone-800" />
-                            </div>
-
-                            {/* Template structure visualization */}
-                            <div className="bg-stone-900/50 rounded-lg p-3 border border-dashed border-stone-700">
-                              <p className="text-xs text-stone-400 font-mono leading-relaxed">
-                                <span className={`inline-block px-1.5 py-0.5 rounded border text-[10px] font-bold mr-1 ${PLACEHOLDER_COLORS.WHO}`}>
-                                  WHO
-                                </span>
-                                struggles with
-                                <span className={`inline-block px-1.5 py-0.5 rounded border text-[10px] font-bold mx-1 ${PLACEHOLDER_COLORS.PROBLEM}`}>
-                                  PROBLEM
-                                </span>
-                                because
-                                <span className={`inline-block px-1.5 py-0.5 rounded border text-[10px] font-bold mx-1 ${PLACEHOLDER_COLORS.CAUSE}`}>
-                                  CAUSE
-                                </span>
-                                , which leads to
-                                <span className={`inline-block px-1.5 py-0.5 rounded border text-[10px] font-bold mx-1 ${PLACEHOLDER_COLORS.IMPACT}`}>
-                                  IMPACT
-                                </span>
-                                .
-                              </p>
-                            </div>
-
-                            {/* Placeholder fields */}
-                            <div className="space-y-2">
-                              {problem.template.placeholders.map((placeholder) => {
-                                const colorClass = PLACEHOLDER_COLORS[placeholder.key] || 'text-stone-400 bg-stone-500/10 border-stone-500/30';
-                                const currentValue = templateValues[cardId]?.[placeholder.key] || '';
-
-                                return (
-                                  <div key={placeholder.key} className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className={`inline-block px-1.5 py-0.5 rounded border text-[10px] font-bold ${colorClass}`}>
-                                        {placeholder.key}
-                                      </span>
-                                      <span className="text-[10px] text-stone-500 italic">
-                                        {placeholder.hint}
-                                      </span>
-                                    </div>
-                                    <div className="relative">
-                                      <input
-                                        type="text"
-                                        placeholder={placeholder.example}
-                                        value={currentValue}
-                                        onChange={(e) => updateTemplateValue(cardId, placeholder.key, e.target.value)}
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="w-full bg-stone-900/80 border border-stone-700 rounded px-3 py-2 text-xs text-stone-200 placeholder:text-stone-600 focus:outline-none focus:border-stone-500 focus:ring-1 focus:ring-stone-500/20"
-                                      />
-                                      {!currentValue && (
-                                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                          <Lightbulb className="w-3.5 h-3.5 text-stone-600" />
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-
-                            {/* Generated statement preview */}
-                            <div className="bg-stone-900/80 rounded-lg p-3 border border-stone-700">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                                  Your Statement
-                                </span>
-                              </div>
-                              <p className="text-xs text-stone-300 leading-relaxed">
-                                {getFilledStatement(cardId, problem)}
-                              </p>
-                            </div>
-
-                            {/* Action buttons */}
-                            <div className="flex items-center gap-2 pt-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 h-8 text-xs border-stone-700 text-stone-400 hover:bg-stone-800"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCopyStatement(cardId, problem);
-                                }}
-                              >
-                                {copiedId === `${cardId}-statement` ? (
-                                  <>
-                                    <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-                                    Copied!
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3.5 h-3.5 mr-1.5" />
-                                    Copy Statement
-                                  </>
-                                )}
-                              </Button>
-                              <Button
-                                size="sm"
-                                className={`flex-1 h-8 text-xs font-bold ${themeColors.bg} ${themeColors.text} ${themeColors.border} border hover:brightness-110`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSelectProblem(problem, cardId);
-                                }}
-                              >
-                                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                                Use This Problem
-                              </Button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </motion.div>
                 );
               })}

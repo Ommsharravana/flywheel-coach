@@ -9,13 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Check, ChevronRight, Lightbulb, Save, Sparkles } from 'lucide-react';
+import { Check, ChevronRight, Lightbulb, Save, Sparkles, FileText, Copy, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useAppathonMode } from '@/lib/context/EventContext';
 import { ProblemIdeasPanel } from '@/components/appathon/ProblemIdeasPanel';
+import { type ProblemIdea, type AppathonThemeId } from '@/lib/appathon/content';
 
 interface ProblemDiscoveryProps {
   cycle: Cycle;
@@ -66,6 +67,14 @@ const FREQUENCY_OPTIONS = [
   { value: 'occasional', label: 'Rarely', description: 'Occasionally when it comes up' },
 ];
 
+// Placeholder key colors for visual distinction
+const PLACEHOLDER_COLORS: Record<string, { text: string; bg: string; border: string }> = {
+  WHO: { text: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/30' },
+  PROBLEM: { text: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/30' },
+  CAUSE: { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
+  IMPACT: { text: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/30' },
+};
+
 export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -88,6 +97,12 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   const [frequency, setFrequency] = useState<string>(cycle.problem?.frequency || 'weekly');
   const [currentTab, setCurrentTab] = useState('questions');
   const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  // Appathon template state
+  const [selectedProblem, setSelectedProblem] = useState<ProblemIdea | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<AppathonThemeId | null>(null);
+  const [templateValues, setTemplateValues] = useState<Record<string, string>>({});
+  const [copiedStatement, setCopiedStatement] = useState(false);
 
   // Calculate progress
   const answeredQuestions = Object.values(answers).filter((a) => a.trim().length > 0).length;
@@ -182,14 +197,54 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
     await saveProblem();
   };
 
-  // Handler for Appathon problem selection
-  const handleAppathonProblemSelect = (problem: string, lovablePrompt?: string) => {
-    setProblemStatement(problem);
-    if (lovablePrompt) {
-      setRefinedStatement(lovablePrompt);
-    }
+  // Handler for Appathon problem selection - receives full ProblemIdea
+  const handleAppathonProblemSelect = (problem: ProblemIdea, themeId: AppathonThemeId) => {
+    setSelectedProblem(problem);
+    setSelectedTheme(themeId);
+    setTemplateValues({}); // Reset template values for new problem
     setCurrentTab('statement');
-    toast.success('Problem idea selected! Review and customize it.');
+  };
+
+  // Get filled statement from template
+  const getFilledStatement = () => {
+    if (!selectedProblem) return '';
+
+    let statement = selectedProblem.template.statement;
+    selectedProblem.template.placeholders.forEach(p => {
+      const value = templateValues[p.key] || p.example;
+      statement = statement.replace(`[${p.key}]`, value);
+    });
+    return statement;
+  };
+
+  // Update template value
+  const updateTemplateValue = (key: string, value: string) => {
+    setTemplateValues(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Use filled statement as problem statement
+  const useFilledStatement = () => {
+    const statement = getFilledStatement();
+    setProblemStatement(statement);
+    if (selectedProblem?.lovablePrompt) {
+      setRefinedStatement(selectedProblem.lovablePrompt);
+    }
+    toast.success('Statement applied! Review and refine it below.');
+  };
+
+  // Copy filled statement
+  const copyFilledStatement = () => {
+    navigator.clipboard.writeText(getFilledStatement());
+    setCopiedStatement(true);
+    toast.success('Copied to clipboard!');
+    setTimeout(() => setCopiedStatement(false), 2000);
+  };
+
+  // Clear selected problem
+  const clearSelectedProblem = () => {
+    setSelectedProblem(null);
+    setSelectedTheme(null);
+    setTemplateValues({});
   };
 
   return (
@@ -210,7 +265,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
             </TabsTrigger>
           <TabsTrigger
             value="statement"
-            disabled={!hasAllAnswers}
+            disabled={!hasAllAnswers && !isAppathonMode}
             className="data-[state=active]:bg-amber-500 data-[state=active]:text-stone-900"
           >
             2. Statement
@@ -354,7 +409,156 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
         </TabsContent>
 
         {/* Statement Tab */}
-        <TabsContent value="statement" className="mt-6">
+        <TabsContent value="statement" className="mt-6 space-y-6">
+          {/* Appathon Template Builder - shown when a problem is selected */}
+          <AnimatePresence mode="wait">
+            {isAppathonMode && selectedProblem && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card className="border-2 border-amber-500/50 bg-gradient-to-br from-amber-500/5 to-stone-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-amber-500/20 border border-amber-500/30">
+                          <FileText className="w-5 h-5 text-amber-400" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg text-stone-100">
+                            Build Your Problem Statement
+                          </CardTitle>
+                          <CardDescription className="text-stone-400">
+                            Fill in the blanks to customize your statement
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearSelectedProblem}
+                        className="h-8 w-8 p-0 text-stone-500 hover:text-stone-300"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    {/* Selected problem title */}
+                    <div className="p-3 bg-stone-800/50 rounded-lg border border-stone-700">
+                      <p className="text-xs text-stone-500 mb-1">Selected Problem</p>
+                      <p className="text-sm text-stone-200 font-medium">{selectedProblem.problem}</p>
+                    </div>
+
+                    {/* Template structure visualization */}
+                    <div className="bg-stone-900/50 rounded-lg p-4 border border-dashed border-stone-700">
+                      <p className="text-xs text-stone-500 mb-3 uppercase tracking-wider font-bold">
+                        Template Structure
+                      </p>
+                      <p className="text-sm text-stone-400 font-mono leading-relaxed">
+                        <span className={`inline-block px-2 py-1 rounded border text-xs font-bold mr-1 ${PLACEHOLDER_COLORS.WHO.text} ${PLACEHOLDER_COLORS.WHO.bg} ${PLACEHOLDER_COLORS.WHO.border}`}>
+                          WHO
+                        </span>
+                        struggles with
+                        <span className={`inline-block px-2 py-1 rounded border text-xs font-bold mx-1 ${PLACEHOLDER_COLORS.PROBLEM.text} ${PLACEHOLDER_COLORS.PROBLEM.bg} ${PLACEHOLDER_COLORS.PROBLEM.border}`}>
+                          PROBLEM
+                        </span>
+                        because
+                        <span className={`inline-block px-2 py-1 rounded border text-xs font-bold mx-1 ${PLACEHOLDER_COLORS.CAUSE.text} ${PLACEHOLDER_COLORS.CAUSE.bg} ${PLACEHOLDER_COLORS.CAUSE.border}`}>
+                          CAUSE
+                        </span>
+                        , which leads to
+                        <span className={`inline-block px-2 py-1 rounded border text-xs font-bold mx-1 ${PLACEHOLDER_COLORS.IMPACT.text} ${PLACEHOLDER_COLORS.IMPACT.bg} ${PLACEHOLDER_COLORS.IMPACT.border}`}>
+                          IMPACT
+                        </span>
+                        .
+                      </p>
+                    </div>
+
+                    {/* Placeholder input fields */}
+                    <div className="grid gap-4">
+                      {selectedProblem.template.placeholders.map((placeholder) => {
+                        const colors = PLACEHOLDER_COLORS[placeholder.key] || PLACEHOLDER_COLORS.WHO;
+                        const currentValue = templateValues[placeholder.key] || '';
+
+                        return (
+                          <div key={placeholder.key} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-block px-2 py-1 rounded border text-xs font-bold ${colors.text} ${colors.bg} ${colors.border}`}>
+                                {placeholder.key}
+                              </span>
+                              <span className="text-xs text-stone-500 italic">
+                                {placeholder.hint}
+                              </span>
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                placeholder={placeholder.example}
+                                value={currentValue}
+                                onChange={(e) => updateTemplateValue(placeholder.key, e.target.value)}
+                                className="w-full bg-stone-900/80 border-2 border-stone-700 rounded-lg px-4 py-3 text-sm text-stone-200 placeholder:text-stone-600 focus:outline-none focus:border-amber-500 transition-colors"
+                              />
+                              {!currentValue && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                  <Lightbulb className="w-4 h-4 text-stone-600" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Generated statement preview */}
+                    <div className="bg-gradient-to-r from-amber-500/10 to-emerald-500/10 rounded-lg p-4 border border-amber-500/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className="w-4 h-4 text-amber-400" />
+                        <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                          Your Problem Statement
+                        </span>
+                      </div>
+                      <p className="text-base text-stone-200 leading-relaxed">
+                        {getFilledStatement()}
+                      </p>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-3 pt-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1 border-stone-700 text-stone-400 hover:bg-stone-800"
+                        onClick={copyFilledStatement}
+                      >
+                        {copiedStatement ? (
+                          <>
+                            <Check className="w-4 h-4 mr-2 text-emerald-400" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4 mr-2" />
+                            Copy Statement
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        className="flex-1 bg-amber-500 hover:bg-amber-600 text-stone-900 font-bold"
+                        onClick={useFilledStatement}
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Use This Statement
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Main Problem Statement Card */}
           <Card className="glass-card">
             <CardHeader>
               <CardTitle className="text-xl text-stone-100 flex items-center gap-2">
@@ -362,7 +566,9 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
                 Problem Statement
               </CardTitle>
               <CardDescription>
-                Based on your answers, here's a draft problem statement. Edit it to capture the core issue.
+                {isAppathonMode && !selectedProblem
+                  ? 'Select a problem idea from the sidebar, or write your own below.'
+                  : 'Based on your answers, here\'s a draft problem statement. Edit it to capture the core issue.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
