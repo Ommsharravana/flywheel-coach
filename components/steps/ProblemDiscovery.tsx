@@ -9,14 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Check, ChevronRight, Lightbulb, Save, Sparkles, Trophy } from 'lucide-react';
+import { Check, ChevronRight, Lightbulb, Save, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useAppathonMode } from '@/lib/context/EventContext';
 import { ProblemIdeasPanel } from '@/components/appathon/ProblemIdeasPanel';
-import { JudgingCriteria } from '@/components/appathon/JudgingCriteria';
 
 interface ProblemDiscoveryProps {
   cycle: Cycle;
@@ -197,20 +196,8 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
     <div className={isAppathonMode ? 'grid lg:grid-cols-3 gap-6' : ''}>
       {/* Appathon sidebar - shown when Appathon mode is ON */}
       {isAppathonMode && (
-        <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
-          <Card className="glass-card border-amber-500/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm text-amber-400">
-                <Trophy className="w-4 h-4" />
-                Appathon 2.0 Mode
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-stone-400">
-              Pick a problem idea or use them for inspiration. Focus on problems that score high on judging criteria.
-            </CardContent>
-          </Card>
+        <div className="lg:col-span-1 order-2 lg:order-1">
           <ProblemIdeasPanel onSelectProblem={handleAppathonProblemSelect} />
-          <JudgingCriteria compact />
         </div>
       )}
 
