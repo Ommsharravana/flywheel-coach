@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { Cycle, FLYWHEEL_STEPS } from '@/lib/types/cycle';
+import {
+  APPATHON_COACH_CONTEXT,
+  getAppathonStepGuidance,
+  getContextualAppathonTips,
+} from '@/lib/appathon/coach-context';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -10,12 +15,13 @@ interface CoachRequest {
   messages: { role: 'user' | 'assistant'; content: string }[];
   cycle: Cycle;
   currentStep: number;
+  isAppathonMode?: boolean;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: CoachRequest = await request.json();
-    const { messages, cycle, currentStep } = body;
+    const { messages, cycle, currentStep, isAppathonMode } = body;
 
     const stepInfo = FLYWHEEL_STEPS[currentStep - 1];
 
@@ -73,6 +79,23 @@ Build:
 `;
     }
 
+    // Build Appathon-specific context if enabled
+    let appathonContext = '';
+    if (isAppathonMode) {
+      const stepGuidance = getAppathonStepGuidance(currentStep);
+      const contextualTips = getContextualAppathonTips();
+      appathonContext = `
+
+${APPATHON_COACH_CONTEXT}
+
+## Current Step Guidance for Appathon
+${stepGuidance}
+
+## Today's Tips
+${contextualTips.map((tip) => `- ${tip}`).join('\n')}
+`;
+    }
+
     const systemPrompt = `You are an AI Coach for the JKKN Solution Studio application. Your role is to guide users through the 8-step Problem-to-Impact Flywheel methodology.
 
 Your persona:
@@ -100,11 +123,11 @@ Key principles to reinforce:
 - Every solution reveals new problems (the flywheel effect)
 - Validate before building
 - Use JKKN terminology: "Learners" not "students", "Learning Facilitators" not "teachers"
-
+${appathonContext}
 Current user context:
 ${contextInfo}
 
-Help the user succeed at their current step. If they're stuck, help them move forward. If they're confused, clarify. If they need encouragement, provide it. Always relate your advice back to the flywheel methodology.`;
+Help the user succeed at their current step. If they're stuck, help them move forward. If they're confused, clarify. If they need encouragement, provide it. Always relate your advice back to the flywheel methodology.${isAppathonMode ? ' Remember: The user is in Appathon 2.0 competition mode. Prioritize advice that helps them win: focus on judging criteria, time constraints, and demo-ready deliverables.' : ''}`;
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',

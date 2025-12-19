@@ -9,11 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Check, ChevronRight, Lightbulb, Save, Sparkles } from 'lucide-react';
+import { Check, ChevronRight, Lightbulb, Save, Sparkles, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { useAppathonMode } from '@/lib/context/AppathonContext';
+import { ProblemIdeasPanel } from '@/components/appathon/ProblemIdeasPanel';
+import { JudgingCriteria } from '@/components/appathon/JudgingCriteria';
 
 interface ProblemDiscoveryProps {
   cycle: Cycle;
@@ -68,6 +71,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const supabase = createClient();
+  const { isAppathonMode } = useAppathonMode();
 
   // Initialize state from existing problem or empty
   const [answers, setAnswers] = useState<Record<string, string>>(
@@ -179,13 +183,44 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
     await saveProblem();
   };
 
+  // Handler for Appathon problem selection
+  const handleAppathonProblemSelect = (problem: string, lovablePrompt?: string) => {
+    setProblemStatement(problem);
+    if (lovablePrompt) {
+      setRefinedStatement(lovablePrompt);
+    }
+    setCurrentTab('statement');
+    toast.success('Problem idea selected! Review and customize it.');
+  };
+
   return (
-    <div className="space-y-6">
-      <Tabs value={currentTab} onValueChange={setCurrentTab}>
-        <TabsList className="grid w-full grid-cols-3 bg-stone-800/50">
-          <TabsTrigger value="questions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-stone-900">
-            1. Questions ({answeredQuestions}/5)
-          </TabsTrigger>
+    <div className={isAppathonMode ? 'grid lg:grid-cols-3 gap-6' : ''}>
+      {/* Appathon sidebar - shown when Appathon mode is ON */}
+      {isAppathonMode && (
+        <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
+          <Card className="glass-card border-amber-500/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm text-amber-400">
+                <Trophy className="w-4 h-4" />
+                Appathon 2.0 Mode
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs text-stone-400">
+              Pick a problem idea or use them for inspiration. Focus on problems that score high on judging criteria.
+            </CardContent>
+          </Card>
+          <ProblemIdeasPanel onSelectProblem={handleAppathonProblemSelect} />
+          <JudgingCriteria compact />
+        </div>
+      )}
+
+      {/* Main content */}
+      <div className={isAppathonMode ? 'lg:col-span-2 order-1 lg:order-2 space-y-6' : 'space-y-6'}>
+        <Tabs value={currentTab} onValueChange={setCurrentTab}>
+          <TabsList className="grid w-full grid-cols-3 bg-stone-800/50">
+            <TabsTrigger value="questions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-stone-900">
+              1. Questions ({answeredQuestions}/5)
+            </TabsTrigger>
           <TabsTrigger
             value="statement"
             disabled={!hasAllAnswers}
@@ -514,6 +549,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

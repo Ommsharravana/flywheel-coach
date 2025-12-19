@@ -4,8 +4,9 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { User, Building2, Globe, Shield } from 'lucide-react';
+import { User, Building2, Globe, Shield, Trophy } from 'lucide-react';
 import { SettingsForm } from './SettingsForm';
+import { AppathonToggle } from '@/components/appathon/AppathonToggle';
 
 interface UserProfile {
   id: string;
@@ -18,6 +19,7 @@ interface UserProfile {
   role: string | null;
   language: string | null;
   onboarding_completed: boolean | null;
+  appathon_mode: boolean | null;
   created_at: string;
   updated_at: string;
 }
@@ -107,6 +109,25 @@ export default async function SettingsPage() {
 
       {/* Edit Profile Form */}
       <SettingsForm profile={profile} userId={effectiveUser.id} />
+
+      {/* Competition Mode */}
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-stone-100">
+            <Trophy className="w-5 h-5 text-amber-400" />
+            Competition Mode
+          </CardTitle>
+          <CardDescription>
+            Enable special features for hackathons and competitions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AppathonToggle
+            userId={effectiveUser.id}
+            initialValue={profile?.appathon_mode ?? false}
+          />
+        </CardContent>
+      </Card>
 
       {/* Institution Info (Read Only) */}
       <Card className="glass-card">

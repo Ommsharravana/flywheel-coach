@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, ChevronRight, ExternalLink, Hammer, Save, Upload } from 'lucide-react';
+import { Check, ChevronRight, ExternalLink, Hammer, Save, Trophy, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { useAppathonMode } from '@/lib/context/AppathonContext';
+import { BuildRoadmap } from '@/components/appathon/BuildRoadmap';
 
 interface BuildTrackerProps {
   cycle: Cycle;
@@ -19,6 +21,7 @@ export function BuildTracker({ cycle }: BuildTrackerProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const supabase = createClient();
+  const { isAppathonMode } = useAppathonMode();
 
   const [lovableUrl, setLovableUrl] = useState(cycle.build?.lovableUrl || '');
   const [projectUrl, setProjectUrl] = useState(cycle.build?.projectUrl || '');
@@ -76,7 +79,27 @@ export function BuildTracker({ cycle }: BuildTrackerProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={isAppathonMode ? 'grid lg:grid-cols-3 gap-6' : ''}>
+      {/* Appathon sidebar - Build Roadmap */}
+      {isAppathonMode && (
+        <div className="lg:col-span-1 order-2 lg:order-1">
+          <Card className="glass-card border-amber-500/30 mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm text-amber-400">
+                <Trophy className="w-4 h-4" />
+                Appathon 2.0 Mode
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-xs text-stone-400">
+              Follow the 10-day roadmap to maximize your score. Focus on working prototype (25%) and user validation (15%).
+            </CardContent>
+          </Card>
+          <BuildRoadmap />
+        </div>
+      )}
+
+      {/* Main content */}
+      <div className={isAppathonMode ? 'lg:col-span-2 order-1 lg:order-2 space-y-6' : 'space-y-6'}>
       {/* Prompt reminder */}
       {cycle.prompt && (
         <Card className="glass-card border-amber-500/30">
@@ -215,6 +238,7 @@ export function BuildTracker({ cycle }: BuildTrackerProps) {
             <ChevronRight className="ml-1 w-4 h-4" />
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -5,9 +5,10 @@ import { Cycle, FLYWHEEL_STEPS } from '@/lib/types/cycle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, Loader2, Send, Sparkles, User, X } from 'lucide-react';
+import { Bot, Loader2, Send, Sparkles, User, X, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { useAppathonMode } from '@/lib/context/AppathonContext';
 
 interface Message {
   id: string;
@@ -33,6 +34,7 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const supabase = createClient();
+  const { isAppathonMode } = useAppathonMode();
 
   const stepInfo = FLYWHEEL_STEPS[currentStep - 1];
 
@@ -230,6 +232,7 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
           })),
           cycle,
           currentStep,
+          isAppathonMode,
         }),
       });
 
@@ -355,6 +358,12 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
               <CardTitle className="text-lg text-amber-400 flex items-center gap-2">
                 <Sparkles className="w-5 h-5" />
                 AI Coach
+                {isAppathonMode && (
+                  <span className="inline-flex items-center gap-1 text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">
+                    <Trophy className="w-3 h-3" />
+                    Appathon
+                  </span>
+                )}
               </CardTitle>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-stone-500">Step {currentStep}: {stepInfo.shortName}</span>
