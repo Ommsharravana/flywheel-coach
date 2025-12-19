@@ -1600,3 +1600,12 @@ Used `(supabase as any)` with eslint-disable comments for tables not in generate
 ## Local Testing Note:
 Local dev requires Docker for local Supabase. Migration pushed to remote successfully. Full testing available on production.
 
+
+
+## Deployed:
+- Committed: de98007
+- Pushed to origin/main
+- Vercel deployment triggered
+
+---
+
