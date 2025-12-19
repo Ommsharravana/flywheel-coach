@@ -102,53 +102,65 @@ ALTER TABLE admin_activity_logs ENABLE ROW LEVEL SECURITY;
 -- ============================================
 
 -- Admin cycle notes policies
+DROP POLICY IF EXISTS "Superadmin can view all cycle notes" ON admin_cycle_notes;
 CREATE POLICY "Superadmin can view all cycle notes"
   ON admin_cycle_notes FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can insert cycle notes" ON admin_cycle_notes;
 CREATE POLICY "Superadmin can insert cycle notes"
   ON admin_cycle_notes FOR INSERT
   WITH CHECK (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update cycle notes" ON admin_cycle_notes;
 CREATE POLICY "Superadmin can update cycle notes"
   ON admin_cycle_notes FOR UPDATE
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can delete cycle notes" ON admin_cycle_notes;
 CREATE POLICY "Superadmin can delete cycle notes"
   ON admin_cycle_notes FOR DELETE
   USING (is_superadmin());
 
 -- Cycle reviews policies
+DROP POLICY IF EXISTS "Superadmin can view all cycle reviews" ON cycle_reviews;
 CREATE POLICY "Superadmin can view all cycle reviews"
   ON cycle_reviews FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can insert cycle reviews" ON cycle_reviews;
 CREATE POLICY "Superadmin can insert cycle reviews"
   ON cycle_reviews FOR INSERT
   WITH CHECK (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update cycle reviews" ON cycle_reviews;
 CREATE POLICY "Superadmin can update cycle reviews"
   ON cycle_reviews FOR UPDATE
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can delete cycle reviews" ON cycle_reviews;
 CREATE POLICY "Superadmin can delete cycle reviews"
   ON cycle_reviews FOR DELETE
   USING (is_superadmin());
 
 -- Impersonation logs policies
+DROP POLICY IF EXISTS "Superadmin can view impersonation logs" ON impersonation_logs;
 CREATE POLICY "Superadmin can view impersonation logs"
   ON impersonation_logs FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can insert impersonation logs" ON impersonation_logs;
 CREATE POLICY "Superadmin can insert impersonation logs"
   ON impersonation_logs FOR INSERT
   WITH CHECK (is_superadmin());
 
 -- Admin activity logs policies
+DROP POLICY IF EXISTS "Superadmin can view activity logs" ON admin_activity_logs;
 CREATE POLICY "Superadmin can view activity logs"
   ON admin_activity_logs FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can insert activity logs" ON admin_activity_logs;
 CREATE POLICY "Superadmin can insert activity logs"
   ON admin_activity_logs FOR INSERT
   WITH CHECK (is_superadmin());
@@ -158,136 +170,166 @@ CREATE POLICY "Superadmin can insert activity logs"
 -- ============================================
 
 -- Users table - superadmin can view/update all users
+DROP POLICY IF EXISTS "Superadmin can view all users" ON users;
 CREATE POLICY "Superadmin can view all users"
   ON users FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all users" ON users;
 CREATE POLICY "Superadmin can update all users"
   ON users FOR UPDATE
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can insert users" ON users;
 CREATE POLICY "Superadmin can insert users"
   ON users FOR INSERT
   WITH CHECK (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can delete users" ON users;
 CREATE POLICY "Superadmin can delete users"
   ON users FOR DELETE
   USING (is_superadmin());
 
 -- Cycles table - superadmin can view/update all cycles
+DROP POLICY IF EXISTS "Superadmin can view all cycles" ON cycles;
 CREATE POLICY "Superadmin can view all cycles"
   ON cycles FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all cycles" ON cycles;
 CREATE POLICY "Superadmin can update all cycles"
   ON cycles FOR UPDATE
   USING (is_superadmin());
 
 -- Problems table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all problems" ON problems;
 CREATE POLICY "Superadmin can view all problems"
   ON problems FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all problems" ON problems;
 CREATE POLICY "Superadmin can update all problems"
   ON problems FOR UPDATE
   USING (is_superadmin());
 
 -- Contexts table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all contexts" ON contexts;
 CREATE POLICY "Superadmin can view all contexts"
   ON contexts FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all contexts" ON contexts;
 CREATE POLICY "Superadmin can update all contexts"
   ON contexts FOR UPDATE
   USING (is_superadmin());
 
 -- Interviews table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all interviews" ON interviews;
 CREATE POLICY "Superadmin can view all interviews"
   ON interviews FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all interviews" ON interviews;
 CREATE POLICY "Superadmin can update all interviews"
   ON interviews FOR UPDATE
   USING (is_superadmin());
 
 -- Value assessments table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all value assessments" ON value_assessments;
 CREATE POLICY "Superadmin can view all value assessments"
   ON value_assessments FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all value assessments" ON value_assessments;
 CREATE POLICY "Superadmin can update all value assessments"
   ON value_assessments FOR UPDATE
   USING (is_superadmin());
 
 -- Workflow classifications table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all workflow classifications" ON workflow_classifications;
 CREATE POLICY "Superadmin can view all workflow classifications"
   ON workflow_classifications FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all workflow classifications" ON workflow_classifications;
 CREATE POLICY "Superadmin can update all workflow classifications"
   ON workflow_classifications FOR UPDATE
   USING (is_superadmin());
 
 -- Prompts table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all prompts" ON prompts;
 CREATE POLICY "Superadmin can view all prompts"
   ON prompts FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all prompts" ON prompts;
 CREATE POLICY "Superadmin can update all prompts"
   ON prompts FOR UPDATE
   USING (is_superadmin());
 
 -- Builds table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all builds" ON builds;
 CREATE POLICY "Superadmin can view all builds"
   ON builds FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all builds" ON builds;
 CREATE POLICY "Superadmin can update all builds"
   ON builds FOR UPDATE
   USING (is_superadmin());
 
 -- Impact assessments table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all impact assessments" ON impact_assessments;
 CREATE POLICY "Superadmin can view all impact assessments"
   ON impact_assessments FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all impact assessments" ON impact_assessments;
 CREATE POLICY "Superadmin can update all impact assessments"
   ON impact_assessments FOR UPDATE
   USING (is_superadmin());
 
 -- Impacts table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all impacts" ON impacts;
 CREATE POLICY "Superadmin can view all impacts"
   ON impacts FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all impacts" ON impacts;
 CREATE POLICY "Superadmin can update all impacts"
   ON impacts FOR UPDATE
   USING (is_superadmin());
 
 -- Conversations table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all conversations" ON conversations;
 CREATE POLICY "Superadmin can view all conversations"
   ON conversations FOR SELECT
   USING (is_superadmin());
 
 -- Messages table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all messages" ON messages;
 CREATE POLICY "Superadmin can view all messages"
   ON messages FOR SELECT
   USING (is_superadmin());
 
 -- Badges table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all badges" ON badges;
 CREATE POLICY "Superadmin can view all badges"
   ON badges FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can manage badges" ON badges;
 CREATE POLICY "Superadmin can manage badges"
   ON badges FOR ALL
   USING (is_superadmin());
 
 -- Skill progress table - superadmin access
+DROP POLICY IF EXISTS "Superadmin can view all skill progress" ON skill_progress;
 CREATE POLICY "Superadmin can view all skill progress"
   ON skill_progress FOR SELECT
   USING (is_superadmin());
 
+DROP POLICY IF EXISTS "Superadmin can update all skill progress" ON skill_progress;
 CREATE POLICY "Superadmin can update all skill progress"
   ON skill_progress FOR UPDATE
   USING (is_superadmin());
@@ -366,10 +408,12 @@ LIMIT 100;
 -- UPDATED_AT TRIGGERS FOR NEW TABLES
 -- ============================================
 
+DROP TRIGGER IF EXISTS update_admin_cycle_notes_updated_at ON admin_cycle_notes;
 CREATE TRIGGER update_admin_cycle_notes_updated_at
   BEFORE UPDATE ON admin_cycle_notes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_cycle_reviews_updated_at ON cycle_reviews;
 CREATE TRIGGER update_cycle_reviews_updated_at
   BEFORE UPDATE ON cycle_reviews
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -1355,3 +1355,97 @@ Polish Phase (Prompts 8-9):
 - Committed: `f40d2b8` - feat: multi-prompt system for Step 5
 - Pushed to origin/main - Vercel auto-deploy triggered
 
+---
+
+# Session 27: Appathon 2.0 Mode Implementation
+**Date:** 2025-12-19
+**Focus:** Add toggleable Appathon 2.0 Mode for hackathon participants
+
+## What Was Done:
+
+1. **Database Migration** (`supabase/migrations/004_appathon_mode.sql`)
+   - Added `appathon_mode` boolean column to users table
+   - Added `appathon_mode_toggled_at` timestamp for tracking
+
+2. **Appathon Content Files** (`/lib/appathon/`)
+   - `content.ts` - 6 themes, judging criteria, 40+ problem ideas by theme, MyJKKN endpoints
+   - `roadmap.ts` - 10-day build phase roadmap with daily tasks and tips
+   - `coach-context.ts` - Appathon-specific AI Coach system prompt additions
+   - `index.ts` - Barrel exports
+
+3. **React Context** (`/lib/context/AppathonContext.tsx`)
+   - `AppathonProvider` - Wraps dashboard with mode state
+   - `useAppathonMode()` hook - Access `isAppathonMode` from any component
+
+4. **Appathon UI Components** (`/components/appathon/`)
+   - `AppathonToggle.tsx` - Switch in Settings page
+   - `AppathonBanner.tsx` - Sticky banner when mode is ON
+   - `JudgingCriteria.tsx` - Card showing weighted criteria + bonus points
+   - `ProblemIdeasPanel.tsx` - Tabbed panel with 40+ ideas by theme
+   - `BuildRoadmap.tsx` - 10-day progress tracker with current day highlight
+
+5. **Settings Page Update** (`/app/(dashboard)/settings/page.tsx`)
+   - Added "Competition Mode" card with AppathonToggle
+   - Fetches `appathon_mode` from users table
+
+6. **Dashboard Layout Update** (`/app/(dashboard)/layout.tsx`)
+   - Wrapped with `AppathonProvider`
+   - Conditionally renders `AppathonBanner` when mode is ON
+   - Dynamic padding for banner(s)
+
+7. **AI Coach Enhancement** (`/app/api/coach/route.ts`)
+   - Added `isAppathonMode` to CoachRequest interface
+   - Injects `APPATHON_COACH_CONTEXT` into system prompt when enabled
+   - Step-specific Appathon guidance
+
+8. **Step Components Update**
+   - `ProblemDiscovery.tsx` - Shows ProblemIdeasPanel + JudgingCriteria in sidebar
+   - `BuildTracker.tsx` - Shows BuildRoadmap in sidebar
+
+9. **New UI Components** (`/components/ui/`)
+   - `switch.tsx` - shadcn/ui Switch (required @radix-ui/react-switch)
+   - `tooltip.tsx` - shadcn/ui Tooltip (required @radix-ui/react-tooltip)
+
+## Files Created:
+- `supabase/migrations/004_appathon_mode.sql`
+- `lib/appathon/content.ts`
+- `lib/appathon/roadmap.ts`
+- `lib/appathon/coach-context.ts`
+- `lib/appathon/index.ts`
+- `lib/context/AppathonContext.tsx`
+- `components/appathon/AppathonToggle.tsx`
+- `components/appathon/AppathonBanner.tsx`
+- `components/appathon/JudgingCriteria.tsx`
+- `components/appathon/ProblemIdeasPanel.tsx`
+- `components/appathon/BuildRoadmap.tsx`
+- `components/ui/switch.tsx`
+- `components/ui/tooltip.tsx`
+
+## Files Modified:
+- `app/(dashboard)/settings/page.tsx`
+- `app/(dashboard)/layout.tsx`
+- `app/api/coach/route.ts`
+- `components/coach/AICoachChat.tsx`
+- `components/steps/ProblemDiscovery.tsx`
+- `components/steps/BuildTracker.tsx`
+- `package.json` (added @radix-ui/react-switch, @radix-ui/react-tooltip)
+
+## Testing Results:
+- ✅ `npm run build` - All 22+ routes compile successfully
+- ✅ No TypeScript errors
+- ✅ Dev server runs at localhost:3000
+
+## Status:
+**COMPLETE** - Appathon 2.0 Mode fully implemented
+
+## Git:
+- Committed: `0c5e7c8` - Add Appathon 2.0 Mode - competition-specific guidance for hackathon participants
+- 21 files changed, 1819 insertions, 27 deletions
+
+## Post-Event Cleanup (After Jan 3, 2026):
+1. Drop columns: `ALTER TABLE users DROP COLUMN appathon_mode, appathon_mode_toggled_at;`
+2. Delete `/lib/appathon/` directory
+3. Delete `/components/appathon/` directory
+4. Delete `lib/context/AppathonContext.tsx`
+5. Remove Appathon imports/conditionals from modified files
+

@@ -104,7 +104,7 @@ export function Header({ user, role }: HeaderProps) {
                 <NavLink href="/admin" active={pathname.startsWith('/admin')}>
                   <span className="flex items-center gap-1.5">
                     <Shield className="h-3.5 w-3.5" />
-                    Admin
+                    Super Admin
                   </span>
                 </NavLink>
               )}
@@ -150,7 +150,7 @@ export function Header({ user, role }: HeaderProps) {
                         <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
                           <Link href="/admin" className="flex items-center gap-2">
                             <Shield className="h-4 w-4 text-amber-400" />
-                            <span>Admin Panel</span>
+                            <span>Super Admin Panel</span>
                           </Link>
                         </DropdownMenuItem>
                       </>
