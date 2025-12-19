@@ -271,12 +271,8 @@ function EventCard({ event, isActive, onJoin, onLeave, onViewDetails, isJoining,
             ) : (
               <button
                 onClick={onJoin}
-                disabled={isJoining || !isLive}
-                className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                  isLive
-                    ? `bg-gradient-to-r ${colorClasses.gradient} text-white hover:shadow-lg ${colorClasses.glow}`
-                    : 'bg-stone-800 text-stone-500 cursor-not-allowed'
-                } disabled:opacity-50`}
+                disabled={isJoining}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all bg-gradient-to-r ${colorClasses.gradient} text-white hover:shadow-lg ${colorClasses.glow} disabled:opacity-50`}
               >
                 {isJoining ? (
                   <>
@@ -294,8 +290,8 @@ function EventCard({ event, isActive, onJoin, onLeave, onViewDetails, isJoining,
                   </>
                 ) : (
                   <>
-                    <Clock className="h-4 w-4" />
-                    <span>Opens Soon</span>
+                    <Zap className="h-4 w-4" />
+                    <span>Join Early</span>
                   </>
                 )}
               </button>
