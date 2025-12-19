@@ -126,25 +126,15 @@ function EventCard({ event, isActive, onJoin, onLeave, onViewDetails, isJoining,
 
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ delay: index * 0.1, type: 'spring', stiffness: 300, damping: 30 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1, duration: 0.3 }}
       className="group relative"
     >
-      {/* Animated border glow for active events */}
+      {/* Static border glow for active events */}
       {isActive && (
-        <motion.div
-          className={`absolute -inset-0.5 rounded-2xl bg-gradient-to-r ${colorClasses.gradient} opacity-75 blur-sm`}
-          animate={{
-            opacity: [0.5, 0.75, 0.5],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
+        <div
+          className={`absolute -inset-0.5 rounded-2xl bg-gradient-to-r ${colorClasses.gradient} opacity-60 blur-sm`}
         />
       )}
 
@@ -157,44 +147,16 @@ function EventCard({ event, isActive, onJoin, onLeave, onViewDetails, isJoining,
       >
         {/* Header with gradient */}
         <div className={`relative h-24 bg-gradient-to-br ${colorClasses.gradient} overflow-hidden`}>
-          {/* Animated particles */}
-          <div className="absolute inset-0">
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute h-1 w-1 rounded-full bg-white/30"
-                initial={{
-                  x: Math.random() * 100 + '%',
-                  y: Math.random() * 100 + '%',
-                }}
-                animate={{
-                  y: [null, '-20%'],
-                  opacity: [0, 1, 0],
-                }}
-                transition={{
-                  duration: 2 + Math.random() * 2,
-                  repeat: Infinity,
-                  delay: Math.random() * 2,
-                }}
-              />
-            ))}
-          </div>
-
           {/* Status badge */}
           <div className="absolute top-3 left-3">
             {isLive ? (
-              <motion.div
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-sm"
-                animate={{ scale: [1, 1.02, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
-                <motion.div
-                  className="h-2 w-2 rounded-full bg-green-400"
-                  animate={{ opacity: [1, 0.5, 1] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                />
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400"></span>
+                </span>
                 <span className="text-xs font-semibold text-white">LIVE</span>
-              </motion.div>
+              </div>
             ) : isUpcoming ? (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-sm">
                 <Clock className="h-3 w-3 text-white/80" />
