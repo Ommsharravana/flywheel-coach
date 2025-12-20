@@ -32,16 +32,38 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
   const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
 
-  // Generate the full 9-prompt sequence
+  // Generate the full 9-prompt sequence with data from all previous steps
   const workflowType = cycle.workflowClassification?.selectedType || 'MONITORING';
   const promptSequence = generatePromptSequence({
     workflowType,
+    // Step 1: Problem Discovery
     problemStatement: cycle.problem?.refinedStatement || cycle.problem?.statement || 'Problem not specified',
     frequency: cycle.problem?.frequency || 'daily',
     painLevel: cycle.problem?.painLevel || 5,
+    // Step 2: Context Discovery
     currentSolution: cycle.context?.currentSolution || 'Manual process',
     primaryUsers: cycle.context?.who || 'users',
     when: cycle.context?.when || 'regularly',
+    // Step 3: Value Assessment (Desperate User Test)
+    valueAssessment: cycle.valueAssessment ? {
+      desperateUserScore: cycle.valueAssessment.desperateUserScore || 0,
+      criteria: cycle.valueAssessment.criteria || {
+        activelySearching: false,
+        triedAlternatives: false,
+        willingToPay: false,
+        urgentNeed: false,
+        frequentProblem: false,
+      },
+      evidence: cycle.valueAssessment.evidence || {
+        activelySearching: '',
+        triedAlternatives: '',
+        willingToPay: '',
+        urgentNeed: '',
+        frequentProblem: '',
+      },
+    } : undefined,
+    // Step 4: Custom workflow description (if custom type selected)
+    customWorkflowDescription: cycle.workflowClassification?.customDescription,
   });
 
   // State for current prompt and editing
