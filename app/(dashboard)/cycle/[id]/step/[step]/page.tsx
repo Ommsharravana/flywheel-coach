@@ -103,11 +103,11 @@ export default async function StepPage({ params }: StepPageProps) {
       const contextData = asAny(rawContextData);
       cycle.context = {
         id: contextData.id,
-        who: contextData.who,
-        when: contextData.when_occurs,
-        where: contextData.where_occurs,
-        howPainful: contextData.how_painful,
-        currentSolution: contextData.current_solution,
+        who: contextData.primary_users || '',
+        when: contextData.frequency || '',
+        where: '',
+        howPainful: contextData.pain_level || 5,
+        currentSolution: contextData.current_workaround || '',
         interviews: [],
       };
     }
@@ -125,8 +125,20 @@ export default async function StepPage({ params }: StepPageProps) {
       cycle.valueAssessment = {
         id: valueData.id,
         desperateUserScore: (valueData.desperate_user_score || 0) * 20, // DB stores 0-5, convert to 0-100
-        criteria: valueData.criteria || {},
-        evidence: valueData.evidence || {},
+        criteria: {
+          activelySearching: valueData.complained_before || false,
+          triedAlternatives: valueData.doing_something || false,
+          willingToPay: valueData.light_up_at_solution || false,
+          urgentNeed: valueData.ask_when_can_use || false,
+          frequentProblem: valueData.multiple_have_it || false,
+        },
+        evidence: {
+          activelySearching: valueData.complained_before_evidence || '',
+          triedAlternatives: valueData.doing_something_evidence || '',
+          willingToPay: valueData.light_up_evidence || '',
+          urgentNeed: valueData.ask_when_evidence || '',
+          frequentProblem: valueData.multiple_have_it_evidence || '',
+        },
         decision: valueData.decision,
       };
     }
@@ -143,7 +155,8 @@ export default async function StepPage({ params }: StepPageProps) {
       const workflowData = asAny(rawWorkflowData);
       cycle.workflowClassification = {
         id: workflowData.id,
-        selectedType: workflowData.workflow_type, // DB column is workflow_type
+        // Use original_type from classification_path (saved during workflow selection)
+        selectedType: workflowData.classification_path?.original_type || workflowData.workflow_type,
         reasoning: workflowData.classification_path?.reasoning || '',
         features: workflowData.features || [],
       };
