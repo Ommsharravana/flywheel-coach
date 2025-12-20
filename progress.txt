@@ -1712,3 +1712,63 @@ All routes compile including:
 
 ---
 
+## 2025-12-21 - Session 18
+
+**Worked On:** UI Polish & Deployment
+
+**Done:**
+1. **Fixed Hover Flickering on Step Cards**
+   - Root cause: `backdrop-blur-xl` + `transition-all` + `hover:scale` causes GPU re-rendering flicker
+   - Changed `app/page.tsx` step cards from `transition-all hover:scale-[1.02]` to `transition-shadow hover:shadow-lg`
+   - Changed `FlywheelNavigator.tsx` from `hover:scale-110` to `hover:brightness-125`
+   - Result: Smooth hover effects without visual flickering
+
+2. **Performed Full UI Audit**
+   - Used curl to verify raw HTML output
+   - Confirmed all 8 flywheel step cards render correctly with content
+   - Home page structure verified working (Header + cards + content)
+
+3. **Fixed AI Coach Button Overlap**
+   - Button was overlapping with right navigation
+   - Changed `right-4` (16px) to `right-20` (80px) in `AICoachChat.tsx`
+   - Now properly spaced from navigation elements
+
+4. **Resolved Git Merge Conflicts & Deployed**
+   - Remote had changes from previous session
+   - Resolved conflicts in `app/(auth)/login/page.tsx` and `app/(auth)/signup/page.tsx`
+   - Kept OAuth queryParams (`access_type: 'offline'`, `prompt: 'consent'`) for proper refresh tokens
+   - Kept simple redirect in signup.tsx (Google-only auth)
+   - Successfully pushed to origin/main (triggers Vercel auto-deploy)
+
+**Files Modified:**
+- `app/page.tsx` - Fixed hover flickering on step cards
+- `components/flywheel/FlywheelNavigator.tsx` - Fixed hover flickering
+- `components/coach/AICoachChat.tsx` - Moved AI Coach button left
+- `app/(auth)/login/page.tsx` - Resolved merge conflict
+- `app/(auth)/signup/page.tsx` - Resolved merge conflict
+
+**Technical Decisions:**
+- Use `transition-shadow` + `hover:shadow-lg` instead of `transition-all` + `hover:scale` when using backdrop-blur effects
+- Use `hover:brightness-125` instead of `hover:scale-110` to avoid blur recalculation
+- Keep OAuth queryParams for proper refresh token handling with Gemini API
+
+**Google OAuth Notes (from this session):**
+- Verification process takes 4-6 weeks for production
+- Test mode limited to 100 test users maximum
+- Current app uses test mode with Gemini API scope
+
+**Current State:**
+DEPLOYED to Vercel - UI polish complete
+
+**Next Session Should:**
+1. Verify deployed changes on production URL
+2. Apply migration `006_institutions.sql` if not already applied to production Supabase
+3. Test institution selection flow end-to-end on production
+4. Test AI Coach with real Gemini credentials
+5. Consider adding the remaining 91 test users (9 used, 100 max)
+
+**Blockers:**
+- None currently
+
+---
+
