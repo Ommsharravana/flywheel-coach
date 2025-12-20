@@ -158,6 +158,7 @@ export default async function StepPage({ params }: StepPageProps) {
         // Use original_type from classification_path (saved during workflow selection)
         selectedType: workflowData.classification_path?.original_type || workflowData.workflow_type,
         reasoning: workflowData.classification_path?.reasoning || '',
+        customDescription: workflowData.classification_path?.custom_description || '',
         features: workflowData.features || [],
       };
     }

@@ -88,6 +88,13 @@ const WORKFLOW_TYPES: { id: WorkflowType; name: string; icon: string; descriptio
     description: 'Facilitating messaging or discussions',
     examples: ['Q&A forum', 'Announcement board', 'Feedback collector'],
   },
+  {
+    id: 'custom',
+    name: 'Custom / Other',
+    icon: '✏️',
+    description: 'Define your own workflow type if none of the above fit',
+    examples: ['Hybrid workflows', 'Unique use cases', 'Novel solutions'],
+  },
 ];
 
 export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
@@ -99,6 +106,7 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
     cycle.workflowClassification?.selectedType || null
   );
   const [reasoning, setReasoning] = useState(cycle.workflowClassification?.reasoning || '');
+  const [customDescription, setCustomDescription] = useState(cycle.workflowClassification?.customDescription || '');
   const [showDetails, setShowDetails] = useState<WorkflowType | null>(null);
 
   const selectedWorkflow = WORKFLOW_TYPES.find((w) => w.id === selectedType);
@@ -106,6 +114,11 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
   const saveWorkflow = async (complete = false) => {
     if (!selectedType) {
       toast.error('Please select a workflow type.');
+      return;
+    }
+
+    if (selectedType === 'custom' && !customDescription.trim()) {
+      toast.error('Please describe your custom workflow.');
       return;
     }
 
@@ -124,6 +137,7 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
         'scheduling-booking': 'ORCHESTRATION',
         'inventory-tracking': 'AUDIT',
         'communication-hub': 'SYNTHESIS',
+        'custom': 'GENERATION', // Default to GENERATION for custom workflows
       };
 
       const dbWorkflowType = typeMapping[selectedType] || 'GENERATION';
@@ -131,7 +145,11 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
       const workflowData = {
         cycle_id: cycle.id,
         workflow_type: dbWorkflowType,
-        classification_path: { original_type: selectedType, reasoning },
+        classification_path: {
+          original_type: selectedType,
+          reasoning,
+          custom_description: selectedType === 'custom' ? customDescription : undefined,
+        },
         confidence: reasoning.trim().length > 50 ? 'high' : reasoning.trim().length > 20 ? 'medium' : 'low',
         completed: complete,
         updated_at: new Date().toISOString(),
@@ -265,6 +283,22 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {selectedType === 'custom' && (
+              <div>
+                <Label className="text-stone-300 mb-2 block">
+                  Describe your custom workflow <span className="text-red-400">*</span>
+                </Label>
+                <Textarea
+                  value={customDescription}
+                  onChange={(e) => setCustomDescription(e.target.value)}
+                  placeholder="Describe the workflow pattern that fits your solution. What are the main steps? What inputs and outputs does it have?"
+                  className="bg-stone-800/50 border-stone-700 focus:border-amber-500 min-h-[100px]"
+                />
+                <p className="text-xs text-stone-500 mt-1">
+                  Be specific about the flow: who does what, in what order, and what the outcome is.
+                </p>
+              </div>
+            )}
             <div>
               <Label className="text-stone-300 mb-2 block">
                 Why does this workflow fit your problem?
