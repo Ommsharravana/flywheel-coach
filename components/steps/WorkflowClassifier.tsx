@@ -327,7 +327,7 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
           </Button>
           <Button
             onClick={() => saveWorkflow(true)}
-            disabled={!selectedType || !reasoning.trim() || isPending}
+            disabled={!selectedType || isPending}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
             {isPending ? 'Saving...' : 'Complete & Continue'}

@@ -319,7 +319,7 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
           </Button>
           <Button
             onClick={() => saveValue(true)}
-            disabled={!hasEvidence || isPending}
+            disabled={score === 0 || isPending}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
             {isPending ? 'Saving...' : 'Complete & Continue'}
