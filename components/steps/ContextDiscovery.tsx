@@ -77,7 +77,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
   const isContextComplete = who.trim() && when.trim() && currentSolution.trim();
   const hasInterviews = interviews.length >= 1 && interviews.some((i) => i.personName.trim());
 
-  const saveContext = async () => {
+  const saveContext = async (complete = false) => {
     setIsPending(true);
     try {
       // Map to actual database column names
@@ -87,7 +87,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
         frequency: when,
         pain_level: howPainful,
         current_workaround: currentSolution,
-        completed: isContextComplete && hasInterviews,
+        completed: complete && isContextComplete && hasInterviews,
         updated_at: new Date().toISOString(),
       };
 
@@ -168,8 +168,8 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
         }
       }
 
-      // Update cycle step if completing
-      if (isContextComplete && hasInterviews) {
+      // Update cycle step only if completing
+      if (complete && isContextComplete && hasInterviews) {
         const { error: cycleError } = await supabase
           .from('cycles')
           .update({
@@ -178,13 +178,11 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
           })
           .eq('id', cycle.id);
         if (cycleError) throw cycleError;
-      }
 
-      toast.success('Context saved successfully!');
-
-      if (isContextComplete && hasInterviews) {
+        toast.success('Context saved successfully!');
         router.push(`/cycle/${cycle.id}/step/3`);
       } else {
+        toast.success('Context saved!');
         router.refresh();
       }
     } catch (error: unknown) {
@@ -444,12 +442,12 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
               Back to Context
             </Button>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={saveContext} disabled={isPending}>
+              <Button variant="outline" onClick={() => saveContext(false)} disabled={isPending}>
                 <Save className="mr-2 w-4 h-4" />
                 Save Draft
               </Button>
               <Button
-                onClick={saveContext}
+                onClick={() => saveContext(true)}
                 disabled={!isContextComplete || !hasInterviews || isPending}
                 className="bg-emerald-500 hover:bg-emerald-600 text-white"
               >
