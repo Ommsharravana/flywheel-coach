@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getEffectiveUserId } from '@/lib/supabase/effective-user';
 import { Cycle, FLYWHEEL_STEPS } from '@/lib/types/cycle';
 import { FlywheelNavigator } from '@/components/flywheel/FlywheelNavigator';
+import { MobileStepNavigation } from '@/components/flywheel/MobileStepNavigation';
 import { ProblemDiscovery } from '@/components/steps/ProblemDiscovery';
 import { ContextDiscovery } from '@/components/steps/ContextDiscovery';
 import { ValueDiscovery } from '@/components/steps/ValueDiscovery';
@@ -253,8 +254,8 @@ export default async function StepPage({ params }: StepPageProps) {
   return (
     <div className="min-h-screen bg-stone-950">
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Header with navigation */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Header with navigation - Desktop only */}
+        <div className="hidden md:flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <Link href="/dashboard" className="text-stone-500 hover:text-stone-300 text-sm flex items-center gap-1">
               <Home className="w-4 h-4" />
@@ -267,129 +268,128 @@ export default async function StepPage({ params }: StepPageProps) {
           </div>
 
           {/* Compact step navigator */}
-          <div className="hidden md:block">
-            <FlywheelNavigator cycle={cycle} currentStep={stepNumber} compact />
-          </div>
+          <FlywheelNavigator cycle={cycle} currentStep={stepNumber} compact />
         </div>
 
-        {/* Step header */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-3xl">
-            {stepInfo.icon}
-          </div>
-          <div>
-            <div className="text-sm text-amber-400 font-medium">Step {stepNumber} of 8</div>
-            <h1 className="text-2xl md:text-3xl font-display font-bold text-stone-100">
-              {stepInfo.name}
-            </h1>
-            <p className="text-stone-400">{stepInfo.description}</p>
-          </div>
-        </div>
-
-        {/* Main content area */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Step content - 2 columns */}
-          <div className="lg:col-span-2">
+        {/* Mobile swipe navigation */}
+        <MobileStepNavigation cycle={cycle} currentStep={stepNumber}>
+          {/* Mobile step content */}
+          <div className="space-y-4">
             {renderStepComponent()}
           </div>
+        </MobileStepNavigation>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Navigation card */}
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="text-lg text-stone-100">Navigation</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {prevStep && (
-                  <Link href={`/cycle/${id}/step/${prevStep}`}>
-                    <Button variant="outline" className="w-full justify-start">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Step {prevStep}: {FLYWHEEL_STEPS[prevStep - 1].shortName}
-                    </Button>
-                  </Link>
-                )}
-                {nextStep && (
-                  <Link href={`/cycle/${id}/step/${nextStep}`}>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      disabled={stepNumber >= cycle.currentStep}
-                    >
-                      Step {nextStep}: {FLYWHEEL_STEPS[nextStep - 1].shortName}
-                      <ArrowRight className="ml-auto h-4 w-4" />
-                    </Button>
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
+        {/* Desktop layout */}
+        <div className="hidden md:block">
+          {/* Step header */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-3xl">
+              {stepInfo.icon}
+            </div>
+            <div>
+              <div className="text-sm text-amber-400 font-medium">Step {stepNumber} of 8</div>
+              <h1 className="text-2xl md:text-3xl font-display font-bold text-stone-100">
+                {stepInfo.name}
+              </h1>
+              <p className="text-stone-400">{stepInfo.description}</p>
+            </div>
+          </div>
 
-            {/* Mobile step navigator */}
-            <Card className="glass-card md:hidden">
-              <CardHeader>
-                <CardTitle className="text-lg text-stone-100">Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <FlywheelNavigator cycle={cycle} currentStep={stepNumber} />
-              </CardContent>
-            </Card>
+          {/* Main content area */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Step content - 2 columns */}
+            <div className="lg:col-span-2">
+              {renderStepComponent()}
+            </div>
 
-            {/* Tips card */}
-            <Card className="glass-card border-blue-500/30">
-              <CardHeader>
-                <CardTitle className="text-lg text-blue-400">Tips</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-stone-300 space-y-2">
-                {stepNumber === 1 && (
-                  <>
-                    <p>Be specific about the problem. Vague problems lead to vague solutions.</p>
-                    <p>Think about problems you personally experience - you'll understand them better.</p>
-                  </>
-                )}
-                {stepNumber === 2 && (
-                  <>
-                    <p>Talk to at least 3 people who experience this problem.</p>
-                    <p>Listen more than you talk. Let them describe the pain in their words.</p>
-                  </>
-                )}
-                {stepNumber === 3 && (
-                  <>
-                    <p>The Desperate User Test separates "nice to have" from "must have" problems.</p>
-                    <p>Look for evidence, not just opinions.</p>
-                  </>
-                )}
-                {stepNumber === 4 && (
-                  <>
-                    <p>Most problems fit into one of 10 common workflow types.</p>
-                    <p>Choosing the right type makes building much faster.</p>
-                  </>
-                )}
-                {stepNumber === 5 && (
-                  <>
-                    <p>A good prompt includes context, constraints, and clear outcomes.</p>
-                    <p>The more specific your prompt, the better the result.</p>
-                  </>
-                )}
-                {stepNumber === 6 && (
-                  <>
-                    <p>Don't try to build everything at once. Start with the core flow.</p>
-                    <p>Get something working, then iterate.</p>
-                  </>
-                )}
-                {stepNumber === 7 && (
-                  <>
-                    <p>Ship early, ship often. Perfect is the enemy of done.</p>
-                    <p>Real feedback from real users is worth more than speculation.</p>
-                  </>
-                )}
-                {stepNumber === 8 && (
-                  <>
-                    <p>Measure what matters. Don't track vanity metrics.</p>
-                    <p>Every completed cycle reveals new problems - that's the flywheel!</p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Navigation card */}
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="text-lg text-stone-100">Navigation</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {prevStep && (
+                    <Link href={`/cycle/${id}/step/${prevStep}`}>
+                      <Button variant="outline" className="w-full justify-start">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Step {prevStep}: {FLYWHEEL_STEPS[prevStep - 1].shortName}
+                      </Button>
+                    </Link>
+                  )}
+                  {nextStep && (
+                    <Link href={`/cycle/${id}/step/${nextStep}`}>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                        disabled={stepNumber >= cycle.currentStep}
+                      >
+                        Step {nextStep}: {FLYWHEEL_STEPS[nextStep - 1].shortName}
+                        <ArrowRight className="ml-auto h-4 w-4" />
+                      </Button>
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Tips card */}
+              <Card className="glass-card border-blue-500/30">
+                <CardHeader>
+                  <CardTitle className="text-lg text-blue-400">Tips</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-stone-300 space-y-2">
+                  {stepNumber === 1 && (
+                    <>
+                      <p>Be specific about the problem. Vague problems lead to vague solutions.</p>
+                      <p>Think about problems you personally experience - you'll understand them better.</p>
+                    </>
+                  )}
+                  {stepNumber === 2 && (
+                    <>
+                      <p>Talk to at least 3 people who experience this problem.</p>
+                      <p>Listen more than you talk. Let them describe the pain in their words.</p>
+                    </>
+                  )}
+                  {stepNumber === 3 && (
+                    <>
+                      <p>The Desperate User Test separates "nice to have" from "must have" problems.</p>
+                      <p>Look for evidence, not just opinions.</p>
+                    </>
+                  )}
+                  {stepNumber === 4 && (
+                    <>
+                      <p>Most problems fit into one of 10 common workflow types.</p>
+                      <p>Choosing the right type makes building much faster.</p>
+                    </>
+                  )}
+                  {stepNumber === 5 && (
+                    <>
+                      <p>A good prompt includes context, constraints, and clear outcomes.</p>
+                      <p>The more specific your prompt, the better the result.</p>
+                    </>
+                  )}
+                  {stepNumber === 6 && (
+                    <>
+                      <p>Don't try to build everything at once. Start with the core flow.</p>
+                      <p>Get something working, then iterate.</p>
+                    </>
+                  )}
+                  {stepNumber === 7 && (
+                    <>
+                      <p>Ship early, ship often. Perfect is the enemy of done.</p>
+                      <p>Real feedback from real users is worth more than speculation.</p>
+                    </>
+                  )}
+                  {stepNumber === 8 && (
+                    <>
+                      <p>Measure what matters. Don't track vanity metrics.</p>
+                      <p>Every completed cycle reveals new problems - that's the flywheel!</p>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
 
