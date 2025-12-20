@@ -138,12 +138,17 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
             pain_level: interview.painLevel,
           };
 
-          const { data: existingInterview } = await supabase
+          const { data: existingInterview, error: interviewFetchError } = await supabase
             .from('interviews')
             .select('id')
             .eq('context_id', contextId)
             .eq('interviewee_name', interview.personName)
             .single();
+
+          // PGRST116 means no rows found - that's expected for new interviews
+          if (interviewFetchError && interviewFetchError.code !== 'PGRST116') {
+            throw interviewFetchError;
+          }
 
           if (existingInterview) {
             const { error: updateInterviewError } = await supabase
@@ -182,9 +187,11 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
       } else {
         router.refresh();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving context:', error);
-      toast.error('Failed to save. Please try again.');
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
     } finally {
       setIsPending(false);
     }

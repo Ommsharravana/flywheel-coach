@@ -140,9 +140,11 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
         toast.success('Progress saved!');
         router.refresh();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving prompts:', error);
-      toast.error('Failed to save.');
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
     } finally {
       setIsPending(false);
     }

@@ -57,9 +57,11 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
         toast.success('Saved!');
         router.refresh();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving deployment:', error);
-      toast.error('Failed to save.');
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
     } finally {
       setIsPending(false);
     }

@@ -183,9 +183,11 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
       } else {
         router.refresh();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving problem:', error);
-      toast.error('Failed to save. Please try again.');
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
     } finally {
       setIsPending(false);
     }

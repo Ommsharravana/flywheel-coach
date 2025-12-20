@@ -121,9 +121,11 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
         toast.success('Saved!');
         router.refresh();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving impact:', error);
-      toast.error('Failed to save.');
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
     } finally {
       setIsPending(false);
     }
@@ -177,9 +179,11 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
 
       toast.success('New cycle started from discovered problem!');
       router.push(`/cycle/${newCycleId}/step/1`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error starting new cycle:', error);
-      toast.error('Failed to start new cycle.');
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to start new cycle: ${errorMessage}`);
     } finally {
       setIsPending(false);
     }

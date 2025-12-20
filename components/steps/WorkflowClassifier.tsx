@@ -174,9 +174,11 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
         toast.success('Saved!');
         router.refresh();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving workflow:', error);
-      toast.error('Failed to save.');
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
     } finally {
       setIsPending(false);
     }
