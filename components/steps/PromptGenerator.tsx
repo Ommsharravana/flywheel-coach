@@ -287,34 +287,69 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
           {/* AI Generation Button */}
           <div className="mt-4 pt-4 border-t border-stone-700">
             {hasGoogleOAuth ? (
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={generateWithAI}
-                  disabled={isGeneratingAI}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                >
-                  {isGeneratingAI ? (
-                    <>
-                      <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                      Generating with Gemini...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="mr-2 w-4 h-4" />
-                      {aiPrompts ? 'Regenerate with AI' : 'Generate AI-Personalized Prompts'}
-                    </>
-                  )}
-                </Button>
-                {aiPrompts && (
-                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">
-                    <Sparkles className="mr-1 w-3 h-3" />
-                    AI Generated
-                  </Badge>
-                )}
-                {!aiPrompts && (
-                  <span className="text-sm text-stone-400">
-                    Using template-based prompts. Click to personalize with Gemini AI.
-                  </span>
+              <div className="flex flex-wrap items-center gap-3">
+                {!aiPrompts ? (
+                  <>
+                    <Button
+                      onClick={generateWithAI}
+                      disabled={isGeneratingAI}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                    >
+                      {isGeneratingAI ? (
+                        <>
+                          <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                          Generating with Gemini...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="mr-2 w-4 h-4" />
+                          Generate AI-Personalized Prompts
+                        </>
+                      )}
+                    </Button>
+                    <span className="text-sm text-stone-400">
+                      Using template-based prompts. Click to personalize with Gemini AI.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">
+                      <Sparkles className="mr-1 w-3 h-3" />
+                      AI Generated
+                    </Badge>
+                    <Button
+                      onClick={generateWithAI}
+                      disabled={isGeneratingAI}
+                      variant="outline"
+                      className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                    >
+                      {isGeneratingAI ? (
+                        <>
+                          <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                          Regenerating...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="mr-2 w-4 h-4" />
+                          Regenerate
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setAiPrompts(null);
+                        setEditedPrompts({});
+                        setCopiedPrompts(new Set());
+                        toast.success('Reset to template prompts');
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="text-stone-400 border-stone-600 hover:bg-stone-700/50"
+                    >
+                      <Sparkles className="mr-1 w-3 h-3" />
+                      Reset to Templates
+                    </Button>
+                  </>
                 )}
               </div>
             ) : (
