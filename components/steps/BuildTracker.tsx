@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ interface BuildTrackerProps {
 
 export function BuildTracker({ cycle }: BuildTrackerProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
   const { isAppathonMode } = useAppathonMode();
 
@@ -30,52 +30,60 @@ export function BuildTracker({ cycle }: BuildTrackerProps) {
   const hasLovableUrl = lovableUrl.trim().length > 0;
 
   const saveBuild = async (complete = false) => {
-    startTransition(async () => {
-      try {
-        const buildData = {
-          cycle_id: cycle.id,
-          lovable_project_url: lovableUrl || null, // DB column is lovable_project_url
-          deployed_url: projectUrl || null, // DB column is deployed_url
-          screenshot_urls: screenshotUrl ? [screenshotUrl] : null, // DB column is screenshot_urls (array)
-          completed_at: complete ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString(),
-        };
+    setIsPending(true);
+    try {
+      const buildData = {
+        cycle_id: cycle.id,
+        lovable_project_url: lovableUrl || null, // DB column is lovable_project_url
+        deployed_url: projectUrl || null, // DB column is deployed_url
+        screenshot_urls: screenshotUrl ? [screenshotUrl] : null, // DB column is screenshot_urls (array)
+        completed_at: complete ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      };
 
-        const { data: existing } = await supabase
-          .from('builds')
-          .select('id')
-          .eq('cycle_id', cycle.id)
-          .single();
+      const { data: existing, error: fetchError } = await supabase
+        .from('builds')
+        .select('id')
+        .eq('cycle_id', cycle.id)
+        .single();
 
-        if (existing) {
-          await supabase.from('builds').update(buildData).eq('id', existing.id);
-        } else {
-          await supabase.from('builds').insert({
-            ...buildData,
-            created_at: new Date().toISOString(),
-          });
-        }
-
-        if (complete) {
-          await supabase
-            .from('cycles')
-            .update({
-              current_step: 7,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', cycle.id);
-
-          toast.success('Build tracked!');
-          router.push(`/cycle/${cycle.id}/step/7`);
-        } else {
-          toast.success('Saved!');
-          router.refresh();
-        }
-      } catch (error) {
-        console.error('Error saving build:', error);
-        toast.error('Failed to save.');
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
-    });
+
+      if (existing) {
+        const { error } = await supabase.from('builds').update(buildData).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('builds').insert({
+          ...buildData,
+          created_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+      }
+
+      if (complete) {
+        const { error: cycleError } = await supabase
+          .from('cycles')
+          .update({
+            current_step: 7,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', cycle.id);
+        if (cycleError) throw cycleError;
+
+        toast.success('Build tracked!');
+        router.push(`/cycle/${cycle.id}/step/7`);
+      } else {
+        toast.success('Saved!');
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error saving build:', error);
+      toast.error('Failed to save.');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (

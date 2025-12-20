@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ interface ImpactDiscoveryProps {
 
 export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
 
   const [usersReached, setUsersReached] = useState(cycle.impact?.usersReached || 0);
@@ -49,78 +49,84 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
   };
 
   const saveImpact = async (complete = false) => {
-    startTransition(async () => {
-      try {
-        // Map UI fields to actual DB column names
-        // DB table is impact_assessments (not impacts!)
-        // DB expects: total_users, potential_users, adoption_rate, weekly_active_users, returning_users,
-        // retention_rate, pain_before, pain_after, time_before, time_after, referral_users, referral_rate,
-        // nps_score, impact_score, new_problems_discovered
-        // DB constraints:
-        // - nps_score CHECK (nps_score BETWEEN 1 AND 10)
-        // - impact_score CHECK (impact_score BETWEEN 0 AND 100)
-        // - time_before and time_after are TEXT type
-        const calculatedImpactScore = Math.min(100, Math.max(0, Math.round((usersReached * timeSavedMinutes) / 100)));
+    setIsPending(true);
+    try {
+      // Map UI fields to actual DB column names
+      // DB table is impact_assessments (not impacts!)
+      // DB expects: total_users, potential_users, adoption_rate, weekly_active_users, returning_users,
+      // retention_rate, pain_before, pain_after, time_before, time_after, referral_users, referral_rate,
+      // nps_score, impact_score, new_problems_discovered
+      // DB constraints:
+      // - nps_score CHECK (nps_score BETWEEN 1 AND 10)
+      // - impact_score CHECK (impact_score BETWEEN 0 AND 100)
+      // - time_before and time_after are TEXT type
+      const calculatedImpactScore = Math.min(100, Math.max(0, Math.round((usersReached * timeSavedMinutes) / 100)));
 
-        const impactData = {
-          cycle_id: cycle.id,
-          total_users: usersReached,
-          potential_users: usersReached * 10, // Estimate potential as 10x current
-          adoption_rate: usersReached > 0 ? 0.1 : 0, // 10% default adoption
-          weekly_active_users: Math.round(usersReached * 0.3), // Estimate 30% weekly active
-          returning_users: Math.round(usersReached * 0.2), // Estimate 20% returning
-          retention_rate: usersReached > 0 ? 0.2 : 0, // 20% retention rate
-          pain_before: 8, // High pain before (estimated)
-          pain_after: Math.max(1, 10 - satisfactionScore), // Lower pain after = higher satisfaction
-          time_before: `${timeSavedMinutes + 30} minutes`, // TEXT field - time before solution
-          time_after: '30 minutes', // TEXT field - time after solution
-          referral_users: 0,
-          referral_rate: 0,
-          nps_score: satisfactionScore, // DB expects 1-10, which matches our satisfaction score
-          impact_score: calculatedImpactScore, // Clamped to 0-100
-          new_problems_discovered: newProblems.filter((p) => p.trim()),
-          completed: complete,
-          updated_at: new Date().toISOString(),
-        };
+      const impactData = {
+        cycle_id: cycle.id,
+        total_users: usersReached,
+        potential_users: usersReached * 10, // Estimate potential as 10x current
+        adoption_rate: usersReached > 0 ? 0.1 : 0, // 10% default adoption
+        weekly_active_users: Math.round(usersReached * 0.3), // Estimate 30% weekly active
+        returning_users: Math.round(usersReached * 0.2), // Estimate 20% returning
+        retention_rate: usersReached > 0 ? 0.2 : 0, // 20% retention rate
+        pain_before: 8, // High pain before (estimated)
+        pain_after: Math.max(1, 10 - satisfactionScore), // Lower pain after = higher satisfaction
+        time_before: `${timeSavedMinutes + 30} minutes`, // TEXT field - time before solution
+        time_after: '30 minutes', // TEXT field - time after solution
+        referral_users: 0,
+        referral_rate: 0,
+        nps_score: satisfactionScore, // DB expects 1-10, which matches our satisfaction score
+        impact_score: calculatedImpactScore, // Clamped to 0-100
+        new_problems_discovered: newProblems.filter((p) => p.trim()),
+        completed: complete,
+        updated_at: new Date().toISOString(),
+      };
 
-        const { data: existing } = await supabase
-          .from('impact_assessments')
-          .select('id')
-          .eq('cycle_id', cycle.id)
-          .single();
+      const { data: existing, error: fetchError } = await supabase
+        .from('impact_assessments')
+        .select('id')
+        .eq('cycle_id', cycle.id)
+        .single();
 
-        if (existing) {
-          const { error } = await supabase.from('impact_assessments').update(impactData).eq('id', existing.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from('impact_assessments').insert({
-            ...impactData,
-            created_at: new Date().toISOString(),
-          });
-          if (error) throw error;
-        }
-
-        if (complete) {
-          await supabase
-            .from('cycles')
-            .update({
-              status: 'completed',
-              completed_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', cycle.id);
-
-          toast.success('Cycle complete! You shipped it!');
-          router.push(`/cycle/${cycle.id}`);
-        } else {
-          toast.success('Saved!');
-          router.refresh();
-        }
-      } catch (error) {
-        console.error('Error saving impact:', error);
-        toast.error('Failed to save.');
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
-    });
+
+      if (existing) {
+        const { error } = await supabase.from('impact_assessments').update(impactData).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('impact_assessments').insert({
+          ...impactData,
+          created_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+      }
+
+      if (complete) {
+        const { error: cycleError } = await supabase
+          .from('cycles')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', cycle.id);
+        if (cycleError) throw cycleError;
+
+        toast.success('Cycle complete! You shipped it!');
+        router.push(`/cycle/${cycle.id}`);
+      } else {
+        toast.success('Saved!');
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error saving impact:', error);
+      toast.error('Failed to save.');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const startNewCycle = async () => {
@@ -132,49 +138,51 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
       return;
     }
 
-    startTransition(async () => {
-      try {
-        // First complete this cycle
-        await saveImpact(true);
+    setIsPending(true);
+    try {
+      // First complete this cycle
+      await saveImpact(true);
 
-        // Create new cycle with the new problem
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast.error('Not authenticated');
-          return;
-        }
-
-        // DB uses 'name' not 'title', and doesn't have 'step_statuses' column
-        const newCycleId = crypto.randomUUID();
-        const { error: cycleError } = await supabase.from('cycles').insert({
-          id: newCycleId,
-          user_id: user.id,
-          name: 'New Cycle',
-          status: 'active',
-          current_step: 1,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        if (cycleError) throw cycleError;
-
-        // Pre-populate with the new problem
-        // DB problems table: selected_question, q_takes_too_long, q_repetitive, etc.
-        const { error: problemError } = await supabase.from('problems').insert({
-          cycle_id: newCycleId,
-          selected_question: firstProblem,
-          completed: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        if (problemError) throw problemError;
-
-        toast.success('New cycle started from discovered problem!');
-        router.push(`/cycle/${newCycleId}/step/1`);
-      } catch (error) {
-        console.error('Error starting new cycle:', error);
-        toast.error('Failed to start new cycle.');
+      // Create new cycle with the new problem
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Not authenticated');
+        setIsPending(false);
+        return;
       }
-    });
+
+      // DB uses 'name' not 'title', and doesn't have 'step_statuses' column
+      const newCycleId = crypto.randomUUID();
+      const { error: cycleError } = await supabase.from('cycles').insert({
+        id: newCycleId,
+        user_id: user.id,
+        name: 'New Cycle',
+        status: 'active',
+        current_step: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      if (cycleError) throw cycleError;
+
+      // Pre-populate with the new problem
+      // DB problems table: selected_question, q_takes_too_long, q_repetitive, etc.
+      const { error: problemError } = await supabase.from('problems').insert({
+        cycle_id: newCycleId,
+        selected_question: firstProblem,
+        completed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      if (problemError) throw problemError;
+
+      toast.success('New cycle started from discovered problem!');
+      router.push(`/cycle/${newCycleId}/step/1`);
+    } catch (error) {
+      console.error('Error starting new cycle:', error);
+      toast.error('Failed to start new cycle.');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (

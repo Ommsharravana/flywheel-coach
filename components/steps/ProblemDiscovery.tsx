@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Cycle, Problem } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,7 +77,7 @@ const PLACEHOLDER_COLORS: Record<string, { text: string; bg: string; border: str
 
 export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
   const { isAppathonMode } = useAppathonMode();
 
@@ -127,66 +127,68 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   };
 
   const saveProblem = async () => {
-    startTransition(async () => {
-      try {
-        // Map to database column names
-        const problemData = {
-          cycle_id: cycle.id,
-          q_takes_too_long: answers.question2 || null,
-          q_repetitive: answers.question3 || null,
-          q_lookup_repeatedly: answers.question1 || null, // What frustrates you
-          q_complaints: answers.question5 || null, // What affects others
-          q_would_pay: answers.question4 || null,
-          selected_question: problemStatement || null,
-          refined_statement: refinedStatement || null,
-          pain_level: painLevel,
-          frequency: frequency,
-          completed: !!refinedStatement,
-          updated_at: new Date().toISOString(),
-        };
+    setIsPending(true);
+    try {
+      // Map to database column names
+      const problemData = {
+        cycle_id: cycle.id,
+        q_takes_too_long: answers.question2 || null,
+        q_repetitive: answers.question3 || null,
+        q_lookup_repeatedly: answers.question1 || null, // What frustrates you
+        q_complaints: answers.question5 || null, // What affects others
+        q_would_pay: answers.question4 || null,
+        selected_question: problemStatement || null,
+        refined_statement: refinedStatement || null,
+        pain_level: painLevel,
+        frequency: frequency,
+        completed: !!refinedStatement,
+        updated_at: new Date().toISOString(),
+      };
 
-        // Check if problem exists
-        if (cycle.problem?.id) {
-          // Update existing
-          const { error } = await supabase
-            .from('problems')
-            .update(problemData)
-            .eq('id', cycle.problem.id);
+      // Check if problem exists
+      if (cycle.problem?.id) {
+        // Update existing
+        const { error } = await supabase
+          .from('problems')
+          .update(problemData)
+          .eq('id', cycle.problem.id);
 
-          if (error) throw error;
-        } else {
-          // Create new
-          const { error } = await supabase.from('problems').insert({
-            ...problemData,
-            created_at: new Date().toISOString(),
-          });
+        if (error) throw error;
+      } else {
+        // Create new
+        const { error } = await supabase.from('problems').insert({
+          ...problemData,
+          created_at: new Date().toISOString(),
+        });
 
-          if (error) throw error;
-        }
-
-        // Update cycle step if completing
-        if (hasRefinement) {
-          await supabase
-            .from('cycles')
-            .update({
-              current_step: 2,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', cycle.id);
-        }
-
-        toast.success('Problem saved successfully!');
-
-        if (hasRefinement) {
-          router.push(`/cycle/${cycle.id}/step/2`);
-        } else {
-          router.refresh();
-        }
-      } catch (error) {
-        console.error('Error saving problem:', error);
-        toast.error('Failed to save. Please try again.');
+        if (error) throw error;
       }
-    });
+
+      // Update cycle step if completing
+      if (hasRefinement) {
+        const { error: cycleError } = await supabase
+          .from('cycles')
+          .update({
+            current_step: 2,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', cycle.id);
+        if (cycleError) throw cycleError;
+      }
+
+      toast.success('Problem saved successfully!');
+
+      if (hasRefinement) {
+        router.push(`/cycle/${cycle.id}/step/2`);
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error saving problem:', error);
+      toast.error('Failed to save. Please try again.');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const completeStep = async () => {

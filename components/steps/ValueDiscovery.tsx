@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,7 +56,7 @@ const DESPERATE_USER_CRITERIA = [
 
 export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
 
   const [criteria, setCriteria] = useState<Record<string, boolean>>(
@@ -95,70 +95,76 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
   const hasEvidence = Object.values(evidence).some((e) => e.trim().length > 0);
 
   const saveValue = async (complete = false) => {
-    startTransition(async () => {
-      try {
-        // Map to actual database column names
-        // DB expects: multiple_have_it, complained_before, doing_something, light_up_at_solution, ask_when_can_use
-        // UI has: frequentProblem, activelySearching, triedAlternatives, willingToPay, urgentNeed
-        const dbDecision = decision === 'abandon' ? 'stop' : decision; // DB allows: proceed, iterate, pivot, stop
-        const dbScore = Math.round(score / 20); // Convert 0-100 to 0-5
+    setIsPending(true);
+    try {
+      // Map to actual database column names
+      // DB expects: multiple_have_it, complained_before, doing_something, light_up_at_solution, ask_when_can_use
+      // UI has: frequentProblem, activelySearching, triedAlternatives, willingToPay, urgentNeed
+      const dbDecision = decision === 'abandon' ? 'stop' : decision; // DB allows: proceed, iterate, pivot, stop
+      const dbScore = Math.round(score / 20); // Convert 0-100 to 0-5
 
-        const valueData = {
-          cycle_id: cycle.id,
-          multiple_have_it: criteria.frequentProblem,
-          multiple_have_it_evidence: evidence.frequentProblem || null,
-          complained_before: criteria.activelySearching,
-          complained_before_evidence: evidence.activelySearching || null,
-          doing_something: criteria.triedAlternatives,
-          doing_something_evidence: evidence.triedAlternatives || null,
-          light_up_at_solution: criteria.willingToPay,
-          light_up_evidence: evidence.willingToPay || null,
-          ask_when_can_use: criteria.urgentNeed,
-          ask_when_evidence: evidence.urgentNeed || null,
-          desperate_user_score: dbScore,
-          quadrant: score >= 70 ? 'quick-win' : score >= 40 ? 'strategic' : 'skip',
-          decision: dbDecision,
-          completed: complete,
-          updated_at: new Date().toISOString(),
-        };
+      const valueData = {
+        cycle_id: cycle.id,
+        multiple_have_it: criteria.frequentProblem,
+        multiple_have_it_evidence: evidence.frequentProblem || null,
+        complained_before: criteria.activelySearching,
+        complained_before_evidence: evidence.activelySearching || null,
+        doing_something: criteria.triedAlternatives,
+        doing_something_evidence: evidence.triedAlternatives || null,
+        light_up_at_solution: criteria.willingToPay,
+        light_up_evidence: evidence.willingToPay || null,
+        ask_when_can_use: criteria.urgentNeed,
+        ask_when_evidence: evidence.urgentNeed || null,
+        desperate_user_score: dbScore,
+        quadrant: score >= 70 ? 'quick-win' : score >= 40 ? 'strategic' : 'skip',
+        decision: dbDecision,
+        completed: complete,
+        updated_at: new Date().toISOString(),
+      };
 
-        const { data: existing } = await supabase
-          .from('value_assessments')
-          .select('id')
-          .eq('cycle_id', cycle.id)
-          .single();
+      const { data: existing, error: fetchError } = await supabase
+        .from('value_assessments')
+        .select('id')
+        .eq('cycle_id', cycle.id)
+        .single();
 
-        if (existing) {
-          const { error } = await supabase.from('value_assessments').update(valueData).eq('id', existing.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from('value_assessments').insert({
-            ...valueData,
-            created_at: new Date().toISOString(),
-          });
-          if (error) throw error;
-        }
-
-        if (complete) {
-          await supabase
-            .from('cycles')
-            .update({
-              current_step: 4,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', cycle.id);
-
-          toast.success('Value assessment complete!');
-          router.push(`/cycle/${cycle.id}/step/4`);
-        } else {
-          toast.success('Saved!');
-          router.refresh();
-        }
-      } catch (error) {
-        console.error('Error saving value:', error);
-        toast.error('Failed to save.');
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
-    });
+
+      if (existing) {
+        const { error } = await supabase.from('value_assessments').update(valueData).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('value_assessments').insert({
+          ...valueData,
+          created_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+      }
+
+      if (complete) {
+        const { error: cycleError } = await supabase
+          .from('cycles')
+          .update({
+            current_step: 4,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', cycle.id);
+        if (cycleError) throw cycleError;
+
+        toast.success('Value assessment complete!');
+        router.push(`/cycle/${cycle.id}/step/4`);
+      } else {
+        toast.success('Saved!');
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error saving value:', error);
+      toast.error('Failed to save.');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (

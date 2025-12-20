@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Cycle, WorkflowType } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,7 +92,7 @@ const WORKFLOW_TYPES: { id: WorkflowType; name: string; icon: string; descriptio
 
 export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
 
   const [selectedType, setSelectedType] = useState<WorkflowType | null>(
@@ -109,71 +109,77 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
       return;
     }
 
-    startTransition(async () => {
-      try {
-        // Map UI workflow types to DB workflow types
-        // DB expects: AUDIT, GENERATION, TRANSFORMATION, CLASSIFICATION, EXTRACTION, SYNTHESIS, PREDICTION, RECOMMENDATION, MONITORING, ORCHESTRATION
-        const typeMapping: Record<string, string> = {
-          'form-to-output': 'GENERATION',
-          'data-entry': 'EXTRACTION',
-          'approval-workflow': 'ORCHESTRATION',
-          'notification-system': 'MONITORING',
-          'search-filter': 'CLASSIFICATION',
-          'dashboard-analytics': 'SYNTHESIS',
-          'content-management': 'TRANSFORMATION',
-          'scheduling-booking': 'ORCHESTRATION',
-          'inventory-tracking': 'AUDIT',
-          'communication-hub': 'SYNTHESIS',
-        };
+    setIsPending(true);
+    try {
+      // Map UI workflow types to DB workflow types
+      // DB expects: AUDIT, GENERATION, TRANSFORMATION, CLASSIFICATION, EXTRACTION, SYNTHESIS, PREDICTION, RECOMMENDATION, MONITORING, ORCHESTRATION
+      const typeMapping: Record<string, string> = {
+        'form-to-output': 'GENERATION',
+        'data-entry': 'EXTRACTION',
+        'approval-workflow': 'ORCHESTRATION',
+        'notification-system': 'MONITORING',
+        'search-filter': 'CLASSIFICATION',
+        'dashboard-analytics': 'SYNTHESIS',
+        'content-management': 'TRANSFORMATION',
+        'scheduling-booking': 'ORCHESTRATION',
+        'inventory-tracking': 'AUDIT',
+        'communication-hub': 'SYNTHESIS',
+      };
 
-        const dbWorkflowType = typeMapping[selectedType] || 'GENERATION';
+      const dbWorkflowType = typeMapping[selectedType] || 'GENERATION';
 
-        const workflowData = {
-          cycle_id: cycle.id,
-          workflow_type: dbWorkflowType,
-          classification_path: { original_type: selectedType, reasoning },
-          confidence: reasoning.trim().length > 50 ? 'high' : reasoning.trim().length > 20 ? 'medium' : 'low',
-          completed: complete,
-          updated_at: new Date().toISOString(),
-        };
+      const workflowData = {
+        cycle_id: cycle.id,
+        workflow_type: dbWorkflowType,
+        classification_path: { original_type: selectedType, reasoning },
+        confidence: reasoning.trim().length > 50 ? 'high' : reasoning.trim().length > 20 ? 'medium' : 'low',
+        completed: complete,
+        updated_at: new Date().toISOString(),
+      };
 
-        const { data: existing } = await supabase
-          .from('workflow_classifications')
-          .select('id')
-          .eq('cycle_id', cycle.id)
-          .single();
+      const { data: existing, error: fetchError } = await supabase
+        .from('workflow_classifications')
+        .select('id')
+        .eq('cycle_id', cycle.id)
+        .single();
 
-        if (existing) {
-          const { error } = await supabase.from('workflow_classifications').update(workflowData).eq('id', existing.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from('workflow_classifications').insert({
-            ...workflowData,
-            created_at: new Date().toISOString(),
-          });
-          if (error) throw error;
-        }
-
-        if (complete) {
-          await supabase
-            .from('cycles')
-            .update({
-              current_step: 5,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', cycle.id);
-
-          toast.success('Workflow classified!');
-          router.push(`/cycle/${cycle.id}/step/5`);
-        } else {
-          toast.success('Saved!');
-          router.refresh();
-        }
-      } catch (error) {
-        console.error('Error saving workflow:', error);
-        toast.error('Failed to save.');
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
-    });
+
+      if (existing) {
+        const { error } = await supabase.from('workflow_classifications').update(workflowData).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('workflow_classifications').insert({
+          ...workflowData,
+          created_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+      }
+
+      if (complete) {
+        const { error: cycleError } = await supabase
+          .from('cycles')
+          .update({
+            current_step: 5,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', cycle.id);
+        if (cycleError) throw cycleError;
+
+        toast.success('Workflow classified!');
+        router.push(`/cycle/${cycle.id}/step/5`);
+      } else {
+        toast.success('Saved!');
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error saving workflow:', error);
+      toast.error('Failed to save.');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ interface PromptGeneratorProps {
 
 export function PromptGenerator({ cycle }: PromptGeneratorProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
 
   // Generate the full 9-prompt sequence
@@ -82,62 +82,70 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
   };
 
   const savePrompts = async (complete = false) => {
-    startTransition(async () => {
-      try {
-        // Prepare all prompts data
-        const promptsData = promptSequence.map((p, i) => ({
-          number: p.number,
-          phase: p.phase,
-          title: p.title,
-          description: p.description,
-          originalPrompt: p.prompt,
-          editedPrompt: editedPrompts[i] || null,
-          copied: copiedPrompts.has(i),
-        }));
+    setIsPending(true);
+    try {
+      // Prepare all prompts data
+      const promptsData = promptSequence.map((p, i) => ({
+        number: p.number,
+        phase: p.phase,
+        title: p.title,
+        description: p.description,
+        originalPrompt: p.prompt,
+        editedPrompt: editedPrompts[i] || null,
+        copied: copiedPrompts.has(i),
+      }));
 
-        const dataToSave = {
-          cycle_id: cycle.id,
-          generated_prompt: JSON.stringify(promptsData),
-          edited_prompt: JSON.stringify(editedPrompts),
-          copied_at: copiedPrompts.size > 0 ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString(),
-        };
+      const dataToSave = {
+        cycle_id: cycle.id,
+        generated_prompt: JSON.stringify(promptsData),
+        edited_prompt: JSON.stringify(editedPrompts),
+        copied_at: copiedPrompts.size > 0 ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      };
 
-        const { data: existing } = await supabase
-          .from('prompts')
-          .select('id')
-          .eq('cycle_id', cycle.id)
-          .single();
+      const { data: existing, error: fetchError } = await supabase
+        .from('prompts')
+        .select('id')
+        .eq('cycle_id', cycle.id)
+        .single();
 
-        if (existing) {
-          await supabase.from('prompts').update(dataToSave).eq('id', existing.id);
-        } else {
-          await supabase.from('prompts').insert({
-            ...dataToSave,
-            created_at: new Date().toISOString(),
-          });
-        }
-
-        if (complete) {
-          await supabase
-            .from('cycles')
-            .update({
-              current_step: 6,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', cycle.id);
-
-          toast.success('All prompts saved!');
-          router.push(`/cycle/${cycle.id}/step/6`);
-        } else {
-          toast.success('Progress saved!');
-          router.refresh();
-        }
-      } catch (error) {
-        console.error('Error saving prompts:', error);
-        toast.error('Failed to save.');
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
-    });
+
+      if (existing) {
+        const { error } = await supabase.from('prompts').update(dataToSave).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('prompts').insert({
+          ...dataToSave,
+          created_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+      }
+
+      if (complete) {
+        const { error: cycleError } = await supabase
+          .from('cycles')
+          .update({
+            current_step: 6,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', cycle.id);
+        if (cycleError) throw cycleError;
+
+        toast.success('All prompts saved!');
+        router.push(`/cycle/${cycle.id}/step/6`);
+      } else {
+        toast.success('Progress saved!');
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error saving prompts:', error);
+      toast.error('Failed to save.');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const getPhaseColor = (phase: string) => {
