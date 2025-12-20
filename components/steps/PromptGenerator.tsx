@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,9 @@ import {
   Layers,
   Save,
   Sparkles,
+  Wand2,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -25,16 +28,40 @@ import { PROMPT_TEMPLATES } from '@/lib/prompts/templates';
 
 interface PromptGeneratorProps {
   cycle: Cycle;
+  hasGeminiKey?: boolean;
 }
 
-export function PromptGenerator({ cycle }: PromptGeneratorProps) {
+export function PromptGenerator({ cycle, hasGeminiKey: initialHasGeminiKey }: PromptGeneratorProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [hasGeminiKey, setHasGeminiKey] = useState(initialHasGeminiKey ?? false);
+  const [aiPrompts, setAiPrompts] = useState<PromptStep[] | null>(null);
   const supabase = createClient();
+
+  // Check if user has Gemini API key on mount
+  useEffect(() => {
+    async function checkGeminiKey() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('users')
+          .select('gemini_api_key')
+          .eq('id', user.id)
+          .single();
+        setHasGeminiKey(!!data?.gemini_api_key);
+      }
+    }
+    if (initialHasGeminiKey === undefined) {
+      checkGeminiKey();
+    }
+  }, [supabase, initialHasGeminiKey]);
 
   // Generate the full 9-prompt sequence with data from all previous steps
   const workflowType = cycle.workflowClassification?.selectedType || 'MONITORING';
-  const promptSequence = generatePromptSequence({
+
+  // Context data for both template and AI generation
+  const contextData = {
     workflowType,
     // Step 1: Problem Discovery
     problemStatement: cycle.problem?.refinedStatement || cycle.problem?.statement || 'Problem not specified',
@@ -64,7 +91,12 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
     } : undefined,
     // Step 4: Custom workflow description (if custom type selected)
     customWorkflowDescription: cycle.workflowClassification?.customDescription,
-  });
+  };
+
+  const templatePrompts = generatePromptSequence(contextData);
+
+  // Use AI prompts if available, otherwise use template
+  const promptSequence = aiPrompts || templatePrompts;
 
   // State for current prompt and editing
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
@@ -73,6 +105,34 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
 
   const currentPrompt = promptSequence[currentPromptIndex];
   const editedContent = editedPrompts[currentPromptIndex] ?? currentPrompt.prompt;
+
+  // Generate AI-personalized prompts using user's Gemini API key
+  const generateWithAI = async () => {
+    setIsGeneratingAI(true);
+    try {
+      const response = await fetch('/api/generate-prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contextData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate prompts');
+      }
+
+      const { prompts } = await response.json();
+      setAiPrompts(prompts);
+      setEditedPrompts({}); // Reset edits when regenerating
+      setCopiedPrompts(new Set()); // Reset copied status
+      toast.success('AI-personalized prompts generated!');
+    } catch (error) {
+      console.error('Error generating AI prompts:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to generate AI prompts');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   // Get sequence summary for sidebar
   const sequenceSummary = getSequenceSummary(workflowType);
@@ -231,6 +291,53 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* AI Generation Button */}
+          <div className="mt-4 pt-4 border-t border-stone-700">
+            {hasGeminiKey ? (
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={generateWithAI}
+                  disabled={isGeneratingAI}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                >
+                  {isGeneratingAI ? (
+                    <>
+                      <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                      Generating with Gemini...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="mr-2 w-4 h-4" />
+                      {aiPrompts ? 'Regenerate with AI' : 'Generate AI-Personalized Prompts'}
+                    </>
+                  )}
+                </Button>
+                {aiPrompts && (
+                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">
+                    <Sparkles className="mr-1 w-3 h-3" />
+                    AI Generated
+                  </Badge>
+                )}
+                {!aiPrompts && (
+                  <span className="text-sm text-stone-400">
+                    Using template-based prompts. Click to personalize with Gemini AI.
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-stone-400">
+                <AlertCircle className="w-4 h-4" />
+                <span>
+                  Add your Gemini API key in{' '}
+                  <a href="/settings" className="text-purple-400 hover:underline">
+                    Settings
+                  </a>{' '}
+                  to generate AI-personalized prompts.
+                </span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

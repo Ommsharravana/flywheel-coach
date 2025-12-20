@@ -4,9 +4,10 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { User, Building2, Globe, Shield, Trophy } from 'lucide-react';
+import { User, Building2, Globe, Shield, Trophy, Key } from 'lucide-react';
 import { SettingsForm } from './SettingsForm';
 import { AppathonToggle } from '@/components/appathon/AppathonToggle';
+import { GeminiApiKeyForm } from './GeminiApiKeyForm';
 
 interface UserProfile {
   id: string;
@@ -20,6 +21,7 @@ interface UserProfile {
   language: string | null;
   onboarding_completed: boolean | null;
   appathon_mode: boolean | null;
+  gemini_api_key: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -128,6 +130,12 @@ export default async function SettingsPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Gemini API Key */}
+      <GeminiApiKeyForm
+        userId={effectiveUser.id}
+        hasApiKey={!!profile?.gemini_api_key}
+      />
 
       {/* Institution Info (Read Only) */}
       <Card className="glass-card">
