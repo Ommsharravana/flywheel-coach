@@ -28,34 +28,25 @@ import { PROMPT_TEMPLATES } from '@/lib/prompts/templates';
 
 interface PromptGeneratorProps {
   cycle: Cycle;
-  hasGeminiKey?: boolean;
 }
 
-export function PromptGenerator({ cycle, hasGeminiKey: initialHasGeminiKey }: PromptGeneratorProps) {
+export function PromptGenerator({ cycle }: PromptGeneratorProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [hasGeminiKey, setHasGeminiKey] = useState(initialHasGeminiKey ?? false);
+  const [hasGoogleOAuth, setHasGoogleOAuth] = useState(false);
   const [aiPrompts, setAiPrompts] = useState<PromptStep[] | null>(null);
   const supabase = createClient();
 
-  // Check if user has Gemini API key on mount
+  // Check if user has Google OAuth session with Gemini access
   useEffect(() => {
-    async function checkGeminiKey() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('users')
-          .select('gemini_api_key')
-          .eq('id', user.id)
-          .single();
-        setHasGeminiKey(!!data?.gemini_api_key);
-      }
+    async function checkGoogleOAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      // Check if user signed in with Google and has provider token
+      setHasGoogleOAuth(!!session?.provider_token);
     }
-    if (initialHasGeminiKey === undefined) {
-      checkGeminiKey();
-    }
-  }, [supabase, initialHasGeminiKey]);
+    checkGoogleOAuth();
+  }, [supabase]);
 
   // Generate the full 9-prompt sequence with data from all previous steps
   const workflowType = cycle.workflowClassification?.selectedType || 'MONITORING';
@@ -295,7 +286,7 @@ export function PromptGenerator({ cycle, hasGeminiKey: initialHasGeminiKey }: Pr
 
           {/* AI Generation Button */}
           <div className="mt-4 pt-4 border-t border-stone-700">
-            {hasGeminiKey ? (
+            {hasGoogleOAuth ? (
               <div className="flex items-center gap-3">
                 <Button
                   onClick={generateWithAI}
@@ -330,11 +321,7 @@ export function PromptGenerator({ cycle, hasGeminiKey: initialHasGeminiKey }: Pr
               <div className="flex items-center gap-2 text-sm text-stone-400">
                 <AlertCircle className="w-4 h-4" />
                 <span>
-                  Add your Gemini API key in{' '}
-                  <a href="/settings" className="text-purple-400 hover:underline">
-                    Settings
-                  </a>{' '}
-                  to generate AI-personalized prompts.
+                  Sign in with Google to generate AI-personalized prompts using Gemini.
                 </span>
               </div>
             )}

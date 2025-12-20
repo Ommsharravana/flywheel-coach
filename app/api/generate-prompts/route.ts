@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { PROMPT_TEMPLATES } from '@/lib/prompts/templates';
 import { createClient } from '@/lib/supabase/server';
 
@@ -35,34 +34,25 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    // Get current session with OAuth provider token
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized. Please sign in with Google.' },
         { status: 401 }
       );
     }
 
-    // Get user's Gemini API key
-    const { data: userData } = await supabase
-      .from('users')
-      .select('gemini_api_key')
-      .eq('id', user.id)
-      .single();
-
-    const geminiApiKey = (userData as { gemini_api_key: string | null } | null)?.gemini_api_key;
-    if (!geminiApiKey) {
+    // Get Google OAuth access token from session
+    const providerToken = session.provider_token;
+    if (!providerToken) {
       return NextResponse.json(
-        { error: 'No Gemini API key configured. Please add your API key in Settings.' },
+        { error: 'Google OAuth token not available. Please sign in with Google to use AI features.' },
         { status: 400 }
       );
     }
 
     const body: GeneratePromptsRequest = await request.json();
-
-    const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const template = PROMPT_TEMPLATES[body.workflowType.toUpperCase()] || PROMPT_TEMPLATES.MONITORING;
 
@@ -147,20 +137,40 @@ ${template.constraints.map(c => `- ${c}`).join('\n')}
 
 Generate the 9 prompts as a JSON array. Make them specific to "${body.problemStatement}" for "${body.primaryUsers}".`;
 
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-      systemInstruction: systemPrompt,
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 8192,
-        responseMimeType: 'application/json',
-      },
-    });
+    // Call Gemini API with OAuth token
+    const geminiResponse = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${providerToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 8192,
+            responseMimeType: 'application/json',
+          },
+        }),
+      }
+    );
 
-    const response = result.response;
-    const text = response.text();
+    if (!geminiResponse.ok) {
+      const errorData = await geminiResponse.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || `Gemini API error: ${geminiResponse.status}`);
+    }
+
+    const result = await geminiResponse.json();
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    if (!text) {
+      throw new Error('Empty response from Gemini API');
+    }
 
     // Parse the JSON response
     let prompts;
