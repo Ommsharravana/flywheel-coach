@@ -28,26 +28,29 @@ interface UserWithCycles {
   id: string;
   email: string;
   name: string | null;
-  role: 'learner' | 'facilitator' | 'admin' | 'superadmin';
+  role: 'learner' | 'facilitator' | 'admin' | 'institution_admin' | 'superadmin';
   avatar_url: string | null;
   created_at: string;
   cycle_count: number;
+  institution_name?: string | null;
 }
 
 interface UserTableProps {
   users: UserWithCycles[];
   onImpersonate?: (userId: string) => void;
   onDelete?: (userId: string) => void;
+  showInstitution?: boolean;
 }
 
 const roleColors: Record<string, string> = {
   learner: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   facilitator: 'bg-green-500/20 text-green-400 border-green-500/30',
   admin: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  institution_admin: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
   superadmin: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
 };
 
-export function UserTable({ users, onImpersonate, onDelete }: UserTableProps) {
+export function UserTable({ users, onImpersonate, onDelete, showInstitution = false }: UserTableProps) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
@@ -78,6 +81,9 @@ export function UserTable({ users, onImpersonate, onDelete }: UserTableProps) {
           <TableRow className="bg-stone-900/50 hover:bg-stone-900/50">
             <TableHead className="text-stone-400">User</TableHead>
             <TableHead className="text-stone-400">Role</TableHead>
+            {showInstitution && (
+              <TableHead className="text-stone-400">Institution</TableHead>
+            )}
             <TableHead className="text-stone-400 text-center">Cycles</TableHead>
             <TableHead className="text-stone-400">Joined</TableHead>
             <TableHead className="text-stone-400 text-right">Actions</TableHead>
@@ -86,7 +92,7 @@ export function UserTable({ users, onImpersonate, onDelete }: UserTableProps) {
         <TableBody>
           {users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-stone-500">
+              <TableCell colSpan={showInstitution ? 6 : 5} className="text-center py-8 text-stone-500">
                 No users found
               </TableCell>
             </TableRow>
@@ -117,9 +123,16 @@ export function UserTable({ users, onImpersonate, onDelete }: UserTableProps) {
                     variant="outline"
                     className={roleColors[user.role] || roleColors.learner}
                   >
-                    {user.role}
+                    {user.role === 'institution_admin' ? 'inst. admin' : user.role}
                   </Badge>
                 </TableCell>
+                {showInstitution && (
+                  <TableCell>
+                    <span className="text-stone-400 text-sm">
+                      {user.institution_name || '—'}
+                    </span>
+                  </TableCell>
+                )}
                 <TableCell className="text-center">
                   <span className="text-stone-300">{user.cycle_count}</span>
                 </TableCell>

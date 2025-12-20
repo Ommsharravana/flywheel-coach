@@ -64,7 +64,7 @@ export function FlywheelNavigator({ cycle, currentStep, onStepClick, compact = f
                   colors.border,
                   colors.text,
                   'border-2',
-                  step.accessible ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed opacity-50',
+                  step.accessible ? 'cursor-pointer hover:brightness-125' : 'cursor-not-allowed opacity-50',
                   isActive && 'ring-2 ring-amber-500 ring-offset-2 ring-offset-stone-900'
                 )}
                 title={step.name}
@@ -135,7 +135,7 @@ export function FlywheelNavigator({ cycle, currentStep, onStepClick, compact = f
                   colors.border,
                   colors.glow,
                   'border-2',
-                  step.accessible ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed opacity-50',
+                  step.accessible ? 'cursor-pointer hover:brightness-125' : 'cursor-not-allowed opacity-50',
                   isActive && 'ring-4 ring-amber-500/50 scale-110'
                 )}
               >

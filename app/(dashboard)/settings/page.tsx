@@ -4,9 +4,12 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { User, Building2, Globe, Shield, Trophy } from 'lucide-react';
+import { User, Globe, Shield, Trophy } from 'lucide-react';
 import { SettingsForm } from './SettingsForm';
 import { AppathonToggle } from '@/components/appathon/AppathonToggle';
+import { InstitutionChangeRequest } from '@/components/settings/InstitutionChangeRequest';
+import { Suspense } from 'react';
+import { GeminiSetup } from '@/components/settings/GeminiSetup';
 
 interface UserProfile {
   id: string;
@@ -14,6 +17,7 @@ interface UserProfile {
   email: string;
   avatar_url: string | null;
   institution: string | null;
+  institution_id: string | null;
   department: string | null;
   year_of_study: number | null;
   role: string | null;
@@ -22,6 +26,14 @@ interface UserProfile {
   appathon_mode: boolean | null;
   created_at: string;
   updated_at: string;
+}
+
+interface Institution {
+  id: string;
+  name: string;
+  short_name: string;
+  type: 'college' | 'school' | 'external';
+  slug: string;
 }
 
 export default async function SettingsPage() {
@@ -42,6 +54,17 @@ export default async function SettingsPage() {
     .single();
 
   const profile = profileData as UserProfile | null;
+
+  // Fetch user's institution if they have one
+  let userInstitution: Institution | null = null;
+  if (profile?.institution_id) {
+    const { data: institutionData } = await supabase
+      .from('institutions')
+      .select('id, name, short_name, type, slug')
+      .eq('id', profile.institution_id)
+      .single();
+    userInstitution = institutionData as Institution | null;
+  }
 
   // Get stats for effective user
   const { count: cycleCount } = await supabase
@@ -129,38 +152,16 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Institution Info (Read Only) */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-stone-100">
-            <Building2 className="w-5 h-5 text-blue-400" />
-            Institution
-          </CardTitle>
-          <CardDescription>Your educational institution details</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-stone-400">Institution</Label>
-              <div className="mt-1 text-stone-200">{profile?.institution || 'JKKN'}</div>
-            </div>
-            <div>
-              <Label className="text-stone-400">Department</Label>
-              <div className="mt-1 text-stone-200">{profile?.department || 'Not specified'}</div>
-            </div>
-            <div>
-              <Label className="text-stone-400">Year of Study</Label>
-              <div className="mt-1 text-stone-200">
-                {profile?.year_of_study ? `Year ${profile.year_of_study}` : 'Not specified'}
-              </div>
-            </div>
-            <div>
-              <Label className="text-stone-400">Role</Label>
-              <div className="mt-1 text-stone-200 capitalize">{profile?.role || 'Learner'}</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* AI Provider Setup */}
+      <Suspense fallback={<div className="glass-card p-6 animate-pulse" />}>
+        <GeminiSetup />
+      </Suspense>
+
+      {/* Institution Change Request */}
+      <InstitutionChangeRequest
+        userId={effectiveUser.id}
+        currentInstitution={userInstitution}
+      />
 
       {/* Language Preference */}
       <Card className="glass-card">

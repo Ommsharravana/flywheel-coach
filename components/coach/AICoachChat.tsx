@@ -5,7 +5,7 @@ import { Cycle, FLYWHEEL_STEPS } from '@/lib/types/cycle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, Loader2, Send, Sparkles, User, X, Trophy } from 'lucide-react';
+import { Bot, Loader2, Send, Sparkles, User, X, Trophy, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { useAppathonMode } from '@/lib/context/EventContext';
@@ -31,12 +31,31 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
   const [isStreaming, setIsStreaming] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentProvider, setCurrentProvider] = useState<'gemini' | 'anthropic' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const supabase = createClient();
   const { isAppathonMode } = useAppathonMode();
 
   const stepInfo = FLYWHEEL_STEPS[currentStep - 1];
+
+  // Check if Gemini is configured
+  const checkProvider = useCallback(async () => {
+    try {
+      const res = await fetch('/api/credentials');
+      if (res.ok) {
+        const data = await res.json();
+        const geminiCred = data.providers?.find((p: { provider: string; isValid: boolean }) =>
+          p.provider === 'gemini' && p.isValid
+        );
+        if (geminiCred) {
+          setCurrentProvider('gemini');
+        }
+      }
+    } catch (err) {
+      console.error('Error checking provider:', err);
+    }
+  }, []);
 
   // Load existing conversation from DB
   const loadConversation = useCallback(async () => {
@@ -149,12 +168,13 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
     }
   };
 
-  // Load conversation when opened
+  // Load conversation and check provider when opened
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       loadConversation();
+      checkProvider();
     }
-  }, [isOpen, loadConversation, messages.length]);
+  }, [isOpen, loadConversation, checkProvider, messages.length]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -241,6 +261,11 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
       }
 
       const data = await response.json();
+
+      // Track which provider was used
+      if (data.provider) {
+        setCurrentProvider(data.provider);
+      }
 
       // Save assistant message to DB
       const assistantMessage = await saveMessage(conversationId, 'assistant', data.message);
@@ -372,6 +397,13 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
                 </Button>
               </div>
             </div>
+            {/* Provider indicator */}
+            {currentProvider === 'gemini' && (
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-teal-400">
+                <Zap className="w-3 h-3" />
+                <span>Powered by your Gemini subscription</span>
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="p-0">
@@ -490,7 +522,7 @@ export function AICoachButton({ onClick, isOpen }: { onClick: () => void; isOpen
       onClick={onClick}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className={`fixed bottom-4 right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
+      className={`fixed bottom-4 right-20 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
         isOpen
           ? 'bg-stone-800 text-stone-400'
           : 'bg-gradient-to-r from-amber-500 to-orange-500 text-stone-900'

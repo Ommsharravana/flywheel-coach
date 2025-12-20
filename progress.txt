@@ -1609,3 +1609,106 @@ Local dev requires Docker for local Supabase. Migration pushed to remote success
 
 ---
 
+# Session 30: Institution Management System
+**Date:** 2025-12-19
+**Focus:** Multi-institution support with admin roles and change request workflow
+
+## What Was Done:
+
+1. **Database Migration** (`supabase/migrations/006_institutions.sql`)
+   - Created `institutions` table with id, slug, name, short_name, type (college/school/external)
+   - Added `institution_id` column to users table (FK to institutions)
+   - Created `institution_change_requests` table for user requests
+   - Added `institution_admin` role to users
+   - Created admin views for change requests
+   - Pre-seeded 9 JKKN institutions
+   - RLS policies for superadmin and institution_admin access
+
+2. **Institution Selection Page** (`app/(auth)/select-institution/page.tsx`)
+   - Grid of institution cards for first-time login
+   - API route to save selection
+   - Redirects from auth callback when no institution set
+
+3. **Institution API Routes** (`app/api/institutions/`)
+   - `route.ts` - GET (list), POST (create - superadmin only)
+   - `[id]/route.ts` - GET, PATCH, DELETE
+   - All routes with type assertions for new tables
+
+4. **User Institution API** (`app/api/user/institution/route.ts`)
+   - GET current institution
+   - POST to set first-time institution
+
+5. **Change Request API** (`app/api/institution-change-requests/`)
+   - `route.ts` - GET (list for admins), POST (create request), PATCH (approve/reject)
+   - `my-request/route.ts` - GET user's pending request
+
+6. **Admin Institutions Page** (`app/(admin)/admin/institutions/page.tsx`)
+   - List all institutions with user counts
+   - Create, edit, deactivate institutions
+   - Added to AdminSidebar navigation
+
+7. **Admin Change Requests Page** (`app/(admin)/admin/change-requests/page.tsx`)
+   - List pending requests (scoped by admin type)
+   - Approve/reject with activity logging
+
+8. **Institution Admin Role Scoping**
+   - Admin users page filters by institution for institution_admin
+   - UserTable shows institution column for superadmin
+   - Change request approval scoped to institution
+
+9. **Settings Integration** (`app/(dashboard)/settings/page.tsx`)
+   - Shows current institution with icon
+   - InstitutionChangeRequest component for requesting changes
+   - Pending request status display
+
+10. **Auth Flow Integration**
+    - `app/auth/callback/route.ts` - Redirects to /select-institution if no institution_id
+    - Middleware checks for institution requirement
+
+## Files Created:
+- `supabase/migrations/006_institutions.sql`
+- `lib/institutions/types.ts`
+- `app/(auth)/select-institution/page.tsx`
+- `app/(admin)/admin/institutions/page.tsx`
+- `app/(admin)/admin/change-requests/page.tsx`
+- `app/api/institutions/route.ts`
+- `app/api/institutions/[id]/route.ts`
+- `app/api/user/institution/route.ts`
+- `app/api/institution-change-requests/route.ts`
+- `app/api/institution-change-requests/my-request/route.ts`
+- `components/settings/InstitutionChangeRequest.tsx`
+
+## Files Modified:
+- `app/auth/callback/route.ts`
+- `middleware.ts`
+- `app/(admin)/admin/users/page.tsx`
+- `components/admin/UserTable.tsx`
+- `components/admin/AdminSidebar.tsx`
+- `app/(dashboard)/settings/page.tsx`
+
+## TypeScript Fixes:
+- Added `(supabase as any)` type assertions for all new table operations
+- Created type interfaces for query results
+- Pattern follows existing codebase for untyped Supabase tables
+
+## Build Verification:
+```
+✓ Compiled successfully in 2.8s
+✓ Generating static pages (33/33) in 503.6ms
+```
+
+All routes compile including:
+- `/select-institution` - Institution selection page
+- `/admin/institutions` - Admin institutions management
+- `/admin/change-requests` - Change requests management
+- `/api/institutions` - Institutions API
+- `/api/institutions/[id]` - Single institution API
+- `/api/user/institution` - User institution API
+- `/api/institution-change-requests` - Change requests API
+- `/api/institution-change-requests/my-request` - User's request API
+
+## Status:
+**BUILD PASSING** - Ready for end-to-end testing
+
+---
+

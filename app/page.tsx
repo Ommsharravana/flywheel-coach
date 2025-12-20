@@ -108,7 +108,7 @@ export default function Home() {
               {flywheelSteps.map((step) => (
                 <div
                   key={step.number}
-                  className="glass-card group relative rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-amber-500/10"
+                  className="glass-card group relative rounded-2xl p-6 transition-shadow duration-300 hover:shadow-lg hover:shadow-amber-500/20 hover:border-amber-500/30"
                 >
                   {/* Step number */}
                   <div className="absolute -top-3 -left-3 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-sm font-bold text-stone-950">

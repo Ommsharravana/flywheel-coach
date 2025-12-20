@@ -12,6 +12,8 @@ import {
   Shield,
   BarChart3,
   Trophy,
+  Building2,
+  FileQuestion,
 } from 'lucide-react';
 
 const navItems = [
@@ -19,6 +21,11 @@ const navItems = [
     label: 'Dashboard',
     href: '/admin',
     icon: LayoutDashboard,
+  },
+  {
+    label: 'Institutions',
+    href: '/admin/institutions',
+    icon: Building2,
   },
   {
     label: 'Events',
@@ -34,6 +41,11 @@ const navItems = [
     label: 'Cycles',
     href: '/admin/cycles',
     icon: Repeat,
+  },
+  {
+    label: 'Change Requests',
+    href: '/admin/change-requests',
+    icon: FileQuestion,
   },
   {
     label: 'Analytics',

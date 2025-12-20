@@ -6,10 +6,38 @@ import {
   getAppathonStepGuidance,
   getContextualAppathonTips,
 } from '@/lib/appathon/coach-context';
+import { createClient } from '@/lib/supabase/server';
+import { decrypt, GeminiProvider, parseGeminiCredentials } from '@/lib/byos';
+import type { GeminiOAuthCredentials } from '@/lib/byos';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
+
+// Helper to get user's Gemini credentials if configured
+async function getUserGeminiCredentials(userId: string): Promise<GeminiOAuthCredentials | null> {
+  try {
+    const supabase = await createClient();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from('provider_credentials')
+      .select('credentials_encrypted, credential_type, is_valid')
+      .eq('user_id', userId)
+      .eq('provider', 'gemini')
+      .single();
+
+    if (error || !data || !data.is_valid) {
+      return null;
+    }
+
+    const decrypted = decrypt(data.credentials_encrypted);
+    return parseGeminiCredentials(decrypted);
+  } catch (error) {
+    console.error('Error getting Gemini credentials:', error);
+    return null;
+  }
+}
 
 interface CoachRequest {
   messages: { role: 'user' | 'assistant'; content: string }[];
@@ -20,10 +48,24 @@ interface CoachRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
     const body: CoachRequest = await request.json();
     const { messages, cycle, currentStep, isAppathonMode } = body;
 
     const stepInfo = FLYWHEEL_STEPS[currentStep - 1];
+
+    // Check if user has Gemini credentials configured
+    let useGemini = false;
+    let geminiCredentials: GeminiOAuthCredentials | null = null;
+
+    if (user) {
+      geminiCredentials = await getUserGeminiCredentials(user.id);
+      if (geminiCredentials) {
+        useGemini = true;
+      }
+    }
 
     // Build context about current state
     let contextInfo = `
@@ -129,20 +171,62 @@ ${contextInfo}
 
 Help the user succeed at their current step. If they're stuck, help them move forward. If they're confused, clarify. If they need encouragement, provide it. Always relate your advice back to the flywheel methodology.${isAppathonMode ? ' Remember: The user is in Appathon 2.0 competition mode. Prioritize advice that helps them win: focus on judging criteria, time constraints, and demo-ready deliverables.' : ''}`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
-    });
+    let message: string;
+    let provider: 'gemini' | 'anthropic' = 'anthropic';
 
-    const textContent = response.content.find((c) => c.type === 'text');
-    const message = textContent?.text || 'I apologize, but I could not generate a response.';
+    if (useGemini && geminiCredentials) {
+      // Use Gemini with user's credentials
+      try {
+        const geminiProvider = new GeminiProvider(geminiCredentials);
 
-    return NextResponse.json({ message });
+        // Combine system prompt with conversation history for Gemini
+        const conversationHistory = messages
+          .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+          .join('\n\n');
+
+        const fullPrompt = `${conversationHistory}`;
+
+        const response = await geminiProvider.query(fullPrompt, {
+          systemPrompt,
+          model: 'gemini-2.0-flash',
+          maxTokens: 1024,
+          temperature: 0.7,
+        });
+
+        message = response.content;
+        provider = 'gemini';
+      } catch (geminiError) {
+        console.error('Gemini error, falling back to Anthropic:', geminiError);
+        // Fall back to Anthropic if Gemini fails
+        const response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        });
+        const textContent = response.content.find((c) => c.type === 'text');
+        message = textContent?.text || 'I apologize, but I could not generate a response.';
+      }
+    } else {
+      // Use Anthropic (default)
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+      });
+
+      const textContent = response.content.find((c) => c.type === 'text');
+      message = textContent?.text || 'I apologize, but I could not generate a response.';
+    }
+
+    return NextResponse.json({ message, provider });
   } catch (error) {
     console.error('Coach API error:', error);
     return NextResponse.json(

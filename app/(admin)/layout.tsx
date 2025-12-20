@@ -7,7 +7,8 @@ interface ProfileRow {
   name: string | null;
   email: string | null;
   avatar_url: string | null;
-  role: 'learner' | 'facilitator' | 'admin' | 'superadmin';
+  role: 'learner' | 'facilitator' | 'admin' | 'institution_admin' | 'superadmin';
+  institution_id: string | null;
 }
 
 export default async function AdminLayout({
@@ -28,14 +29,15 @@ export default async function AdminLayout({
   // Fetch user profile
   const { data: profileData } = await supabase
     .from('users')
-    .select('name, email, avatar_url, role')
+    .select('name, email, avatar_url, role, institution_id')
     .eq('id', user.id)
     .single();
 
   const profile = profileData as unknown as ProfileRow | null;
 
-  // Double-check superadmin role (middleware should catch this, but belt-and-suspenders)
-  if (!profile || profile.role !== 'superadmin') {
+  // Double-check admin role (middleware should catch this, but belt-and-suspenders)
+  const allowedRoles = ['superadmin', 'institution_admin'];
+  if (!profile || !allowedRoles.includes(profile.role)) {
     redirect('/dashboard');
   }
 

@@ -45,6 +45,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(route)
   )
 
+  // Institution selection is a special protected route (needs auth but no institution)
+  const isSelectInstitutionRoute = request.nextUrl.pathname === '/select-institution'
+
   if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
@@ -52,22 +55,40 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Admin routes require superadmin role
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-
-  if (isAdminRoute && user) {
-    // Fetch user profile to check role
+  // For protected routes (except select-institution), check if user has institution
+  if (user && (isProtectedRoute || isSelectInstitutionRoute)) {
+    // Fetch user profile to check role and institution
     const { data: profile } = await supabase
       .from('users')
-      .select('role')
+      .select('role, institution_id')
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'superadmin') {
-      // Not a superadmin, redirect to dashboard
+    // If no institution set and not on select-institution page, redirect there
+    if (!profile?.institution_id && !isSelectInstitutionRoute) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/select-institution'
+      return NextResponse.redirect(url)
+    }
+
+    // If has institution and on select-institution page, redirect to dashboard
+    if (profile?.institution_id && isSelectInstitutionRoute) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)
+    }
+
+    // Admin routes require superadmin or institution_admin role
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+
+    if (isAdminRoute) {
+      const allowedRoles = ['superadmin', 'institution_admin']
+      if (!profile || !allowedRoles.includes(profile.role)) {
+        // Not authorized, redirect to dashboard
+        const url = request.nextUrl.clone()
+        url.pathname = '/dashboard'
+        return NextResponse.redirect(url)
+      }
     }
   }
 
