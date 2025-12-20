@@ -19,6 +19,26 @@ export interface PromptContext {
   currentSolution: string;
   primaryUsers: string;
   when: string;
+  // Step 3: Value Assessment data
+  valueAssessment?: {
+    desperateUserScore: number;
+    criteria: {
+      activelySearching: boolean;
+      triedAlternatives: boolean;
+      willingToPay: boolean;
+      urgentNeed: boolean;
+      frequentProblem: boolean;
+    };
+    evidence: {
+      activelySearching: string;
+      triedAlternatives: string;
+      willingToPay: string;
+      urgentNeed: string;
+      frequentProblem: string;
+    };
+  };
+  // Step 4: Custom workflow description
+  customWorkflowDescription?: string;
 }
 
 // Workflow-specific feature prompts (prompts 4-7)
@@ -1045,9 +1065,57 @@ Keep all existing pages working.`,
   ],
 };
 
+// Helper to generate validation context section
+function generateValidationContext(context: PromptContext): string {
+  if (!context.valueAssessment || context.valueAssessment.desperateUserScore === 0) {
+    return '';
+  }
+
+  const va = context.valueAssessment;
+  const validatedCriteria: string[] = [];
+  const evidencePoints: string[] = [];
+
+  if (va.criteria.activelySearching && va.evidence.activelySearching) {
+    validatedCriteria.push('Users have complained about this problem before');
+    evidencePoints.push(`- "${va.evidence.activelySearching}"`);
+  }
+  if (va.criteria.triedAlternatives && va.evidence.triedAlternatives) {
+    validatedCriteria.push('Users are already doing something to solve it');
+    evidencePoints.push(`- "${va.evidence.triedAlternatives}"`);
+  }
+  if (va.criteria.willingToPay && va.evidence.willingToPay) {
+    validatedCriteria.push('Users light up when they hear about a solution');
+    evidencePoints.push(`- "${va.evidence.willingToPay}"`);
+  }
+  if (va.criteria.urgentNeed && va.evidence.urgentNeed) {
+    validatedCriteria.push('Users ask when they can start using it');
+    evidencePoints.push(`- "${va.evidence.urgentNeed}"`);
+  }
+  if (va.criteria.frequentProblem && va.evidence.frequentProblem) {
+    validatedCriteria.push('Multiple users have this problem');
+    evidencePoints.push(`- "${va.evidence.frequentProblem}"`);
+  }
+
+  if (validatedCriteria.length === 0) {
+    return '';
+  }
+
+  return `
+VALIDATION (Desperate User Score: ${va.desperateUserScore}%):
+${validatedCriteria.map(c => `✓ ${c}`).join('\n')}
+
+USER EVIDENCE:
+${evidencePoints.join('\n')}
+`;
+}
+
 // Foundation prompts (same for all workflows)
 function generateFoundationPrompts(context: PromptContext): PromptStep[] {
   const template = PROMPT_TEMPLATES[context.workflowType.toUpperCase()] || PROMPT_TEMPLATES.MONITORING;
+  const validationContext = generateValidationContext(context);
+  const customWorkflow = context.customWorkflowDescription
+    ? `\nCUSTOM WORKFLOW: ${context.customWorkflowDescription}\n`
+    : '';
 
   return [
     {
@@ -1065,7 +1133,7 @@ CONTEXT:
 - Current workaround: ${context.currentSolution}
 - Pain level: ${context.painLevel}/10
 - Frequency: ${context.frequency}
-
+${validationContext}${customWorkflow}
 WHAT USERS NEED TO DO:
 1. ${template.action1}
 2. ${template.action2}

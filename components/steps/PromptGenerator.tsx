@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect } from 'react';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,9 @@ import {
   Layers,
   Save,
   Sparkles,
+  Wand2,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -29,20 +32,62 @@ interface PromptGeneratorProps {
 
 export function PromptGenerator({ cycle }: PromptGeneratorProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [hasGoogleOAuth, setHasGoogleOAuth] = useState(false);
+  const [aiPrompts, setAiPrompts] = useState<PromptStep[] | null>(null);
   const supabase = createClient();
 
-  // Generate the full 9-prompt sequence
+  // Check if user has Google OAuth session with Gemini access
+  useEffect(() => {
+    async function checkGoogleOAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      // Check if user signed in with Google and has provider token
+      setHasGoogleOAuth(!!session?.provider_token);
+    }
+    checkGoogleOAuth();
+  }, [supabase]);
+
+  // Generate the full 9-prompt sequence with data from all previous steps
   const workflowType = cycle.workflowClassification?.selectedType || 'MONITORING';
-  const promptSequence = generatePromptSequence({
+
+  // Context data for both template and AI generation
+  const contextData = {
     workflowType,
+    // Step 1: Problem Discovery
     problemStatement: cycle.problem?.refinedStatement || cycle.problem?.statement || 'Problem not specified',
     frequency: cycle.problem?.frequency || 'daily',
     painLevel: cycle.problem?.painLevel || 5,
+    // Step 2: Context Discovery
     currentSolution: cycle.context?.currentSolution || 'Manual process',
     primaryUsers: cycle.context?.who || 'users',
     when: cycle.context?.when || 'regularly',
-  });
+    // Step 3: Value Assessment (Desperate User Test)
+    valueAssessment: cycle.valueAssessment ? {
+      desperateUserScore: cycle.valueAssessment.desperateUserScore || 0,
+      criteria: cycle.valueAssessment.criteria || {
+        activelySearching: false,
+        triedAlternatives: false,
+        willingToPay: false,
+        urgentNeed: false,
+        frequentProblem: false,
+      },
+      evidence: cycle.valueAssessment.evidence || {
+        activelySearching: '',
+        triedAlternatives: '',
+        willingToPay: '',
+        urgentNeed: '',
+        frequentProblem: '',
+      },
+    } : undefined,
+    // Step 4: Custom workflow description (if custom type selected)
+    customWorkflowDescription: cycle.workflowClassification?.customDescription,
+  };
+
+  const templatePrompts = generatePromptSequence(contextData);
+
+  // Use AI prompts if available, otherwise use template
+  const promptSequence = aiPrompts || templatePrompts;
 
   // State for current prompt and editing
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
@@ -51,6 +96,34 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
 
   const currentPrompt = promptSequence[currentPromptIndex];
   const editedContent = editedPrompts[currentPromptIndex] ?? currentPrompt.prompt;
+
+  // Generate AI-personalized prompts using user's Gemini API key
+  const generateWithAI = async () => {
+    setIsGeneratingAI(true);
+    try {
+      const response = await fetch('/api/generate-prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contextData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate prompts');
+      }
+
+      const { prompts } = await response.json();
+      setAiPrompts(prompts);
+      setEditedPrompts({}); // Reset edits when regenerating
+      setCopiedPrompts(new Set()); // Reset copied status
+      toast.success('AI-personalized prompts generated!');
+    } catch (error) {
+      console.error('Error generating AI prompts:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to generate AI prompts');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   // Get sequence summary for sidebar
   const sequenceSummary = getSequenceSummary(workflowType);
@@ -82,62 +155,72 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
   };
 
   const savePrompts = async (complete = false) => {
-    startTransition(async () => {
-      try {
-        // Prepare all prompts data
-        const promptsData = promptSequence.map((p, i) => ({
-          number: p.number,
-          phase: p.phase,
-          title: p.title,
-          description: p.description,
-          originalPrompt: p.prompt,
-          editedPrompt: editedPrompts[i] || null,
-          copied: copiedPrompts.has(i),
-        }));
+    setIsPending(true);
+    try {
+      // Prepare all prompts data
+      const promptsData = promptSequence.map((p, i) => ({
+        number: p.number,
+        phase: p.phase,
+        title: p.title,
+        description: p.description,
+        originalPrompt: p.prompt,
+        editedPrompt: editedPrompts[i] || null,
+        copied: copiedPrompts.has(i),
+      }));
 
-        const dataToSave = {
-          cycle_id: cycle.id,
-          generated_prompt: JSON.stringify(promptsData),
-          edited_prompt: JSON.stringify(editedPrompts),
-          copied_at: copiedPrompts.size > 0 ? new Date().toISOString() : null,
-          updated_at: new Date().toISOString(),
-        };
+      const dataToSave = {
+        cycle_id: cycle.id,
+        generated_prompt: JSON.stringify(promptsData),
+        edited_prompt: JSON.stringify(editedPrompts),
+        copied_at: copiedPrompts.size > 0 ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      };
 
-        const { data: existing } = await supabase
-          .from('prompts')
-          .select('id')
-          .eq('cycle_id', cycle.id)
-          .single();
+      const { data: existing, error: fetchError } = await supabase
+        .from('prompts')
+        .select('id')
+        .eq('cycle_id', cycle.id)
+        .single();
 
-        if (existing) {
-          await supabase.from('prompts').update(dataToSave).eq('id', existing.id);
-        } else {
-          await supabase.from('prompts').insert({
-            ...dataToSave,
-            created_at: new Date().toISOString(),
-          });
-        }
-
-        if (complete) {
-          await supabase
-            .from('cycles')
-            .update({
-              current_step: 6,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', cycle.id);
-
-          toast.success('All prompts saved!');
-          router.push(`/cycle/${cycle.id}/step/6`);
-        } else {
-          toast.success('Progress saved!');
-          router.refresh();
-        }
-      } catch (error) {
-        console.error('Error saving prompts:', error);
-        toast.error('Failed to save.');
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
-    });
+
+      if (existing) {
+        const { error } = await supabase.from('prompts').update(dataToSave).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('prompts').insert({
+          ...dataToSave,
+          created_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+      }
+
+      if (complete) {
+        const { error: cycleError } = await supabase
+          .from('cycles')
+          .update({
+            current_step: 6,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', cycle.id);
+        if (cycleError) throw cycleError;
+
+        toast.success('All prompts saved!');
+        router.push(`/cycle/${cycle.id}/step/6`);
+      } else {
+        toast.success('Progress saved!');
+        router.refresh();
+      }
+    } catch (error: unknown) {
+      console.error('Error saving prompts:', error);
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const getPhaseColor = (phase: string) => {
@@ -199,6 +282,84 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* AI Generation Button */}
+          <div className="mt-4 pt-4 border-t border-stone-700">
+            {hasGoogleOAuth ? (
+              <div className="flex flex-wrap items-center gap-3">
+                {!aiPrompts ? (
+                  <>
+                    <Button
+                      onClick={generateWithAI}
+                      disabled={isGeneratingAI}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                    >
+                      {isGeneratingAI ? (
+                        <>
+                          <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                          Generating with Gemini...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="mr-2 w-4 h-4" />
+                          Generate AI-Personalized Prompts
+                        </>
+                      )}
+                    </Button>
+                    <span className="text-sm text-stone-400">
+                      Using template-based prompts. Click to personalize with Gemini AI.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">
+                      <Sparkles className="mr-1 w-3 h-3" />
+                      AI Generated
+                    </Badge>
+                    <Button
+                      onClick={generateWithAI}
+                      disabled={isGeneratingAI}
+                      variant="outline"
+                      className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                    >
+                      {isGeneratingAI ? (
+                        <>
+                          <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                          Regenerating...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="mr-2 w-4 h-4" />
+                          Regenerate
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setAiPrompts(null);
+                        setEditedPrompts({});
+                        setCopiedPrompts(new Set());
+                        toast.success('Reset to template prompts');
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="text-stone-400 border-stone-600 hover:bg-stone-700/50"
+                    >
+                      <Sparkles className="mr-1 w-3 h-3" />
+                      Reset to Templates
+                    </Button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-stone-400">
+                <AlertCircle className="w-4 h-4" />
+                <span>
+                  Sign in with Google to generate AI-personalized prompts using Gemini.
+                </span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

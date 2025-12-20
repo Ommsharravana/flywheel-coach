@@ -60,6 +60,7 @@ function LoginContent() {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: 'https://www.googleapis.com/auth/generative-language.retriever',
         },
       })
 

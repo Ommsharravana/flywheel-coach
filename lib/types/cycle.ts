@@ -138,12 +138,14 @@ export type WorkflowType =
   | 'content-management'
   | 'scheduling-booking'
   | 'inventory-tracking'
-  | 'communication-hub';
+  | 'communication-hub'
+  | 'custom';
 
 export interface WorkflowClassification {
   id: string;
   selectedType: WorkflowType;
   reasoning: string;
+  customDescription?: string;
   features: string[];
 }
 

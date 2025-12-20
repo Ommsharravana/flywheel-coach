@@ -22,6 +22,7 @@ export type Database = {
           onboarding_completed: boolean
           language: 'en' | 'ta'
           active_event_id: string | null
+          gemini_api_key: string | null
           created_at: string
           updated_at: string
         }
@@ -37,6 +38,7 @@ export type Database = {
           onboarding_completed?: boolean
           language?: 'en' | 'ta'
           active_event_id?: string | null
+          gemini_api_key?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -52,6 +54,7 @@ export type Database = {
           onboarding_completed?: boolean
           language?: 'en' | 'ta'
           active_event_id?: string | null
+          gemini_api_key?: string | null
           created_at?: string
           updated_at?: string
         }

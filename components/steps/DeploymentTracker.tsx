@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ interface DeploymentTrackerProps {
 
 export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
 
   const [deployedUrl, setDeployedUrl] = useState(cycle.build?.projectUrl || '');
@@ -28,38 +28,43 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
   const hasDeployedUrl = deployedUrl.trim().length > 0;
 
   const saveDeployment = async (complete = false) => {
-    startTransition(async () => {
-      try {
-        // Update the build record with deployed URL
-        await supabase
-          .from('builds')
+    setIsPending(true);
+    try {
+      // Update the build record with deployed URL
+      const { error: buildError } = await supabase
+        .from('builds')
+        .update({
+          deployed_url: deployedUrl, // DB column is deployed_url
+          completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('cycle_id', cycle.id);
+      if (buildError) throw buildError;
+
+      if (complete) {
+        const { error: cycleError } = await supabase
+          .from('cycles')
           .update({
-            deployed_url: deployedUrl, // DB column is deployed_url
-            completed_at: new Date().toISOString(),
+            current_step: 8,
             updated_at: new Date().toISOString(),
           })
-          .eq('cycle_id', cycle.id);
+          .eq('id', cycle.id);
+        if (cycleError) throw cycleError;
 
-        if (complete) {
-          await supabase
-            .from('cycles')
-            .update({
-              current_step: 8,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', cycle.id);
-
-          toast.success('Deployment tracked!');
-          router.push(`/cycle/${cycle.id}/step/8`);
-        } else {
-          toast.success('Saved!');
-          router.refresh();
-        }
-      } catch (error) {
-        console.error('Error saving deployment:', error);
-        toast.error('Failed to save.');
+        toast.success('Deployment tracked!');
+        router.push(`/cycle/${cycle.id}/step/8`);
+      } else {
+        toast.success('Saved!');
+        router.refresh();
       }
-    });
+    } catch (error: unknown) {
+      console.error('Error saving deployment:', error);
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
+    } finally {
+      setIsPending(false);
+    }
   };
 
   const generateShareMessage = () => {

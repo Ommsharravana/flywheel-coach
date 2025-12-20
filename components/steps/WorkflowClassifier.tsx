@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Cycle, WorkflowType } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -88,17 +88,25 @@ const WORKFLOW_TYPES: { id: WorkflowType; name: string; icon: string; descriptio
     description: 'Facilitating messaging or discussions',
     examples: ['Q&A forum', 'Announcement board', 'Feedback collector'],
   },
+  {
+    id: 'custom',
+    name: 'Custom / Other',
+    icon: '✏️',
+    description: 'Define your own workflow type if none of the above fit',
+    examples: ['Hybrid workflows', 'Unique use cases', 'Novel solutions'],
+  },
 ];
 
 export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
 
   const [selectedType, setSelectedType] = useState<WorkflowType | null>(
     cycle.workflowClassification?.selectedType || null
   );
   const [reasoning, setReasoning] = useState(cycle.workflowClassification?.reasoning || '');
+  const [customDescription, setCustomDescription] = useState(cycle.workflowClassification?.customDescription || '');
   const [showDetails, setShowDetails] = useState<WorkflowType | null>(null);
 
   const selectedWorkflow = WORKFLOW_TYPES.find((w) => w.id === selectedType);
@@ -109,71 +117,89 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
       return;
     }
 
-    startTransition(async () => {
-      try {
-        // Map UI workflow types to DB workflow types
-        // DB expects: AUDIT, GENERATION, TRANSFORMATION, CLASSIFICATION, EXTRACTION, SYNTHESIS, PREDICTION, RECOMMENDATION, MONITORING, ORCHESTRATION
-        const typeMapping: Record<string, string> = {
-          'form-to-output': 'GENERATION',
-          'data-entry': 'EXTRACTION',
-          'approval-workflow': 'ORCHESTRATION',
-          'notification-system': 'MONITORING',
-          'search-filter': 'CLASSIFICATION',
-          'dashboard-analytics': 'SYNTHESIS',
-          'content-management': 'TRANSFORMATION',
-          'scheduling-booking': 'ORCHESTRATION',
-          'inventory-tracking': 'AUDIT',
-          'communication-hub': 'SYNTHESIS',
-        };
+    if (selectedType === 'custom' && !customDescription.trim()) {
+      toast.error('Please describe your custom workflow.');
+      return;
+    }
 
-        const dbWorkflowType = typeMapping[selectedType] || 'GENERATION';
+    setIsPending(true);
+    try {
+      // Map UI workflow types to DB workflow types
+      // DB expects: AUDIT, GENERATION, TRANSFORMATION, CLASSIFICATION, EXTRACTION, SYNTHESIS, PREDICTION, RECOMMENDATION, MONITORING, ORCHESTRATION
+      const typeMapping: Record<string, string> = {
+        'form-to-output': 'GENERATION',
+        'data-entry': 'EXTRACTION',
+        'approval-workflow': 'ORCHESTRATION',
+        'notification-system': 'MONITORING',
+        'search-filter': 'CLASSIFICATION',
+        'dashboard-analytics': 'SYNTHESIS',
+        'content-management': 'TRANSFORMATION',
+        'scheduling-booking': 'ORCHESTRATION',
+        'inventory-tracking': 'AUDIT',
+        'communication-hub': 'SYNTHESIS',
+        'custom': 'GENERATION', // Default to GENERATION for custom workflows
+      };
 
-        const workflowData = {
-          cycle_id: cycle.id,
-          workflow_type: dbWorkflowType,
-          classification_path: { original_type: selectedType, reasoning },
-          confidence: reasoning.trim().length > 50 ? 'high' : reasoning.trim().length > 20 ? 'medium' : 'low',
-          completed: complete,
-          updated_at: new Date().toISOString(),
-        };
+      const dbWorkflowType = typeMapping[selectedType] || 'GENERATION';
 
-        const { data: existing } = await supabase
-          .from('workflow_classifications')
-          .select('id')
-          .eq('cycle_id', cycle.id)
-          .single();
+      const workflowData = {
+        cycle_id: cycle.id,
+        workflow_type: dbWorkflowType,
+        classification_path: {
+          original_type: selectedType,
+          reasoning,
+          custom_description: selectedType === 'custom' ? customDescription : undefined,
+        },
+        confidence: reasoning.trim().length > 50 ? 'high' : reasoning.trim().length > 20 ? 'medium' : 'low',
+        completed: complete,
+        updated_at: new Date().toISOString(),
+      };
 
-        if (existing) {
-          const { error } = await supabase.from('workflow_classifications').update(workflowData).eq('id', existing.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from('workflow_classifications').insert({
-            ...workflowData,
-            created_at: new Date().toISOString(),
-          });
-          if (error) throw error;
-        }
+      const { data: existing, error: fetchError } = await supabase
+        .from('workflow_classifications')
+        .select('id')
+        .eq('cycle_id', cycle.id)
+        .single();
 
-        if (complete) {
-          await supabase
-            .from('cycles')
-            .update({
-              current_step: 5,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', cycle.id);
-
-          toast.success('Workflow classified!');
-          router.push(`/cycle/${cycle.id}/step/5`);
-        } else {
-          toast.success('Saved!');
-          router.refresh();
-        }
-      } catch (error) {
-        console.error('Error saving workflow:', error);
-        toast.error('Failed to save.');
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
       }
-    });
+
+      if (existing) {
+        const { error } = await supabase.from('workflow_classifications').update(workflowData).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('workflow_classifications').insert({
+          ...workflowData,
+          created_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+      }
+
+      if (complete) {
+        const { error: cycleError } = await supabase
+          .from('cycles')
+          .update({
+            current_step: 5,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', cycle.id);
+        if (cycleError) throw cycleError;
+
+        toast.success('Workflow classified!');
+        router.push(`/cycle/${cycle.id}/step/5`);
+      } else {
+        toast.success('Saved!');
+        router.refresh();
+      }
+    } catch (error: unknown) {
+      console.error('Error saving workflow:', error);
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
@@ -257,6 +283,22 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {selectedType === 'custom' && (
+              <div>
+                <Label className="text-stone-300 mb-2 block">
+                  Describe your custom workflow <span className="text-red-400">*</span>
+                </Label>
+                <Textarea
+                  value={customDescription}
+                  onChange={(e) => setCustomDescription(e.target.value)}
+                  placeholder="Describe the workflow pattern that fits your solution. What are the main steps? What inputs and outputs does it have?"
+                  className="bg-stone-800/50 border-stone-700 focus:border-amber-500 min-h-[100px]"
+                />
+                <p className="text-xs text-stone-500 mt-1">
+                  Be specific about the flow: who does what, in what order, and what the outcome is.
+                </p>
+              </div>
+            )}
             <div>
               <Label className="text-stone-300 mb-2 block">
                 Why does this workflow fit your problem?
@@ -319,7 +361,7 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
           </Button>
           <Button
             onClick={() => saveWorkflow(true)}
-            disabled={!selectedType || !reasoning.trim() || isPending}
+            disabled={!selectedType || isPending}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
             {isPending ? 'Saving...' : 'Complete & Continue'}

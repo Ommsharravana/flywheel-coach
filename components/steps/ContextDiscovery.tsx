@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ interface Interview {
 
 export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
 
   const [who, setWho] = useState(cycle.context?.who || '');
@@ -77,94 +77,122 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
   const isContextComplete = who.trim() && when.trim() && currentSolution.trim();
   const hasInterviews = interviews.length >= 1 && interviews.some((i) => i.personName.trim());
 
-  const saveContext = async () => {
-    startTransition(async () => {
-      try {
-        // Map to actual database column names
-        const contextData = {
-          cycle_id: cycle.id,
-          primary_users: who,
-          frequency: when,
-          pain_level: howPainful,
-          current_workaround: currentSolution,
-          completed: isContextComplete && hasInterviews,
-          updated_at: new Date().toISOString(),
-        };
+  const saveContext = async (complete = false) => {
+    setIsPending(true);
+    try {
+      // Map to actual database column names
+      const contextData = {
+        cycle_id: cycle.id,
+        primary_users: who,
+        frequency: when,
+        pain_level: howPainful,
+        current_workaround: currentSolution,
+        completed: complete && isContextComplete && hasInterviews,
+        updated_at: new Date().toISOString(),
+      };
 
-        // Check if context exists
-        const { data: existing } = await supabase
+      // Check if context exists
+      const { data: existing, error: fetchError } = await supabase
+        .from('contexts')
+        .select('id')
+        .eq('cycle_id', cycle.id)
+        .single();
+
+      // PGRST116 is "no rows found" which is expected for new contexts
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      let contextId: string;
+
+      if (existing) {
+        const { error: updateError } = await supabase
           .from('contexts')
-          .select('id')
-          .eq('cycle_id', cycle.id)
-          .single();
-
-        let contextId: string;
-
-        if (existing) {
-          await supabase.from('contexts').update(contextData).eq('id', existing.id);
-          contextId = existing.id;
-        } else {
-          const { data: newContext, error } = await supabase.from('contexts').insert({
+          .update(contextData)
+          .eq('id', existing.id);
+        if (updateError) throw updateError;
+        contextId = existing.id;
+      } else {
+        const { data: newContext, error: insertError } = await supabase
+          .from('contexts')
+          .insert({
             ...contextData,
             created_at: new Date().toISOString(),
-          }).select('id').single();
+          })
+          .select('id')
+          .single();
 
-          if (error) throw error;
-          contextId = newContext.id;
-        }
+        if (insertError) throw insertError;
+        if (!newContext) throw new Error('Failed to create context');
+        contextId = newContext.id;
+      }
 
-        // Save interviews - use context_id, not cycle_id
-        for (const interview of interviews) {
-          if (interview.personName.trim()) {
-            const interviewData = {
-              context_id: contextId,
-              interviewee_name: interview.personName,
-              interviewee_role: interview.role,
-              key_quote: interview.notes,
-              pain_level: interview.painLevel,
-            };
+      // Save interviews - use context_id, not cycle_id
+      for (const interview of interviews) {
+        if (interview.personName.trim()) {
+          const interviewData = {
+            context_id: contextId,
+            interviewee_name: interview.personName,
+            interviewee_role: interview.role,
+            key_quote: interview.notes,
+            pain_level: interview.painLevel,
+          };
 
-            const { data: existingInterview } = await supabase
+          const { data: existingInterview, error: interviewFetchError } = await supabase
+            .from('interviews')
+            .select('id')
+            .eq('context_id', contextId)
+            .eq('interviewee_name', interview.personName)
+            .single();
+
+          // PGRST116 means no rows found - that's expected for new interviews
+          if (interviewFetchError && interviewFetchError.code !== 'PGRST116') {
+            throw interviewFetchError;
+          }
+
+          if (existingInterview) {
+            const { error: updateInterviewError } = await supabase
               .from('interviews')
-              .select('id')
-              .eq('context_id', contextId)
-              .eq('interviewee_name', interview.personName)
-              .single();
-
-            if (existingInterview) {
-              await supabase.from('interviews').update(interviewData).eq('id', existingInterview.id);
-            } else {
-              await supabase.from('interviews').insert({
+              .update(interviewData)
+              .eq('id', existingInterview.id);
+            if (updateInterviewError) throw updateInterviewError;
+          } else {
+            const { error: insertInterviewError } = await supabase
+              .from('interviews')
+              .insert({
                 ...interviewData,
                 conducted_at: new Date().toISOString(),
               });
-            }
+            if (insertInterviewError) throw insertInterviewError;
           }
         }
+      }
 
-        // Update cycle step if completing
-        if (isContextComplete && hasInterviews) {
-          await supabase
-            .from('cycles')
-            .update({
-              current_step: 3,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', cycle.id);
-        }
+      // Update cycle step only if completing
+      if (complete && isContextComplete && hasInterviews) {
+        const { error: cycleError } = await supabase
+          .from('cycles')
+          .update({
+            current_step: 3,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', cycle.id);
+        if (cycleError) throw cycleError;
 
         toast.success('Context saved successfully!');
-
-        if (isContextComplete && hasInterviews) {
-          router.push(`/cycle/${cycle.id}/step/3`);
-        } else {
-          router.refresh();
-        }
-      } catch (error) {
-        console.error('Error saving context:', error);
-        toast.error('Failed to save. Please try again.');
+        router.push(`/cycle/${cycle.id}/step/3`);
+      } else {
+        toast.success('Context saved!');
+        router.refresh();
       }
-    });
+    } catch (error: unknown) {
+      console.error('Error saving context:', error);
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
@@ -414,12 +442,12 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
               Back to Context
             </Button>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={saveContext} disabled={isPending}>
+              <Button variant="outline" onClick={() => saveContext(false)} disabled={isPending}>
                 <Save className="mr-2 w-4 h-4" />
                 Save Draft
               </Button>
               <Button
-                onClick={saveContext}
+                onClick={() => saveContext(true)}
                 disabled={!isContextComplete || !hasInterviews || isPending}
                 className="bg-emerald-500 hover:bg-emerald-600 text-white"
               >
