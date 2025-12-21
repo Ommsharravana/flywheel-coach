@@ -29,9 +29,10 @@ interface HeaderUser {
 interface HeaderProps {
   user?: HeaderUser | null
   role?: 'learner' | 'facilitator' | 'admin' | 'superadmin' | null
+  isImpersonating?: boolean
 }
 
-export function Header({ user, role }: HeaderProps) {
+export function Header({ user, role, isImpersonating }: HeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -51,7 +52,7 @@ export function Header({ user, role }: HeaderProps) {
   const isAuthPage = pathname === '/login' || pathname === '/signup'
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-amber-100/20 bg-gradient-to-r from-stone-950/95 via-stone-900/95 to-stone-950/95 backdrop-blur-xl">
+    <header className={`fixed left-0 right-0 z-50 border-b border-amber-100/20 bg-gradient-to-r from-stone-950/95 via-stone-900/95 to-stone-950/95 backdrop-blur-xl ${isImpersonating ? 'top-10' : 'top-0'}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}

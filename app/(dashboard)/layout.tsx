@@ -96,7 +96,7 @@ export default async function DashboardLayout({
 
         <ImpersonationBanner />
         <EventBanner />
-        <Header user={displayUser} role={profile?.role} />
+        <Header user={displayUser} role={profile?.role} isImpersonating={impersonating} />
 
         <main className={`relative z-10 pb-8 px-4 sm:px-6 lg:px-8 ${topPadding}`}>
           <div className="mx-auto max-w-7xl">
