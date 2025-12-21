@@ -1797,9 +1797,37 @@ DEPLOYED to Vercel - UI polish complete
 **Current State:**
 DEPLOYED to Vercel - Bug fix pushed
 
-**Next Session Should:**
-1. Verify impersonation banner visibility on production
-2. Test end-to-end impersonation flow
+---
+
+## 2025-12-21 - Session 20
+
+**Worked On:** Bug Fix - Gemini API Model Not Found Error
+
+**Problem:**
+- Error: "models/gemini-1.5-flash is not found for API version v1beta"
+- `app/api/generate-prompts/route.ts` was using wrong credentials and outdated model
+
+**Root Cause:**
+1. Code used `session.provider_token` (Supabase Google OAuth token for identity)
+2. Should use stored Gemini CLI credentials from `provider_credentials` table
+3. Model name was outdated: `gemini-1.5-flash` → should be `gemini-2.0-flash`
+4. Was using raw fetch instead of the BYOS GeminiProvider class
+
+**Fix Applied:**
+1. Imported `GeminiProvider` and `getUserCredentials` from BYOS lib
+2. Changed from `session.provider_token` to `getUserCredentials(user.id, 'gemini')`
+3. Replaced raw fetch with `GeminiProvider.query()`
+4. Updated model to `gemini-2.0-flash`
+
+**Files Changed:**
+- `app/api/generate-prompts/route.ts` (+21 -37 lines)
+
+**Commit:** a0e9b5d
+
+**Current State:**
+DEPLOYED to Vercel - Gemini API fix pushed
+
+**Note:** User must have stored Gemini CLI credentials in Settings for this to work. The error message now properly guides users to set up credentials.
 
 ---
 
