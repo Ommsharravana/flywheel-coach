@@ -85,9 +85,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate credential type
-    if (!credentialType || !['token', 'oauth_json'].includes(credentialType)) {
+    if (!credentialType || !['token', 'oauth_json', 'api_key'].includes(credentialType)) {
       return NextResponse.json(
-        { error: 'Invalid credentialType. Must be "token" or "oauth_json"' },
+        { error: 'Invalid credentialType. Must be "token", "oauth_json", or "api_key"' },
         { status: 400 }
       );
     }
@@ -102,9 +102,17 @@ export async function POST(request: NextRequest) {
 
     if (provider === 'gemini') {
       try {
-        const geminiCreds = parseGeminiCredentials(
-          typeof credentials === 'string' ? credentials : JSON.stringify(credentials)
-        );
+        let geminiCreds: string | ReturnType<typeof parseGeminiCredentials>;
+
+        if (credentialType === 'api_key') {
+          // API key - just use the string directly
+          geminiCreds = credentials;
+        } else {
+          // OAuth JSON - parse it
+          geminiCreds = parseGeminiCredentials(
+            typeof credentials === 'string' ? credentials : JSON.stringify(credentials)
+          );
+        }
 
         // Test the credentials
         const geminiProvider = new GeminiProvider(geminiCreds);
@@ -112,13 +120,13 @@ export async function POST(request: NextRequest) {
 
         if (!isValid) {
           return NextResponse.json(
-            { error: 'Invalid Gemini credentials. Please check and try again.' },
+            { error: 'Invalid Gemini API key. Please check and try again.' },
             { status: 400 }
           );
         }
 
-        // Set expiry if available
-        if (geminiCreds.expiry) {
+        // Set expiry if available (only for OAuth)
+        if (typeof geminiCreds !== 'string' && geminiCreds.expiry) {
           expiresAt = geminiCreds.expiry;
         }
       } catch (error) {
@@ -243,6 +251,12 @@ export async function getUserCredentials(
   try {
     const decrypted = decrypt(data.credentials_encrypted);
 
+    // For API keys, return the string directly
+    if (provider === 'gemini' && data.credential_type === 'api_key') {
+      return decrypted;
+    }
+
+    // For OAuth JSON, parse it
     if (provider === 'gemini' && data.credential_type === 'oauth_json') {
       return parseGeminiCredentials(decrypted);
     }

@@ -3,7 +3,6 @@ import { PROMPT_TEMPLATES } from '@/lib/prompts/templates';
 import { createClient } from '@/lib/supabase/server';
 import { GeminiProvider } from '@/lib/byos';
 import { getUserCredentials } from '@/app/api/credentials/route';
-import type { GeminiOAuthCredentials } from '@/lib/byos';
 
 interface GeneratePromptsRequest {
   workflowType: string;
@@ -46,11 +45,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get stored Gemini credentials (from Gemini CLI)
+    // Get stored Gemini credentials (API key or OAuth)
     const geminiCredentials = await getUserCredentials(user.id, 'gemini');
     if (!geminiCredentials) {
       return NextResponse.json(
-        { error: 'Gemini credentials not configured. Please set up your Gemini CLI credentials in Settings.' },
+        { error: 'Gemini not connected. Please set up your Gemini API key in Settings.' },
         { status: 400 }
       );
     }
@@ -140,8 +139,8 @@ ${template.constraints.map(c => `- ${c}`).join('\n')}
 
 Generate the 9 prompts as a JSON array. Make them specific to "${body.problemStatement}" for "${body.primaryUsers}".`;
 
-    // Use GeminiProvider with stored CLI credentials
-    const geminiProvider = new GeminiProvider(geminiCredentials as GeminiOAuthCredentials);
+    // Use GeminiProvider with stored credentials (API key or OAuth)
+    const geminiProvider = new GeminiProvider(geminiCredentials);
 
     const response = await geminiProvider.query(userPrompt, {
       systemPrompt,

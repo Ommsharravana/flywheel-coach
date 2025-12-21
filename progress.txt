@@ -1831,3 +1831,39 @@ DEPLOYED to Vercel - Gemini API fix pushed
 
 ---
 
+
+---
+
+## 2025-12-22 - Session 21
+
+**Worked On:** Gemini Auth Simplification (CLI-only approach)
+
+**Context:**
+- User asked why Gemini setup requires a separate action when they already logged in with Google
+- Investigation revealed: OAuth approach doesn't work because `generative-language.retriever` is a sensitive scope requiring OAuth app verification (4-6 weeks)
+- Without verification, Google silently ignores the scope request and `provider_token` returns `null`
+
+**Decision:**
+Simplified to CLI-only approach - users authenticate Gemini via Gemini CLI locally and upload credentials.
+
+**Done:**
+- Removed Gemini scope from Google OAuth login (login/page.tsx)
+- Removed auto-credential-store logic from auth callback (callback/route.ts)
+- GeminiSetup.tsx now shows CLI instructions with JSON paste/upload UI
+- Committed: c2af830 "refactor: switch Gemini auth from OAuth to CLI credentials"
+- Pushed to main (auto-deploys to Vercel)
+
+**How Users Connect Gemini Now:**
+1. `npm install -g @google/gemini-cli`
+2. Run `gemini` (opens browser for Google auth)
+3. Go to Settings page in app
+4. Paste contents of `~/.gemini/oauth_creds.json` or upload file
+5. Click "Connect Gemini"
+
+**Why This Is Better:**
+- Works immediately (no OAuth app verification needed)
+- Users use their own Gemini subscription quota
+- Credentials are encrypted and stored securely
+
+**Current State:** Complete - deployed to production
+

@@ -18,16 +18,21 @@ const AVAILABLE_MODELS = [
 
 const DEFAULT_MODEL = 'gemini-2.0-flash';
 
+// Credentials can be either an API key (string) or OAuth credentials (object)
+type GeminiCredentials = string | GeminiOAuthCredentials;
+
 export class GeminiProvider implements Provider {
   readonly name = 'gemini';
-  private credentials: GeminiOAuthCredentials;
+  private credentials: GeminiCredentials;
+  private isApiKey: boolean;
   private onTokenRefresh?: (newCredentials: GeminiOAuthCredentials) => Promise<void>;
 
   constructor(
-    credentials: GeminiOAuthCredentials,
+    credentials: GeminiCredentials,
     onTokenRefresh?: (newCredentials: GeminiOAuthCredentials) => Promise<void>
   ) {
     this.credentials = credentials;
+    this.isApiKey = typeof credentials === 'string';
     this.onTokenRefresh = onTokenRefresh;
   }
 
@@ -35,11 +40,33 @@ export class GeminiProvider implements Provider {
     return AVAILABLE_MODELS;
   }
 
+  private getAuthConfig(baseUrl: string): { url: string; headers: Record<string, string> } {
+    if (this.isApiKey) {
+      // API key auth - append to URL
+      const separator = baseUrl.includes('?') ? '&' : '?';
+      return {
+        url: `${baseUrl}${separator}key=${this.credentials}`,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+    } else {
+      // OAuth auth - use Bearer token
+      const oauthCreds = this.credentials as GeminiOAuthCredentials;
+      return {
+        url: baseUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${oauthCreds.access_token}`,
+        },
+      };
+    }
+  }
+
   async query(prompt: string, options: QueryOptions = {}): Promise<ProviderResponse> {
     const model = options.model || DEFAULT_MODEL;
-    const accessToken = this.credentials.access_token;
-
-    const url = `${GEMINI_API_BASE}/models/${model}:generateContent`;
+    const baseUrl = `${GEMINI_API_BASE}/models/${model}:generateContent`;
+    const { url, headers } = this.getAuthConfig(baseUrl);
 
     const requestBody: Record<string, unknown> = {
       contents: [
@@ -61,10 +88,7 @@ export class GeminiProvider implements Provider {
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 
@@ -93,9 +117,8 @@ export class GeminiProvider implements Provider {
 
   async *queryStream(prompt: string, options: QueryOptions = {}): AsyncGenerator<string, void, unknown> {
     const model = options.model || DEFAULT_MODEL;
-    const accessToken = this.credentials.access_token;
-
-    const url = `${GEMINI_API_BASE}/models/${model}:streamGenerateContent?alt=sse`;
+    const baseUrl = `${GEMINI_API_BASE}/models/${model}:streamGenerateContent?alt=sse`;
+    const { url, headers } = this.getAuthConfig(baseUrl);
 
     const requestBody: Record<string, unknown> = {
       contents: [
@@ -117,10 +140,7 @@ export class GeminiProvider implements Provider {
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 

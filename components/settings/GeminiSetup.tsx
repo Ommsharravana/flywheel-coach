@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, CheckCircle2, AlertCircle, Loader2, Trash2, Zap, Upload, Terminal, FileJson } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Sparkles, CheckCircle2, AlertCircle, Loader2, Trash2, Zap, ExternalLink, Key } from 'lucide-react';
 
 interface ProviderInfo {
   id: string;
@@ -23,8 +23,7 @@ export function GeminiSetup() {
   const [existingCredential, setExistingCredential] = useState<ProviderInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [credentialsJson, setCredentialsJson] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [apiKey, setApiKey] = useState('');
 
   // Check for existing credentials on mount
   const checkExisting = async () => {
@@ -47,25 +46,17 @@ export function GeminiSetup() {
     checkExisting();
   }, []);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      setCredentialsJson(content);
-      setError(null);
-    };
-    reader.onerror = () => {
-      setError('Failed to read file');
-    };
-    reader.readAsText(file);
-  };
-
   const handleConnect = async () => {
-    if (!credentialsJson.trim()) {
-      setError('Please paste your credentials JSON or upload the file');
+    const trimmedKey = apiKey.trim();
+
+    if (!trimmedKey) {
+      setError('Please enter your API key');
+      return;
+    }
+
+    // Basic validation - Gemini API keys start with "AIza"
+    if (!trimmedKey.startsWith('AIza')) {
+      setError('Invalid API key format. Gemini API keys start with "AIza"');
       return;
     }
 
@@ -74,30 +65,21 @@ export function GeminiSetup() {
     setSuccess(null);
 
     try {
-      // Validate JSON format first
-      try {
-        JSON.parse(credentialsJson);
-      } catch {
-        setError('Invalid JSON format. Please paste the exact contents of your oauth_creds.json file.');
-        setIsSubmitting(false);
-        return;
-      }
-
       const res = await fetch('/api/credentials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           provider: 'gemini',
-          credentialType: 'oauth_json',
-          credentials: credentialsJson,
+          credentialType: 'api_key',
+          credentials: trimmedKey,
         }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        setSuccess('Gemini connected successfully! Your AI Coach now uses your Gemini subscription.');
-        setCredentialsJson('');
+        setSuccess('Gemini connected! Your AI Coach is now powered by your Gemini API.');
+        setApiKey('');
         await checkExisting();
       } else {
         setError(data.error || 'Failed to connect Gemini');
@@ -110,7 +92,7 @@ export function GeminiSetup() {
   };
 
   const handleRemove = async () => {
-    if (!confirm('Are you sure you want to disconnect your Gemini subscription?')) {
+    if (!confirm('Disconnect your Gemini API key?')) {
       return;
     }
 
@@ -146,10 +128,10 @@ export function GeminiSetup() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-stone-100">
           <Sparkles className="w-5 h-5 text-teal-400" />
-          AI Coach - Powered by Your Gemini Subscription
+          AI Coach - Powered by Gemini
         </CardTitle>
         <CardDescription>
-          Use your own Google Gemini subscription through the Gemini CLI
+          Connect your free Gemini API key to enable AI features
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -177,34 +159,27 @@ export function GeminiSetup() {
               <div className="flex-1">
                 <div className="font-medium text-stone-100">Gemini Connected</div>
                 <div className="text-sm text-stone-400">
-                  AI Coach is powered by your Google Gemini subscription
+                  AI Coach is ready to help you
                 </div>
               </div>
               <Badge className="bg-teal-500/20 text-teal-400 border-teal-500/30">
-                {existingCredential.isValid ? 'Active' : 'Expired'}
+                {existingCredential.isValid ? 'Active' : 'Check Key'}
               </Badge>
             </div>
 
-            {/* Info about BYOS */}
+            {/* Info about free tier */}
             <div className="p-4 bg-stone-800/50 rounded-lg">
               <div className="flex items-start gap-3">
                 <Zap className="w-5 h-5 text-amber-400 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-stone-200 mb-1">Bring Your Own Subscription</h4>
+                  <h4 className="font-medium text-stone-200 mb-1">Free Gemini API</h4>
                   <p className="text-sm text-stone-400">
-                    Your AI Coach uses your own Google Gemini subscription.
-                    No additional costs from us - you use your Google quota directly.
+                    Google offers Gemini API free forever with generous limits.
+                    Your API key is encrypted and stored securely.
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* Last validated */}
-            {existingCredential.lastValidated && (
-              <p className="text-xs text-stone-500">
-                Last verified: {new Date(existingCredential.lastValidated).toLocaleString()}
-              </p>
-            )}
 
             {/* Disconnect Button */}
             <Button
@@ -218,96 +193,54 @@ export function GeminiSetup() {
             </Button>
           </div>
         ) : (
-          /* Not Connected State - CLI Setup Instructions */
-          <div className="space-y-6">
-            {/* Step-by-step instructions */}
-            <div className="p-4 bg-stone-800/50 rounded-lg">
-              <h4 className="font-medium text-stone-200 mb-3 flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-amber-400" />
-                Setup Instructions
+          /* Not Connected State - Simple API Key Setup */
+          <div className="space-y-5">
+            {/* Step 1: Get API Key */}
+            <div className="p-4 bg-gradient-to-r from-blue-500/10 to-teal-500/10 border border-blue-500/20 rounded-lg">
+              <h4 className="font-medium text-stone-200 mb-2 flex items-center gap-2">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 text-sm font-bold">1</span>
+                Get your free API key (takes 30 seconds)
               </h4>
-              <ol className="space-y-3 text-sm text-stone-400">
-                <li className="flex gap-2">
-                  <span className="text-amber-400 font-mono">1.</span>
-                  <div>
-                    <span>Install Gemini CLI:</span>
-                    <code className="block mt-1 p-2 bg-stone-900 rounded text-teal-400 text-xs">
-                      npm install -g @google/gemini-cli
-                    </code>
-                  </div>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-amber-400 font-mono">2.</span>
-                  <div>
-                    <span>Run Gemini to authenticate (opens browser):</span>
-                    <code className="block mt-1 p-2 bg-stone-900 rounded text-teal-400 text-xs">
-                      gemini
-                    </code>
-                  </div>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-amber-400 font-mono">3.</span>
-                  <div>
-                    <span>Find your credentials file:</span>
-                    <code className="block mt-1 p-2 bg-stone-900 rounded text-teal-400 text-xs">
-                      ~/.gemini/oauth_creds.json
-                    </code>
-                    <span className="text-xs text-stone-500 block mt-1">
-                      On Windows: %USERPROFILE%\.gemini\oauth_creds.json
-                    </span>
-                  </div>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-amber-400 font-mono">4.</span>
-                  <span>Paste the file contents below or upload the file:</span>
-                </li>
-              </ol>
+              <p className="text-sm text-stone-400 mb-3">
+                Sign in with your Google account and click &quot;Create API Key&quot;
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('https://aistudio.google.com/app/apikey', '_blank')}
+                className="text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Open Google AI Studio
+              </Button>
             </div>
 
-            {/* Credential Input */}
+            {/* Step 2: Paste API Key */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <FileJson className="w-4 h-4 text-stone-400" />
-                <label className="text-sm font-medium text-stone-300">
-                  Credentials JSON
-                </label>
-              </div>
+              <h4 className="font-medium text-stone-200 flex items-center gap-2">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 text-sm font-bold">2</span>
+                Paste your API key here
+              </h4>
 
-              <Textarea
-                placeholder='Paste contents of ~/.gemini/oauth_creds.json here...'
-                value={credentialsJson}
-                onChange={(e) => {
-                  setCredentialsJson(e.target.value);
-                  setError(null);
-                }}
-                className="min-h-[120px] font-mono text-xs bg-stone-900 border-stone-700 text-stone-300 placeholder:text-stone-600"
-              />
-
-              {/* File Upload */}
-              <div className="flex gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json"
-                  onChange={handleFileUpload}
-                  className="hidden"
+              <div className="relative">
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
+                <Input
+                  type="password"
+                  placeholder="AIza..."
+                  value={apiKey}
+                  onChange={(e) => {
+                    setApiKey(e.target.value);
+                    setError(null);
+                  }}
+                  className="pl-10 bg-stone-900 border-stone-700 text-stone-300 placeholder:text-stone-600"
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-stone-400 border-stone-600 hover:bg-stone-800"
-                >
-                  <Upload className="w-4 h-4 mr-1" />
-                  Upload JSON File
-                </Button>
               </div>
             </div>
 
             {/* Connect Button */}
             <Button
               onClick={handleConnect}
-              disabled={isSubmitting || !credentialsJson.trim()}
+              disabled={isSubmitting || !apiKey.trim()}
               className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white disabled:opacity-50"
             >
               {isSubmitting ? (
@@ -324,7 +257,7 @@ export function GeminiSetup() {
             </Button>
 
             <p className="text-xs text-stone-500 text-center">
-              Your credentials are encrypted and stored securely
+              Your API key is encrypted and never shared
             </p>
           </div>
         )}

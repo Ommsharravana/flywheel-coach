@@ -4,7 +4,7 @@
       "Read(**)",
       "Write(**)",
       "Edit(**)",
-      "Bash(*)",
+      "Bash",
       "Glob(**)",
       "Grep(**)",
       "Skill(*)"
