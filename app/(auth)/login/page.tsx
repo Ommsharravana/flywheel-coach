@@ -22,16 +22,10 @@ function LoginContent() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
-      // Request Gemini API scope for AI Coach powered by user's own subscription
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: 'https://www.googleapis.com/auth/generative-language.retriever',
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
         },
       })
 
