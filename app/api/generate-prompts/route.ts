@@ -46,12 +46,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Get stored Gemini credentials (API key or OAuth)
-    const geminiCredentials = await getUserCredentials(user.id, 'gemini');
+    // Falls back to platform API key if user hasn't configured their own
+    let geminiCredentials = await getUserCredentials(user.id, 'gemini');
+
     if (!geminiCredentials) {
-      return NextResponse.json(
-        { error: 'Gemini not connected. Please set up your Gemini API key in Settings.' },
-        { status: 400 }
-      );
+      // Use platform's fallback API key (free tier for all users)
+      const fallbackApiKey = process.env.GEMINI_API_KEY;
+      if (!fallbackApiKey) {
+        return NextResponse.json(
+          { error: 'AI features not configured. Please contact administrator.' },
+          { status: 500 }
+        );
+      }
+      geminiCredentials = fallbackApiKey;
     }
 
     const body: GeneratePromptsRequest = await request.json();
