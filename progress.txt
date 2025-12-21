@@ -1772,3 +1772,34 @@ DEPLOYED to Vercel - UI polish complete
 
 ---
 
+## 2025-12-21 - Session 19
+
+**Worked On:** Bug Fix - ImpersonationBanner Hidden Behind Header
+
+**Problem:**
+- ImpersonationBanner (z-[60], fixed top-0) was hidden behind Header (z-50, fixed top-0)
+- Both elements positioned at same top-0, header's backdrop-blur obscured banner
+- Duplicate banner renders in both root and dashboard layouts
+
+**Fix Applied:**
+1. Added `isImpersonating` prop to Header component
+2. Header now uses conditional positioning: `top-10` when impersonating, `top-0` otherwise
+3. Removed duplicate ImpersonationBanner from `app/layout.tsx` (kept in dashboard layout only)
+4. Dashboard layout passes `isImpersonating={impersonating}` to Header
+
+**Files Changed:**
+- `components/shared/Header.tsx` - Added prop and conditional class
+- `app/(dashboard)/layout.tsx` - Pass isImpersonating prop
+- `app/layout.tsx` - Removed duplicate banner import/render
+
+**Commit:** 87d6e07
+
+**Current State:**
+DEPLOYED to Vercel - Bug fix pushed
+
+**Next Session Should:**
+1. Verify impersonation banner visibility on production
+2. Test end-to-end impersonation flow
+
+---
+
