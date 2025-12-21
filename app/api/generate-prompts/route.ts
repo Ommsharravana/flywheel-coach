@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PROMPT_TEMPLATES } from '@/lib/prompts/templates';
 import { createClient } from '@/lib/supabase/server';
+import { GeminiProvider } from '@/lib/byos';
+import { getUserCredentials } from '@/app/api/credentials/route';
+import type { GeminiOAuthCredentials } from '@/lib/byos';
 
 interface GeneratePromptsRequest {
   workflowType: string;
@@ -34,20 +37,20 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Get current session with OAuth provider token
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json(
-        { error: 'Unauthorized. Please sign in with Google.' },
+        { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
       );
     }
 
-    // Get Google OAuth access token from session
-    const providerToken = session.provider_token;
-    if (!providerToken) {
+    // Get stored Gemini credentials (from Gemini CLI)
+    const geminiCredentials = await getUserCredentials(user.id, 'gemini');
+    if (!geminiCredentials) {
       return NextResponse.json(
-        { error: 'Google OAuth token not available. Please sign in with Google to use AI features.' },
+        { error: 'Gemini credentials not configured. Please set up your Gemini CLI credentials in Settings.' },
         { status: 400 }
       );
     }
@@ -137,39 +140,20 @@ ${template.constraints.map(c => `- ${c}`).join('\n')}
 
 Generate the 9 prompts as a JSON array. Make them specific to "${body.problemStatement}" for "${body.primaryUsers}".`;
 
-    // Call Gemini API with OAuth token
-    const geminiResponse = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${providerToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 8192,
-            responseMimeType: 'application/json',
-          },
-        }),
-      }
-    );
+    // Use GeminiProvider with stored CLI credentials
+    const geminiProvider = new GeminiProvider(geminiCredentials as GeminiOAuthCredentials);
 
-    if (!geminiResponse.ok) {
-      const errorData = await geminiResponse.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `Gemini API error: ${geminiResponse.status}`);
-    }
+    const response = await geminiProvider.query(userPrompt, {
+      systemPrompt,
+      model: 'gemini-2.0-flash',
+      temperature: 0.7,
+      maxTokens: 8192,
+    });
 
-    const result = await geminiResponse.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const text = response.content;
 
     if (!text) {
-      throw new Error('Empty response from Gemini API');
+      throw new Error('Empty response from Gemini');
     }
 
     // Parse the JSON response
