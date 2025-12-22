@@ -17,8 +17,17 @@ An AI-guided practice platform for the **Problem-to-Impact Flywheel** - teaching
 
 - **Framework:** Next.js 14 (App Router)
 - **Database:** Supabase (PostgreSQL, Auth)
-- **AI:** Claude API (Anthropic)
+- **AI:** Gemini API (Google) - BYOS pattern
 - **Styling:** Tailwind CSS + shadcn/ui
+
+## AI: Bring Your Own Subscription (BYOS)
+
+Users connect their Google account to enable AI features. No platform API keys needed - all AI usage is powered by the user's own Google/Gemini subscription.
+
+1. User clicks "Sign in with Google" in Settings
+2. Google OAuth grants Gemini API access
+3. Credentials are encrypted and stored securely
+4. AI Coach and prompt generation use user's subscription
 
 ## Getting Started
 
@@ -26,7 +35,7 @@ An AI-guided practice platform for the **Problem-to-Impact Flywheel** - teaching
 
 - Node.js 18+
 - Docker (for local Supabase)
-- Anthropic API key
+- Google Cloud project with Gemini API enabled (for OAuth setup)
 
 ### Local Development
 
@@ -39,7 +48,7 @@ npm install
 # Start local Supabase
 supabase start
 
-# Copy env and add your API keys
+# Copy env and configure
 cp .env.local.example .env.local
 
 # Run dev server
@@ -54,7 +63,11 @@ Open [http://localhost:3000](http://localhost:3000)
 |----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
-| `ANTHROPIC_API_KEY` | Claude API key (server-side only) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side) |
+| `CREDENTIAL_ENCRYPTION_KEY` | 32-byte hex key for AES-256 encryption |
+| `GOOGLE_GEMINI_CLIENT_ID` | Google OAuth client ID for Gemini |
+| `GOOGLE_GEMINI_CLIENT_SECRET` | Google OAuth client secret |
+| `NEXT_PUBLIC_APP_URL` | Your app URL (e.g., http://localhost:3000) |
 
 ## Deployment
 
@@ -65,6 +78,7 @@ Open [http://localhost:3000](http://localhost:3000)
 3. Deploy to Vercel: `vercel`
 4. Set environment variables in Vercel Dashboard
 5. Configure auth redirect URLs in Supabase
+6. Set up Google Cloud OAuth credentials for Gemini API
 
 ## Project Structure
 
@@ -72,17 +86,21 @@ Open [http://localhost:3000](http://localhost:3000)
 app/
   (auth)/          # Login/Signup pages
   api/coach/       # AI Coach API endpoint
+  api/auth/gemini/ # Gemini OAuth flow
   cycle/           # Cycle pages (view, step navigation)
   dashboard/       # Main dashboard
+  settings/        # User settings (Gemini setup)
   portfolio/       # Completed cycles showcase
 
 components/
   flywheel/        # FlywheelNavigator, FlywheelCard
-  shared/          # Header, Logo
+  settings/        # GeminiSetup (Google OAuth)
+  coach/           # AICoachChat
   steps/           # All 8 step components
   ui/              # shadcn/ui components
 
 lib/
+  byos/            # BYOS provider system (encryption, Gemini)
   supabase/        # Database client helpers
   types/           # TypeScript types
 ```
@@ -90,7 +108,8 @@ lib/
 ## Features
 
 - Complete 8-step flywheel methodology
-- AI Coach with step-specific guidance
+- AI Coach with step-specific guidance (powered by user's Gemini subscription)
 - Progress tracking and persistence
 - Portfolio of completed cycles
 - Impact measurement and analytics
+- BYOS: No platform AI costs - users bring their own Google subscription

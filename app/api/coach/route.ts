@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import { Cycle, FLYWHEEL_STEPS } from '@/lib/types/cycle';
 import {
   APPATHON_COACH_CONTEXT,
@@ -10,11 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 import { decrypt, GeminiProvider, parseGeminiCredentials } from '@/lib/byos';
 import type { GeminiOAuthCredentials } from '@/lib/byos';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-// Helper to get user's Gemini credentials if configured
+// Helper to get user's Gemini credentials
 async function getUserGeminiCredentials(userId: string): Promise<GeminiOAuthCredentials | null> {
   try {
     const supabase = await createClient();
@@ -51,21 +46,33 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    // User must be logged in
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Please sign in to use AI features' },
+        { status: 401 }
+      );
+    }
+
+    // Get user's Gemini credentials
+    const geminiCredentials = await getUserGeminiCredentials(user.id);
+
+    // BYOS: User must have Gemini connected
+    if (!geminiCredentials) {
+      return NextResponse.json(
+        {
+          error: 'Gemini not connected',
+          message: 'Please connect your Google account in Settings to enable AI features.',
+          requiresSetup: true
+        },
+        { status: 401 }
+      );
+    }
+
     const body: CoachRequest = await request.json();
     const { messages, cycle, currentStep, isAppathonMode } = body;
 
     const stepInfo = FLYWHEEL_STEPS[currentStep - 1];
-
-    // Check if user has Gemini credentials configured
-    let useGemini = false;
-    let geminiCredentials: GeminiOAuthCredentials | null = null;
-
-    if (user) {
-      geminiCredentials = await getUserGeminiCredentials(user.id);
-      if (geminiCredentials) {
-        useGemini = true;
-      }
-    }
 
     // Build context about current state
     let contextInfo = `
@@ -171,64 +178,43 @@ ${contextInfo}
 
 Help the user succeed at their current step. If they're stuck, help them move forward. If they're confused, clarify. If they need encouragement, provide it. Always relate your advice back to the flywheel methodology.${isAppathonMode ? ' Remember: The user is in Appathon 2.0 competition mode. Prioritize advice that helps them win: focus on judging criteria, time constraints, and demo-ready deliverables.' : ''}`;
 
-    let message: string;
-    let provider: 'gemini' | 'anthropic' = 'anthropic';
+    // Use Gemini with user's credentials
+    const geminiProvider = new GeminiProvider(geminiCredentials);
 
-    if (useGemini && geminiCredentials) {
-      // Use Gemini with user's credentials
-      try {
-        const geminiProvider = new GeminiProvider(geminiCredentials);
+    // Combine conversation history for Gemini
+    const conversationHistory = messages
+      .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+      .join('\n\n');
 
-        // Combine system prompt with conversation history for Gemini
-        const conversationHistory = messages
-          .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-          .join('\n\n');
+    const fullPrompt = `${conversationHistory}`;
 
-        const fullPrompt = `${conversationHistory}`;
+    const response = await geminiProvider.query(fullPrompt, {
+      systemPrompt,
+      model: 'gemini-2.0-flash',
+      maxTokens: 1024,
+      temperature: 0.7,
+    });
 
-        const response = await geminiProvider.query(fullPrompt, {
-          systemPrompt,
-          model: 'gemini-2.0-flash',
-          maxTokens: 1024,
-          temperature: 0.7,
-        });
-
-        message = response.content;
-        provider = 'gemini';
-      } catch (geminiError) {
-        console.error('Gemini error, falling back to Anthropic:', geminiError);
-        // Fall back to Anthropic if Gemini fails
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-        });
-        const textContent = response.content.find((c) => c.type === 'text');
-        message = textContent?.text || 'I apologize, but I could not generate a response.';
-      }
-    } else {
-      // Use Anthropic (default)
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: messages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        })),
-      });
-
-      const textContent = response.content.find((c) => c.type === 'text');
-      message = textContent?.text || 'I apologize, but I could not generate a response.';
-    }
-
-    return NextResponse.json({ message, provider });
+    return NextResponse.json({
+      message: response.content,
+      provider: 'gemini'
+    });
   } catch (error) {
     console.error('Coach API error:', error);
+
+    // Check if it's a credential error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('401') || errorMessage.includes('403') || errorMessage.includes('Invalid')) {
+      return NextResponse.json(
+        {
+          error: 'Gemini credentials expired or invalid',
+          message: 'Please reconnect your Google account in Settings.',
+          requiresSetup: true
+        },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to generate response' },
       { status: 500 }

@@ -45,20 +45,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get stored Gemini credentials (API key or OAuth)
-    // Falls back to platform API key if user hasn't configured their own
-    let geminiCredentials = await getUserCredentials(user.id, 'gemini');
+    // Get stored Gemini credentials (OAuth only - BYOS pattern)
+    const geminiCredentials = await getUserCredentials(user.id, 'gemini');
 
+    // BYOS: User must have Gemini connected - no platform fallback
     if (!geminiCredentials) {
-      // Use platform's fallback API key (free tier for all users)
-      const fallbackApiKey = process.env.GEMINI_API_KEY;
-      if (!fallbackApiKey) {
-        return NextResponse.json(
-          { error: 'AI features not configured. Please contact administrator.' },
-          { status: 500 }
-        );
-      }
-      geminiCredentials = fallbackApiKey;
+      return NextResponse.json(
+        {
+          error: 'Gemini not connected',
+          message: 'Please connect your Google account in Settings to enable AI features.',
+          requiresSetup: true
+        },
+        { status: 401 }
+      );
     }
 
     const body: GeneratePromptsRequest = await request.json();
@@ -146,7 +145,7 @@ ${template.constraints.map(c => `- ${c}`).join('\n')}
 
 Generate the 9 prompts as a JSON array. Make them specific to "${body.problemStatement}" for "${body.primaryUsers}".`;
 
-    // Use GeminiProvider with stored credentials (API key or OAuth)
+    // Use GeminiProvider with user's OAuth credentials
     const geminiProvider = new GeminiProvider(geminiCredentials);
 
     const response = await geminiProvider.query(userPrompt, {
@@ -179,6 +178,20 @@ Generate the 9 prompts as a JSON array. Make them specific to "${body.problemSta
     return NextResponse.json({ prompts });
   } catch (error) {
     console.error('Gemini API error:', error);
+
+    // Check if it's a credential error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('401') || errorMessage.includes('403') || errorMessage.includes('Invalid')) {
+      return NextResponse.json(
+        {
+          error: 'Gemini credentials expired or invalid',
+          message: 'Please reconnect your Google account in Settings.',
+          requiresSetup: true
+        },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to generate prompts' },
       { status: 500 }

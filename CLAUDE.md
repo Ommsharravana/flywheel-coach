@@ -32,8 +32,19 @@ An AI-guided practice platform for the Problem-to-Impact Flywheel - teaching use
 ## Tech Stack
 - Next.js 14 (App Router)
 - Supabase (PostgreSQL, Auth, Edge Functions)
-- Claude API (Anthropic)
+- Gemini API (Google) - BYOS pattern (users bring their own subscription)
 - Tailwind CSS + shadcn/ui
+
+## AI Architecture: BYOS (Bring Your Own Subscription)
+Users must connect their Google account to enable AI features. The app uses their Gemini subscription - no platform API keys needed.
+
+**How it works:**
+1. User clicks "Sign in with Google" in Settings
+2. Google OAuth flow grants Gemini API access
+3. Credentials are encrypted and stored in Supabase
+4. All AI features use user's Google subscription
+
+**No fallback:** AI features are blocked until user connects Google account.
 
 ## Key Files
 - `/app/` - Next.js app router pages
@@ -50,7 +61,13 @@ Schema in `/supabase/migrations/001_initial_schema.sql`
 Copy `.env.local.example` to `.env.local` and fill in:
 - NEXT_PUBLIC_SUPABASE_URL
 - NEXT_PUBLIC_SUPABASE_ANON_KEY
-- ANTHROPIC_API_KEY
+- SUPABASE_SERVICE_ROLE_KEY
+- CREDENTIAL_ENCRYPTION_KEY (32 bytes hex for AES-256 encryption)
+- GOOGLE_GEMINI_CLIENT_ID (for Google OAuth)
+- GOOGLE_GEMINI_CLIENT_SECRET (for Google OAuth)
+- NEXT_PUBLIC_APP_URL (your app URL, e.g., http://localhost:3000)
+
+**Note:** No ANTHROPIC_API_KEY or GEMINI_API_KEY needed - users bring their own via OAuth.
 
 ### Local Development (Docker)
 ```bash
@@ -76,7 +93,11 @@ vercel
 # Set environment variables in Vercel Dashboard:
 # - NEXT_PUBLIC_SUPABASE_URL
 # - NEXT_PUBLIC_SUPABASE_ANON_KEY
-# - ANTHROPIC_API_KEY
+# - SUPABASE_SERVICE_ROLE_KEY
+# - CREDENTIAL_ENCRYPTION_KEY
+# - GOOGLE_GEMINI_CLIENT_ID
+# - GOOGLE_GEMINI_CLIENT_SECRET
+# - NEXT_PUBLIC_APP_URL (your Vercel domain)
 ```
 
 **3. Configure Auth:**

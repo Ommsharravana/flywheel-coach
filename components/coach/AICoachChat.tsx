@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect, useTransition, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Cycle, FLYWHEEL_STEPS } from '@/lib/types/cycle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, Loader2, Send, Sparkles, User, X, Trophy, Zap } from 'lucide-react';
+import { Bot, Loader2, Send, Sparkles, User, X, Trophy, Zap, AlertCircle, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { useAppathonMode } from '@/lib/context/EventContext';
@@ -25,13 +26,15 @@ interface AICoachChatProps {
 }
 
 export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChatProps) {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const [isStreaming, setIsStreaming] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentProvider, setCurrentProvider] = useState<'gemini' | 'anthropic' | null>(null);
+  const [hasGeminiConnected, setHasGeminiConnected] = useState<boolean | null>(null);
+  const [needsReconnect, setNeedsReconnect] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const supabase = createClient();
@@ -46,14 +49,22 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
       if (res.ok) {
         const data = await res.json();
         const geminiCred = data.providers?.find((p: { provider: string; isValid: boolean }) =>
-          p.provider === 'gemini' && p.isValid
+          p.provider === 'gemini'
         );
         if (geminiCred) {
-          setCurrentProvider('gemini');
+          setHasGeminiConnected(true);
+          if (!geminiCred.isValid) {
+            setNeedsReconnect(true);
+          }
+        } else {
+          setHasGeminiConnected(false);
         }
+      } else {
+        setHasGeminiConnected(false);
       }
     } catch (err) {
       console.error('Error checking provider:', err);
+      setHasGeminiConnected(false);
     }
   }, []);
 
@@ -170,11 +181,17 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
 
   // Load conversation and check provider when opened
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      loadConversation();
+    if (isOpen) {
       checkProvider();
     }
-  }, [isOpen, loadConversation, checkProvider, messages.length]);
+  }, [isOpen, checkProvider]);
+
+  // Load conversation only after we confirm Gemini is connected
+  useEffect(() => {
+    if (isOpen && hasGeminiConnected === true && messages.length === 0) {
+      loadConversation();
+    }
+  }, [isOpen, hasGeminiConnected, loadConversation, messages.length]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -183,10 +200,10 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
 
   // Focus input when opened
   useEffect(() => {
-    if (isOpen && !isLoading) {
+    if (isOpen && !isLoading && hasGeminiConnected) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, isLoading]);
+  }, [isOpen, isLoading, hasGeminiConnected]);
 
   const getStepGreeting = (step: number, cycle: Cycle): string => {
     switch (step) {
@@ -256,15 +273,21 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response');
-      }
-
       const data = await response.json();
 
-      // Track which provider was used
-      if (data.provider) {
-        setCurrentProvider(data.provider);
+      // Check if we need to reconnect
+      if (!response.ok && data.requiresSetup) {
+        setNeedsReconnect(true);
+        const errorContent = 'Your Google connection needs to be refreshed. Please go to Settings to reconnect.';
+        const errorMessage = await saveMessage(conversationId, 'assistant', errorContent);
+        if (errorMessage) {
+          setMessages((prev) => [...prev, errorMessage]);
+        }
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get response');
       }
 
       // Save assistant message to DB
@@ -367,7 +390,94 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
     }
   };
 
+  const goToSettings = () => {
+    onClose();
+    router.push('/settings');
+  };
+
   if (!isOpen) return null;
+
+  // Credential gate: Show setup prompt if Gemini is not connected
+  if (hasGeminiConnected === false || needsReconnect) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="fixed bottom-4 right-4 w-96 max-w-[calc(100vw-2rem)] z-50"
+        >
+          <Card className="glass-card border-amber-500/30 shadow-2xl">
+            <CardHeader className="pb-3 border-b border-stone-800">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg text-amber-400 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  AI Coach
+                </CardTitle>
+                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-6">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto">
+                  <AlertCircle className="w-8 h-8 text-amber-400" />
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-stone-100 mb-2">
+                    {needsReconnect ? 'Reconnect Google Account' : 'Connect Google to Enable AI'}
+                  </h3>
+                  <p className="text-sm text-stone-400">
+                    {needsReconnect
+                      ? 'Your Google connection expired. Please reconnect to continue using AI features.'
+                      : 'Sign in with Google to use the AI Coach. Your subscription powers all AI features.'}
+                  </p>
+                </div>
+
+                <Button
+                  onClick={goToSettings}
+                  className="w-full bg-white hover:bg-gray-100 text-gray-700 border border-gray-300"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Go to Settings
+                </Button>
+
+                <p className="text-xs text-stone-500">
+                  We only request permission to use Gemini AI. We never access your email or other data.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
+  // Still checking credentials
+  if (hasGeminiConnected === null) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="fixed bottom-4 right-4 w-96 max-w-[calc(100vw-2rem)] z-50"
+        >
+          <Card className="glass-card border-amber-500/30 shadow-2xl">
+            <CardContent className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-amber-400 mx-auto mb-2" />
+                <p className="text-sm text-stone-400">Checking AI access...</p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   return (
     <AnimatePresence>
@@ -398,12 +508,10 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
               </div>
             </div>
             {/* Provider indicator */}
-            {currentProvider === 'gemini' && (
-              <div className="flex items-center gap-1.5 mt-2 text-xs text-teal-400">
-                <Zap className="w-3 h-3" />
-                <span>Powered by your Gemini subscription</span>
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 mt-2 text-xs text-teal-400">
+              <Zap className="w-3 h-3" />
+              <span>Powered by your Google subscription</span>
+            </div>
           </CardHeader>
 
           <CardContent className="p-0">
