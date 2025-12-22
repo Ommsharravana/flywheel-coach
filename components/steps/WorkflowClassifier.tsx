@@ -102,22 +102,40 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
   const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
 
-  const [selectedType, setSelectedType] = useState<WorkflowType | null>(
-    cycle.workflowClassification?.selectedType || null
-  );
+  // Support multi-select with backward compatibility for single selection
+  const [selectedTypes, setSelectedTypes] = useState<WorkflowType[]>(() => {
+    if (cycle.workflowClassification?.selectedTypes?.length) {
+      return cycle.workflowClassification.selectedTypes;
+    }
+    // Backward compat: convert single selectedType to array
+    if (cycle.workflowClassification?.selectedType) {
+      return [cycle.workflowClassification.selectedType];
+    }
+    return [];
+  });
   const [reasoning, setReasoning] = useState(cycle.workflowClassification?.reasoning || '');
   const [customDescription, setCustomDescription] = useState(cycle.workflowClassification?.customDescription || '');
   const [showDetails, setShowDetails] = useState<WorkflowType | null>(null);
 
-  const selectedWorkflow = WORKFLOW_TYPES.find((w) => w.id === selectedType);
+  // Toggle workflow selection (add if not present, remove if present)
+  const toggleWorkflow = (id: WorkflowType) => {
+    setSelectedTypes(prev =>
+      prev.includes(id)
+        ? prev.filter(t => t !== id)
+        : [...prev, id]
+    );
+  };
+
+  // Get all selected workflows for display
+  const selectedWorkflows = WORKFLOW_TYPES.filter((w) => selectedTypes.includes(w.id));
 
   const saveWorkflow = async (complete = false) => {
-    if (!selectedType) {
-      toast.error('Please select a workflow type.');
+    if (selectedTypes.length === 0) {
+      toast.error('Please select at least one workflow type.');
       return;
     }
 
-    if (selectedType === 'custom' && !customDescription.trim()) {
+    if (selectedTypes.includes('custom') && !customDescription.trim()) {
       toast.error('Please describe your custom workflow.');
       return;
     }
@@ -140,15 +158,18 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
         'custom': 'GENERATION', // Default to GENERATION for custom workflows
       };
 
-      const dbWorkflowType = typeMapping[selectedType] || 'GENERATION';
+      // Use first selected type as primary for DB (backward compat)
+      const primaryType = selectedTypes[0];
+      const dbWorkflowType = typeMapping[primaryType] || 'GENERATION';
 
       const workflowData = {
         cycle_id: cycle.id,
         workflow_type: dbWorkflowType,
         classification_path: {
-          original_type: selectedType,
+          original_type: primaryType, // Primary for backward compat
+          original_types: selectedTypes, // All selected types
           reasoning,
-          custom_description: selectedType === 'custom' ? customDescription : undefined,
+          custom_description: selectedTypes.includes('custom') ? customDescription : undefined,
         },
         confidence: reasoning.trim().length > 50 ? 'high' : reasoning.trim().length > 20 ? 'medium' : 'low',
         completed: complete,
@@ -227,63 +248,79 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <p className="text-sm text-amber-400/80 mb-3">
+            You can select multiple workflow types to create a hybrid solution.
+          </p>
           <div className="grid md:grid-cols-2 gap-3">
-            {WORKFLOW_TYPES.map((workflow) => (
-              <motion.button
-                key={workflow.id}
-                onClick={() => setSelectedType(workflow.id)}
-                onMouseEnter={() => setShowDetails(workflow.id)}
-                onMouseLeave={() => setShowDetails(null)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-4 rounded-xl text-left transition-all ${
-                  selectedType === workflow.id
-                    ? 'bg-amber-500/20 border-2 border-amber-500 ring-2 ring-amber-500/20'
-                    : 'bg-stone-800/50 border border-stone-700 hover:border-stone-600'
-                }`}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-2xl">{workflow.icon}</span>
-                  <span className="font-medium text-stone-200">{workflow.name}</span>
-                  {selectedType === workflow.id && (
-                    <Check className="w-5 h-5 text-amber-400 ml-auto" />
-                  )}
-                </div>
-                <p className="text-sm text-stone-400">{workflow.description}</p>
+            {WORKFLOW_TYPES.map((workflow) => {
+              const isSelected = selectedTypes.includes(workflow.id);
+              return (
+                <motion.button
+                  key={workflow.id}
+                  onClick={() => toggleWorkflow(workflow.id)}
+                  onMouseEnter={() => setShowDetails(workflow.id)}
+                  onMouseLeave={() => setShowDetails(null)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`p-4 rounded-xl text-left transition-all ${
+                    isSelected
+                      ? 'bg-amber-500/20 border-2 border-amber-500 ring-2 ring-amber-500/20'
+                      : 'bg-stone-800/50 border border-stone-700 hover:border-stone-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl">{workflow.icon}</span>
+                    <span className="font-medium text-stone-200">{workflow.name}</span>
+                    {isSelected && (
+                      <Check className="w-5 h-5 text-amber-400 ml-auto" />
+                    )}
+                  </div>
+                  <p className="text-sm text-stone-400">{workflow.description}</p>
 
-                {showDetails === workflow.id && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-3 pt-3 border-t border-stone-700"
-                  >
-                    <p className="text-xs text-stone-500 mb-1">Examples:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {workflow.examples.map((ex) => (
-                        <Badge key={ex} variant="outline" className="text-xs">
-                          {ex}
-                        </Badge>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </motion.button>
-            ))}
+                  {showDetails === workflow.id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-3 pt-3 border-t border-stone-700"
+                    >
+                      <p className="text-xs text-stone-500 mb-1">Examples:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {workflow.examples.map((ex) => (
+                          <Badge key={ex} variant="outline" className="text-xs">
+                            {ex}
+                          </Badge>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </motion.button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
       {/* Selected workflow details */}
-      {selectedWorkflow && (
+      {selectedWorkflows.length > 0 && (
         <Card className="glass-card border-emerald-500/30">
           <CardHeader>
-            <CardTitle className="text-lg text-emerald-400 flex items-center gap-2">
-              <span className="text-2xl">{selectedWorkflow.icon}</span>
-              {selectedWorkflow.name} Selected
+            <CardTitle className="text-lg text-emerald-400 flex items-center gap-2 flex-wrap">
+              {selectedWorkflows.map((w, i) => (
+                <span key={w.id} className="flex items-center gap-1">
+                  <span className="text-2xl">{w.icon}</span>
+                  <span>{w.name}</span>
+                  {i < selectedWorkflows.length - 1 && <span className="text-stone-500 mx-1">+</span>}
+                </span>
+              ))}
             </CardTitle>
+            {selectedWorkflows.length > 1 && (
+              <p className="text-sm text-stone-400 mt-1">
+                Hybrid workflow combining {selectedWorkflows.length} types
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
-            {selectedType === 'custom' && (
+            {selectedTypes.includes('custom') && (
               <div>
                 <Label className="text-stone-300 mb-2 block">
                   Describe your custom workflow <span className="text-red-400">*</span>
@@ -301,48 +338,94 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
             )}
             <div>
               <Label className="text-stone-300 mb-2 block">
-                Why does this workflow fit your problem?
+                Why {selectedWorkflows.length > 1 ? 'do these workflows fit' : 'does this workflow fit'} your problem?
               </Label>
               <Textarea
                 value={reasoning}
                 onChange={(e) => setReasoning(e.target.value)}
-                placeholder="Explain why this workflow type matches your problem..."
+                placeholder={selectedWorkflows.length > 1
+                  ? "Explain why these workflow types together match your problem..."
+                  : "Explain why this workflow type matches your problem..."
+                }
                 className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
               />
             </div>
 
             <div className="p-4 bg-stone-800/30 rounded-lg">
-              <p className="text-sm text-stone-400 mb-2">This workflow typically includes:</p>
+              <p className="text-sm text-stone-400 mb-2">
+                {selectedWorkflows.length > 1 ? 'These workflows typically include:' : 'This workflow typically includes:'}
+              </p>
               <ul className="text-sm text-stone-300 space-y-1">
-                {selectedWorkflow.id === 'form-to-output' && (
+                {selectedTypes.includes('form-to-output') && (
                   <>
                     <li>• Input form with validation</li>
                     <li>• Processing logic</li>
                     <li>• Output display or download</li>
                   </>
                 )}
-                {selectedWorkflow.id === 'data-entry' && (
+                {selectedTypes.includes('data-entry') && (
                   <>
                     <li>• Data input forms</li>
                     <li>• Database storage</li>
                     <li>• List/table views</li>
                   </>
                 )}
-                {selectedWorkflow.id === 'approval-workflow' && (
+                {selectedTypes.includes('approval-workflow') && (
                   <>
                     <li>• Request submission</li>
                     <li>• Status tracking</li>
                     <li>• Approval/rejection actions</li>
                   </>
                 )}
-                {selectedWorkflow.id === 'dashboard-analytics' && (
+                {selectedTypes.includes('dashboard-analytics') && (
                   <>
                     <li>• Data visualization charts</li>
                     <li>• Metric cards</li>
                     <li>• Filters and date ranges</li>
                   </>
                 )}
-                {/* Add more as needed */}
+                {selectedTypes.includes('notification-system') && (
+                  <>
+                    <li>• Alert triggers and rules</li>
+                    <li>• Notification channels</li>
+                    <li>• Status tracking</li>
+                  </>
+                )}
+                {selectedTypes.includes('search-filter') && (
+                  <>
+                    <li>• Search interface</li>
+                    <li>• Filter controls</li>
+                    <li>• Results display</li>
+                  </>
+                )}
+                {selectedTypes.includes('content-management') && (
+                  <>
+                    <li>• Content editor</li>
+                    <li>• Organization/folders</li>
+                    <li>• Publishing workflow</li>
+                  </>
+                )}
+                {selectedTypes.includes('scheduling-booking') && (
+                  <>
+                    <li>• Calendar interface</li>
+                    <li>• Booking form</li>
+                    <li>• Availability management</li>
+                  </>
+                )}
+                {selectedTypes.includes('inventory-tracking') && (
+                  <>
+                    <li>• Item catalog</li>
+                    <li>• Stock tracking</li>
+                    <li>• Movement history</li>
+                  </>
+                )}
+                {selectedTypes.includes('communication-hub') && (
+                  <>
+                    <li>• Message threads</li>
+                    <li>• User mentions</li>
+                    <li>• Notification system</li>
+                  </>
+                )}
               </ul>
             </div>
           </CardContent>
@@ -355,13 +438,13 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
           Back to Value
         </Button>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => saveWorkflow(false)} disabled={isPending || !selectedType}>
+          <Button variant="outline" onClick={() => saveWorkflow(false)} disabled={isPending || selectedTypes.length === 0}>
             <Save className="mr-2 w-4 h-4" />
             Save Draft
           </Button>
           <Button
             onClick={() => saveWorkflow(true)}
-            disabled={!selectedType || isPending}
+            disabled={selectedTypes.length === 0 || isPending}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
             {isPending ? 'Saving...' : 'Complete & Continue'}

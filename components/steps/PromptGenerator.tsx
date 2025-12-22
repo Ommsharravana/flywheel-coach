@@ -49,11 +49,23 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
   }, [supabase]);
 
   // Generate the full 9-prompt sequence with data from all previous steps
-  const workflowType = cycle.workflowClassification?.selectedType || 'MONITORING';
+  // Support multi-select with backward compatibility for single selection
+  const workflowTypes: string[] = (() => {
+    if (cycle.workflowClassification?.selectedTypes?.length) {
+      return cycle.workflowClassification.selectedTypes;
+    }
+    // Backward compat: convert single selectedType to array
+    if (cycle.workflowClassification?.selectedType) {
+      return [cycle.workflowClassification.selectedType];
+    }
+    return ['MONITORING'];
+  })();
+  const primaryWorkflowType = workflowTypes[0];
 
   // Context data for both template and AI generation
   const contextData = {
-    workflowType,
+    workflowType: primaryWorkflowType,
+    workflowTypes, // Pass all selected types for hybrid generation
     // Step 1: Problem Discovery
     problemStatement: cycle.problem?.refinedStatement || cycle.problem?.statement || 'Problem not specified',
     frequency: cycle.problem?.frequency || 'daily',
@@ -125,8 +137,8 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
     }
   };
 
-  // Get sequence summary for sidebar
-  const sequenceSummary = getSequenceSummary(workflowType);
+  // Get sequence summary for sidebar (uses primary type, but features are hybrid)
+  const sequenceSummary = getSequenceSummary(primaryWorkflowType, workflowTypes);
 
   const copyCurrentPrompt = async () => {
     try {
@@ -247,7 +259,15 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
           <CardDescription>
             Complete prompt sequence for building a{' '}
             <span className="text-amber-400 font-medium">
-              {PROMPT_TEMPLATES[workflowType.toUpperCase()]?.name || workflowType}
+              {workflowTypes.length > 1 ? (
+                <>
+                  hybrid ({workflowTypes.map(t =>
+                    PROMPT_TEMPLATES[t.toUpperCase()]?.name || t.replace('-', ' ')
+                  ).join(' + ')})
+                </>
+              ) : (
+                PROMPT_TEMPLATES[primaryWorkflowType.toUpperCase()]?.name || primaryWorkflowType
+              )}
             </span>{' '}
             workflow in Lovable
           </CardDescription>
@@ -261,9 +281,11 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
               </div>
             </div>
             <div className="p-3 bg-stone-800/50 rounded-lg">
-              <div className="text-stone-400 mb-1">Workflow Type</div>
+              <div className="text-stone-400 mb-1">Workflow Type{workflowTypes.length > 1 ? 's' : ''}</div>
               <div className="text-stone-200 capitalize">
-                {cycle.workflowClassification?.selectedType?.replace('-', ' ') || 'Not selected'}
+                {workflowTypes.length > 0
+                  ? workflowTypes.map(t => t.replace('-', ' ')).join(' + ')
+                  : 'Not selected'}
               </div>
             </div>
             <div className="p-3 bg-stone-800/50 rounded-lg">

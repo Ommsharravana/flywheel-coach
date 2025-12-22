@@ -12,7 +12,8 @@ export interface PromptStep {
 }
 
 export interface PromptContext {
-  workflowType: string;
+  workflowType: string; // Primary workflow type (backward compat)
+  workflowTypes?: string[]; // All selected types for hybrid generation
   problemStatement: string;
   frequency: string;
   painLevel: number;
@@ -1299,16 +1300,69 @@ Test the complete user journey.`,
 }
 
 // Generate workflow-specific feature prompts (4-7)
+// For hybrid workflows, combines features from all selected types
 function generateFeaturePrompts(context: PromptContext): PromptStep[] {
-  const workflowKey = context.workflowType.toUpperCase();
-  const featureSequence = WORKFLOW_FEATURE_SEQUENCES[workflowKey] || WORKFLOW_FEATURE_SEQUENCES.MONITORING;
+  const workflowTypes = context.workflowTypes || [context.workflowType];
+  const primaryKey = context.workflowType.toUpperCase();
 
-  return featureSequence.map((feature, index) => ({
+  // For single workflow, use standard sequence
+  if (workflowTypes.length <= 1) {
+    const featureSequence = WORKFLOW_FEATURE_SEQUENCES[primaryKey] || WORKFLOW_FEATURE_SEQUENCES.MONITORING;
+    return featureSequence.map((feature, index) => ({
+      number: index + 4,
+      phase: 'features' as const,
+      title: feature.title,
+      description: feature.description,
+      prompt: feature.promptTemplate
+        .replace(/\[WORKFLOW_CONTEXT\]/g, context.problemStatement)
+        .replace(/\[PRIMARY_USERS\]/g, context.primaryUsers),
+    }));
+  }
+
+  // For hybrid workflows, blend features from all selected types
+  return generateHybridFeaturePrompts(context, workflowTypes);
+}
+
+// Generate hybrid prompts by combining features from multiple workflow types
+function generateHybridFeaturePrompts(context: PromptContext, workflowTypes: string[]): PromptStep[] {
+  const primaryKey = workflowTypes[0].toUpperCase();
+  const primarySequence = WORKFLOW_FEATURE_SEQUENCES[primaryKey] || WORKFLOW_FEATURE_SEQUENCES.MONITORING;
+
+  // Get secondary workflow features
+  const secondaryTypes = workflowTypes.slice(1);
+  const secondaryFeatures: string[] = [];
+
+  for (const type of secondaryTypes) {
+    const key = type.toUpperCase();
+    const seq = WORKFLOW_FEATURE_SEQUENCES[key];
+    if (seq) {
+      // Take key features from each secondary workflow (first 2 items)
+      secondaryFeatures.push(
+        ...seq.slice(0, 2).map(f => `- ${f.title}: ${f.description}`)
+      );
+    }
+  }
+
+  const hybridNote = secondaryFeatures.length > 0
+    ? `\n\nHYBRID WORKFLOW ADDITIONS (from selected secondary workflows):\n${secondaryFeatures.join('\n')}\nIntegrate these capabilities where they naturally fit.`
+    : '';
+
+  const workflowNames = workflowTypes.map(t => {
+    const key = t.toUpperCase();
+    return PROMPT_TEMPLATES[key]?.name || t.replace('-', ' ');
+  }).join(' + ');
+
+  return primarySequence.map((feature, index) => ({
     number: index + 4,
     phase: 'features' as const,
-    title: feature.title,
-    description: feature.description,
-    prompt: feature.promptTemplate
+    title: index === 0 ? `Hybrid Foundation: ${feature.title}` : feature.title,
+    description: index === 0
+      ? `Build hybrid ${workflowNames} capabilities starting with: ${feature.description}`
+      : feature.description,
+    prompt: (index === 0
+      ? `Building a HYBRID WORKFLOW combining: ${workflowNames}\n\n` + feature.promptTemplate + hybridNote
+      : feature.promptTemplate
+    )
       .replace(/\[WORKFLOW_CONTEXT\]/g, context.problemStatement)
       .replace(/\[PRIMARY_USERS\]/g, context.primaryUsers),
   }));
@@ -1324,9 +1378,16 @@ export function generatePromptSequence(context: PromptContext): PromptStep[] {
 }
 
 // Get prompt sequence summary
-export function getSequenceSummary(workflowType: string): { phase: string; prompts: string[] }[] {
+// For hybrid workflows, shows primary features with hybrid indicator
+export function getSequenceSummary(workflowType: string, workflowTypes?: string[]): { phase: string; prompts: string[] }[] {
   const workflowKey = workflowType.toUpperCase();
   const features = WORKFLOW_FEATURE_SEQUENCES[workflowKey] || WORKFLOW_FEATURE_SEQUENCES.MONITORING;
+
+  const isHybrid = workflowTypes && workflowTypes.length > 1;
+  const featurePrompts = features.map((f, i) => {
+    const title = i === 0 && isHybrid ? `Hybrid: ${f.title}` : f.title;
+    return `${i + 4}. ${title}`;
+  });
 
   return [
     {
@@ -1338,8 +1399,8 @@ export function getSequenceSummary(workflowType: string): { phase: string; promp
       ],
     },
     {
-      phase: 'Features',
-      prompts: features.map((f, i) => `${i + 4}. ${f.title}`),
+      phase: isHybrid ? 'Features (Hybrid)' : 'Features',
+      prompts: featurePrompts,
     },
     {
       phase: 'Polish',

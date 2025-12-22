@@ -154,10 +154,17 @@ export default async function StepPage({ params }: StepPageProps) {
 
     if (rawWorkflowData) {
       const workflowData = asAny(rawWorkflowData);
+      // Support multi-select with backward compatibility for single selection
+      const selectedTypes = workflowData.classification_path?.original_types
+        || (workflowData.classification_path?.original_type ? [workflowData.classification_path.original_type] : [])
+        || (workflowData.workflow_type ? [workflowData.workflow_type] : []);
+
       cycle.workflowClassification = {
         id: workflowData.id,
-        // Use original_type from classification_path (saved during workflow selection)
+        // Deprecated: kept for backward compat
         selectedType: workflowData.classification_path?.original_type || workflowData.workflow_type,
+        // New: array of selected types
+        selectedTypes,
         reasoning: workflowData.classification_path?.reasoning || '',
         customDescription: workflowData.classification_path?.custom_description || '',
         features: workflowData.features || [],

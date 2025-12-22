@@ -143,7 +143,8 @@ export type WorkflowType =
 
 export interface WorkflowClassification {
   id: string;
-  selectedType: WorkflowType;
+  selectedType?: WorkflowType; // Deprecated: kept for backward compatibility
+  selectedTypes: WorkflowType[]; // New: supports multi-select
   reasoning: string;
   customDescription?: string;
   features: string[];
