@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 
 // Gemini API OAuth scopes
 const GEMINI_SCOPES = [
-  'https://www.googleapis.com/auth/generative-language.retriever',
+  'https://www.googleapis.com/auth/generative-language',
   'https://www.googleapis.com/auth/cloud-platform',
 ];
 
