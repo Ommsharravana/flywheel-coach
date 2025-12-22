@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-// Gemini API OAuth scopes
+// Gemini API OAuth scopes - peruserquota allows using user's personal Gemini quota
 const GEMINI_SCOPES = [
-  'https://www.googleapis.com/auth/generative-language',
-  'https://www.googleapis.com/auth/cloud-platform',
+  'https://www.googleapis.com/auth/generative-language.peruserquota',
 ];
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
