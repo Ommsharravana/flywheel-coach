@@ -1867,3 +1867,155 @@ Simplified to CLI-only approach - users authenticate Gemini via Gemini CLI local
 
 **Current State:** Complete - deployed to production
 
+
+---
+
+## 2025-12-22 - Session: Gemini BYOS OAuth Setup
+
+**Worked On:** Migrating to Gemini-only BYOS (Bring Your Own Subscription)
+
+**Done:**
+1. **Removed Anthropic SDK dependency** - Deleted @anthropic-ai/sdk from package.json
+2. **Rewrote coach API route** - Now uses GeminiProvider exclusively with BYOS pattern
+3. **Updated GeminiSetup component** - Added "Sign in with Google" button
+4. **Added credential gate to AICoachChat** - Blocks AI features until user connects Google
+5. **Updated generate-prompts API** - Removed platform fallback
+6. **Updated documentation** - CLAUDE.md and README.md reflect BYOS pattern
+
+**Google Cloud OAuth Setup:**
+- Using existing jkkn-admin project
+- Enabled Generative Language API
+- Created OAuth credentials for Flywheel Coach
+- Client ID: 945718631426-s7417plt9hml64iiucj4aosv050td59d.apps.googleusercontent.com
+- Added redirect URIs for production and localhost
+
+**Vercel Environment Variables Added:**
+- GOOGLE_GEMINI_CLIENT_ID
+- GOOGLE_GEMINI_CLIENT_SECRET
+- CREDENTIAL_ENCRYPTION_KEY
+- NEXT_PUBLIC_APP_URL (fixed trailing slash issue)
+
+**OAuth Scope Investigation:**
+- Tried: generative-language.retriever (wrong - for RAG only)
+- Tried: generative-language (general - doesn't exist in console)
+- Using: generative-language.peruserquota (correct - "Use Gemini models with personal quota")
+
+**Bug Fixed:**
+- redirect_uri_mismatch error - caused by trailing slash in NEXT_PUBLIC_APP_URL creating double slash
+
+**Current Status:** In Progress
+- OAuth flow works (redirects to Google, gets code, exchanges for tokens)
+- Credential validation was failing (skipped temporarily to test full flow)
+- Need to confirm AI features work with peruserquota OAuth tokens
+
+**Blocker:**
+- Credential validation was failing even with correct scope
+- Temporarily disabled validation to test if credentials work for actual AI calls
+- Need to verify if peruserquota scope works with generativelanguage.googleapis.com/v1beta endpoint
+
+**Next Session Should:**
+1. Redeploy Vercel with latest code (validation skipped)
+2. Test Sign in with Google flow
+3. Test if AI Coach works with stored OAuth credentials
+4. If working, add back validation with correct API call
+5. If not working, investigate API endpoint for peruserquota scope
+
+**Files Changed:**
+- package.json - Removed @anthropic-ai/sdk
+- app/api/coach/route.ts - Gemini only
+- app/api/generate-prompts/route.ts - Removed fallback
+- app/api/auth/gemini/route.ts - Fixed OAuth scope to peruserquota
+- app/api/auth/gemini/callback/route.ts - Temporarily skipped validation
+- components/settings/GeminiSetup.tsx - Google Sign-in button
+- components/coach/AICoachChat.tsx - Credential gate
+- CLAUDE.md, README.md - Updated docs
+
+---
+
+## 2025-12-22 - Session: Gemini BYOS OAuth Completion (Continued)
+
+**Context from Previous Session:**
+- OAuth scope changed to `generative-language.peruserquota`
+- Validation temporarily skipped to test full flow
+- Code pushed to GitHub but NOT deployed to Vercel
+
+**Key Commits (Ready to Deploy):**
+1. `33fc35a` - fix: use correct OAuth scope for Gemini content generation
+2. `9e14f7f` - fix: use peruserquota scope for BYOS Gemini access
+3. `f3b9f45` - temp: skip OAuth validation to test full flow
+
+**Blocked On:**
+- Vercel needs manual redeploy - auto-deploy didn't pick up latest commits
+- User needs to trigger redeploy from Vercel dashboard
+
+**Session End State:**
+- All code changes complete and pushed
+- Waiting on Vercel deployment to test OAuth flow
+
+---
+
+## NEXT SESSION CHECKLIST
+
+### Immediate (Before Testing)
+1. **Redeploy on Vercel:**
+   - Go to https://vercel.com/dashboard
+   - Click jkkn-solution-studio project
+   - Go to Deployments tab
+   - Click "..." on latest → Redeploy
+   - Wait ~60 seconds
+
+### Testing Flow
+2. **Test Sign in with Google:**
+   - Go to https://jkkn-solution-studio.vercel.app/settings
+   - Click "Sign in with Google"
+   - Complete Google OAuth
+   - Should redirect back with `gemini_success=true`
+
+3. **Test AI Coach:**
+   - Start a new cycle
+   - Try AI Coach chat
+   - Verify Gemini responds (using user's quota)
+
+### If OAuth Works
+4. **Re-enable validation** (commit back proper validation in callback/route.ts)
+5. Mark feature complete
+
+### If OAuth Still Fails
+6. Check browser console for errors
+7. Check Vercel function logs for error details
+8. May need to try different Gemini API endpoint
+9. Consider falling back to CLI credential approach
+
+---
+
+## DECISIONS MADE
+
+| Decision | Rationale |
+|----------|-----------|
+| Use `peruserquota` scope | Only scope that allows using user's personal Gemini quota |
+| Skip validation temporarily | Isolate whether token exchange works before validating |
+| One-time admin OAuth setup | Platform registers once, all users benefit |
+
+---
+
+## ARCHITECTURE SUMMARY
+
+```
+User clicks "Sign in with Google"
+  ↓
+App calls /api/auth/gemini (returns auth URL)
+  ↓
+Redirect to Google OAuth consent
+  ↓
+User grants permission
+  ↓
+Google redirects to /api/auth/gemini/callback
+  ↓
+Callback exchanges code for tokens
+  ↓
+Tokens encrypted + stored in provider_credentials
+  ↓
+AI Coach uses tokens to call Gemini API
+  ↓
+Usage charged to user's Google account
+```
