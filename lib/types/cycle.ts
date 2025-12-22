@@ -72,6 +72,23 @@ export const FLYWHEEL_STEPS: Omit<FlywheelStep, 'status'>[] = [
   },
 ];
 
+// Step 9 is only visible during Appathon mode
+export const APPATHON_STEP: Omit<FlywheelStep, 'status'> = {
+  id: 9,
+  name: 'Appathon Submission',
+  shortName: 'Submit',
+  description: 'Submit your solution for the Appathon competition',
+  icon: '🏆',
+};
+
+// Get all steps including Appathon step if in appathon mode
+export function getFlywheelSteps(isAppathonMode: boolean): Omit<FlywheelStep, 'status'>[] {
+  if (isAppathonMode) {
+    return [...FLYWHEEL_STEPS, APPATHON_STEP];
+  }
+  return FLYWHEEL_STEPS;
+}
+
 export interface Problem {
   id: string;
   statement: string;
