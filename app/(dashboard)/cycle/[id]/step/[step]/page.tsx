@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getEffectiveUserId } from '@/lib/supabase/effective-user';
-import { Cycle, FLYWHEEL_STEPS } from '@/lib/types/cycle';
+import { Cycle, FLYWHEEL_STEPS, getFlywheelSteps } from '@/lib/types/cycle';
 import { FlywheelNavigator } from '@/components/flywheel/FlywheelNavigator';
 import { MobileStepNavigation } from '@/components/flywheel/MobileStepNavigation';
 import { ProblemDiscovery } from '@/components/steps/ProblemDiscovery';
@@ -12,6 +12,7 @@ import { PromptGenerator } from '@/components/steps/PromptGenerator';
 import { BuildTracker } from '@/components/steps/BuildTracker';
 import { DeploymentTracker } from '@/components/steps/DeploymentTracker';
 import { ImpactDiscovery } from '@/components/steps/ImpactDiscovery';
+import { AppathonSubmission } from '@/components/steps/AppathonSubmission';
 import { StepPageClient } from './StepPageClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -34,8 +35,28 @@ export default async function StepPage({ params }: StepPageProps) {
     redirect('/login');
   }
 
-  // Validate step number
-  if (isNaN(stepNumber) || stepNumber < 1 || stepNumber > 8) {
+  // Check if user is in Appathon mode
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userData } = await supabase
+    .from('users')
+    .select('active_event_id')
+    .eq('id', effectiveUserId)
+    .single() as { data: { active_event_id: string | null } | null };
+
+  let isAppathonMode = false;
+  if (userData?.active_event_id) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: eventData } = await supabase
+      .from('events')
+      .select('config')
+      .eq('id', userData.active_event_id)
+      .single() as { data: { config: { type?: string } } | null };
+    isAppathonMode = eventData?.config?.type === 'appathon';
+  }
+
+  // Validate step number (allow Step 9 only in Appathon mode)
+  const maxStep = isAppathonMode ? 9 : 8;
+  if (isNaN(stepNumber) || stepNumber < 1 || stepNumber > maxStep) {
     redirect(`/cycle/${id}`);
   }
 
@@ -230,9 +251,10 @@ export default async function StepPage({ params }: StepPageProps) {
     }
   }
 
-  const stepInfo = FLYWHEEL_STEPS[stepNumber - 1];
+  const allSteps = getFlywheelSteps(isAppathonMode);
+  const stepInfo = allSteps[stepNumber - 1];
   const prevStep = stepNumber > 1 ? stepNumber - 1 : null;
-  const nextStep = stepNumber < 8 ? stepNumber + 1 : null;
+  const nextStep = stepNumber < maxStep ? stepNumber + 1 : null;
 
   // Render appropriate step component
   const renderStepComponent = () => {
@@ -253,6 +275,8 @@ export default async function StepPage({ params }: StepPageProps) {
         return <DeploymentTracker cycle={cycle} />;
       case 8:
         return <ImpactDiscovery cycle={cycle} />;
+      case 9:
+        return <AppathonSubmission cycle={cycle} />;
       default:
         return <div>Unknown step</div>;
     }
@@ -294,7 +318,7 @@ export default async function StepPage({ params }: StepPageProps) {
               {stepInfo.icon}
             </div>
             <div>
-              <div className="text-sm text-amber-400 font-medium">Step {stepNumber} of 8</div>
+              <div className="text-sm text-amber-400 font-medium">Step {stepNumber} of {maxStep}</div>
               <h1 className="text-2xl md:text-3xl font-display font-bold text-stone-100">
                 {stepInfo.name}
               </h1>
@@ -321,7 +345,7 @@ export default async function StepPage({ params }: StepPageProps) {
                     <Link href={`/cycle/${id}/step/${prevStep}`}>
                       <Button variant="outline" className="w-full justify-start">
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Step {prevStep}: {FLYWHEEL_STEPS[prevStep - 1].shortName}
+                        Step {prevStep}: {allSteps[prevStep - 1].shortName}
                       </Button>
                     </Link>
                   )}
@@ -332,7 +356,7 @@ export default async function StepPage({ params }: StepPageProps) {
                         className="w-full justify-start"
                         disabled={stepNumber >= cycle.currentStep}
                       >
-                        Step {nextStep}: {FLYWHEEL_STEPS[nextStep - 1].shortName}
+                        Step {nextStep}: {allSteps[nextStep - 1].shortName}
                         <ArrowRight className="ml-auto h-4 w-4" />
                       </Button>
                     </Link>
@@ -392,6 +416,12 @@ export default async function StepPage({ params }: StepPageProps) {
                     <>
                       <p>Measure what matters. Don't track vanity metrics.</p>
                       <p>Every completed cycle reveals new problems - that's the flywheel!</p>
+                    </>
+                  )}
+                  {stepNumber === 9 && (
+                    <>
+                      <p>Make your elevator pitch compelling - judges have limited time.</p>
+                      <p>A demo video showing your app in action is worth a thousand words.</p>
                     </>
                   )}
                 </CardContent>
