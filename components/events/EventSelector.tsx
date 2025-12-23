@@ -6,6 +6,7 @@ import { Calendar, Users, Clock, Zap, ChevronRight, Trophy, Sparkles, X, Loader2
 import { useActiveEvent } from '@/lib/context/EventContext';
 import type { EventWithParticipantCount } from '@/lib/events/types';
 import { getBannerColorClasses, isEventLive, isEventUpcoming, getDaysRemaining, getDaysUntilStart } from '@/lib/events/types';
+import { AppathonDetailsModal, isAppathonEvent } from '@/components/appathon/details/AppathonDetailsModal';
 
 export function EventSelector() {
   const { activeEvent, joinEvent, leaveEvent, isJoining } = useActiveEvent();
@@ -94,14 +95,25 @@ export function EventSelector() {
       {/* Event Details Modal */}
       <AnimatePresence>
         {selectedEvent && (
-          <EventDetailsModal
-            event={selectedEvent}
-            isActive={activeEvent?.id === selectedEvent.id}
-            onJoin={() => joinEvent(selectedEvent.id)}
-            onLeave={leaveEvent}
-            onClose={() => setSelectedEvent(null)}
-            isJoining={isJoining}
-          />
+          isAppathonEvent(selectedEvent) ? (
+            <AppathonDetailsModal
+              event={selectedEvent}
+              isActive={activeEvent?.id === selectedEvent.id}
+              onJoin={() => joinEvent(selectedEvent.id)}
+              onLeave={leaveEvent}
+              onClose={() => setSelectedEvent(null)}
+              isJoining={isJoining}
+            />
+          ) : (
+            <EventDetailsModal
+              event={selectedEvent}
+              isActive={activeEvent?.id === selectedEvent.id}
+              onJoin={() => joinEvent(selectedEvent.id)}
+              onLeave={leaveEvent}
+              onClose={() => setSelectedEvent(null)}
+              isJoining={isJoining}
+            />
+          )
         )}
       </AnimatePresence>
     </section>
