@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Shield } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n/LanguageContext'
 
 // Simplified user type that works with both auth user and effective user (impersonation)
 interface HeaderUser {
@@ -38,6 +39,7 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
   const router = useRouter()
   const supabase = createClient()
   const [mounted, setMounted] = useState(false)
+  const { t } = useTranslation()
 
   // Prevent hydration mismatch with Radix UI
   useEffect(() => {
@@ -94,19 +96,19 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
           {user && !isAuthPage && (
             <nav className="hidden md:flex items-center gap-1">
               <NavLink href="/dashboard" active={pathname === '/dashboard'}>
-                Home
+                {t('nav.home')}
               </NavLink>
               <NavLink href="/portfolio" active={pathname === '/portfolio'}>
-                Portfolio
+                {t('nav.portfolio')}
               </NavLink>
               <NavLink href="/settings" active={pathname === '/settings'}>
-                Settings
+                {t('nav.settings')}
               </NavLink>
               {role === 'superadmin' && (
                 <NavLink href="/admin" active={pathname.startsWith('/admin')}>
                   <span className="flex items-center gap-1.5">
                     <Shield className="h-3.5 w-3.5" />
-                    Super Admin
+                    {t('nav.superAdmin')}
                   </span>
                 </NavLink>
               )}
@@ -133,18 +135,18 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
                     className="w-56 bg-stone-900 border-stone-800 text-stone-100"
                   >
                     <div className="px-3 py-2">
-                      <p className="text-sm font-medium">{user.user_metadata?.name || 'Learner'}</p>
+                      <p className="text-sm font-medium">{user.user_metadata?.name || t('common.learner')}</p>
                       <p className="text-xs text-stone-400 truncate">{user.email}</p>
                     </div>
                     <DropdownMenuSeparator className="bg-stone-800" />
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
-                      <Link href="/dashboard">Home</Link>
+                      <Link href="/dashboard">{t('nav.home')}</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
-                      <Link href="/portfolio">Portfolio</Link>
+                      <Link href="/portfolio">{t('nav.portfolio')}</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
-                      <Link href="/settings">Settings</Link>
+                      <Link href="/settings">{t('nav.settings')}</Link>
                     </DropdownMenuItem>
                     {role === 'superadmin' && (
                       <>
@@ -152,7 +154,7 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
                         <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
                           <Link href="/admin" className="flex items-center gap-2">
                             <Shield className="h-4 w-4 text-amber-400" />
-                            <span>Super Admin Panel</span>
+                            <span>{t('nav.superAdminPanel')}</span>
                           </Link>
                         </DropdownMenuItem>
                       </>
@@ -162,7 +164,7 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
                       onClick={handleSignOut}
                       className="cursor-pointer text-rose-400 hover:bg-stone-800 hover:text-rose-300 focus:bg-stone-800"
                     >
-                      Sign out
+                      {t('common.signOut')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -179,13 +181,13 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
                   asChild
                   className="text-stone-300 hover:text-stone-100 hover:bg-stone-800/50"
                 >
-                  <Link href="/login">Log in</Link>
+                  <Link href="/login">{t('common.logIn')}</Link>
                 </Button>
                 <Button
                   asChild
                   className="bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-semibold hover:from-amber-400 hover:to-orange-500 shadow-lg shadow-orange-500/25"
                 >
-                  <Link href="/signup">Get Started</Link>
+                  <Link href="/signup">{t('common.getStarted')}</Link>
                 </Button>
               </div>
             ) : null}

@@ -4,12 +4,15 @@ import { Header } from '@/components/shared/Header'
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner'
 import { EventBanner } from '@/components/events/EventBanner'
 import { EventProvider } from '@/lib/context/EventContext'
+import { LanguageProvider } from '@/lib/i18n/LanguageContext'
+import type { Locale } from '@/lib/i18n/types'
 import { redirect } from 'next/navigation'
 import type { Event } from '@/lib/events/types'
 
 interface ProfileRow {
   role: 'learner' | 'facilitator' | 'admin' | 'superadmin';
   active_event_id: string | null;
+  language: string | null;
 }
 
 export default async function DashboardLayout({
@@ -32,14 +35,15 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  // Fetch user role for admin link (always use auth user's role for admin access)
+  // Fetch user role and language for admin link (always use auth user's role for admin access)
   const { data: profileData } = await supabase
     .from('users')
-    .select('role, active_event_id')
+    .select('role, active_event_id, language')
     .eq('id', authUser.id)
     .single()
 
   const profile = profileData as unknown as ProfileRow | null;
+  const userLocale: Locale = (profile?.language as Locale) || 'en';
 
   // Fetch effective user's active event (may differ if impersonating)
   const { data: effectiveProfileData } = await supabase
@@ -88,22 +92,24 @@ export default async function DashboardLayout({
   }
 
   return (
-    <EventProvider activeEvent={activeEvent}>
-      <div className="relative min-h-screen">
-        {/* Background effects */}
-        <div className="fixed inset-0 gradient-mesh" />
-        <div className="fixed inset-0 noise-bg" />
+    <LanguageProvider initialLocale={userLocale} userId={authUser.id}>
+      <EventProvider activeEvent={activeEvent}>
+        <div className="relative min-h-screen">
+          {/* Background effects */}
+          <div className="fixed inset-0 gradient-mesh" />
+          <div className="fixed inset-0 noise-bg" />
 
-        <ImpersonationBanner />
-        <EventBanner />
-        <Header user={displayUser} role={profile?.role} isImpersonating={impersonating} />
+          <ImpersonationBanner />
+          <EventBanner />
+          <Header user={displayUser} role={profile?.role} isImpersonating={impersonating} />
 
-        <main className={`relative z-10 pb-8 px-4 sm:px-6 lg:px-8 ${topPadding}`}>
-          <div className="mx-auto max-w-7xl">
-            {children}
-          </div>
-        </main>
-      </div>
-    </EventProvider>
+          <main className={`relative z-10 pb-8 px-4 sm:px-6 lg:px-8 ${topPadding}`}>
+            <div className="mx-auto max-w-7xl">
+              {children}
+            </div>
+          </main>
+        </div>
+      </EventProvider>
+    </LanguageProvider>
   )
 }

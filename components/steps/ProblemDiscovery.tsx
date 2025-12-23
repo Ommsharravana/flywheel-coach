@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { useAppathonMode } from '@/lib/context/EventContext';
 import { ProblemIdeasPanel } from '@/components/appathon/ProblemIdeasPanel';
 import { type ProblemIdea, type AppathonThemeId } from '@/lib/appathon/content';
+import { useTranslation } from '@/lib/i18n/LanguageContext';
 
 interface ProblemDiscoveryProps {
   cycle: Cycle;
@@ -80,6 +81,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
   const { isAppathonMode } = useAppathonMode();
+  const { t } = useTranslation();
 
   // Initialize state from existing problem or empty
   const [answers, setAnswers] = useState<Record<string, string>>(
@@ -265,21 +267,21 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
         <Tabs value={currentTab} onValueChange={setCurrentTab}>
           <TabsList className="grid w-full grid-cols-3 bg-stone-800/50">
             <TabsTrigger value="questions" className="data-[state=active]:bg-amber-500 data-[state=active]:text-stone-900">
-              1. Questions ({answeredQuestions}/5)
+              1. {t('stepUI.questions')} ({answeredQuestions}/5)
             </TabsTrigger>
           <TabsTrigger
             value="statement"
             disabled={!hasAllAnswers && !isAppathonMode}
             className="data-[state=active]:bg-amber-500 data-[state=active]:text-stone-900"
           >
-            2. Statement
+            2. {t('stepUI.statement')}
           </TabsTrigger>
           <TabsTrigger
             value="refine"
             disabled={!hasProblemStatement}
             className="data-[state=active]:bg-amber-500 data-[state=active]:text-stone-900"
           >
-            3. Refine
+            3. {t('stepUI.refine')}
           </TabsTrigger>
         </TabsList>
 
@@ -287,9 +289,9 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
         <TabsContent value="questions" className="mt-6">
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle className="text-xl text-stone-100">Discovery Questions</CardTitle>
+              <CardTitle className="text-xl text-stone-100">{t('stepUI.discoveryQuestions')}</CardTitle>
               <CardDescription>
-                Answer these 5 questions to uncover problems worth solving.
+                {t('stepUI.answerQuestionsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -349,7 +351,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
                             variant="outline"
                             onClick={() => setCurrentQuestion((prev) => prev - 1)}
                           >
-                            Previous
+                            {t('common.previous')}
                           </Button>
                         )}
                         {currentQuestion < 4 ? (
@@ -357,7 +359,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
                             onClick={() => setCurrentQuestion((prev) => prev + 1)}
                             className="bg-amber-500 hover:bg-amber-600 text-stone-900"
                           >
-                            Next
+                            {t('common.next')}
                             <ChevronRight className="ml-1 w-4 h-4" />
                           </Button>
                         ) : (
@@ -367,7 +369,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
                             className="bg-amber-500 hover:bg-amber-600 text-stone-900"
                           >
                             <Sparkles className="mr-2 w-4 h-4" />
-                            Generate Statement
+                            {t('stepUI.generateStatement')}
                           </Button>
                         )}
                       </div>
@@ -381,7 +383,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
           {/* Answers summary */}
           <Card className="glass-card mt-6">
             <CardHeader>
-              <CardTitle className="text-lg text-stone-100">Your Answers</CardTitle>
+              <CardTitle className="text-lg text-stone-100">{t('stepUI.yourAnswers')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {DISCOVERY_QUESTIONS.map((q, idx) => (
@@ -399,12 +401,12 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
                     <span className="text-sm font-medium text-stone-300">{q.title}</span>
                     {answers[q.id]?.trim() && (
                       <Badge variant="outline" className="ml-auto text-emerald-400 border-emerald-500">
-                        <Check className="w-3 h-3 mr-1" /> Done
+                        <Check className="w-3 h-3 mr-1" /> {t('stepUI.done')}
                       </Badge>
                     )}
                   </div>
                   <p className="text-sm text-stone-500 line-clamp-2">
-                    {answers[q.id]?.trim() || 'Not answered yet'}
+                    {answers[q.id]?.trim() || t('stepUI.notAnswered')}
                   </p>
                 </div>
               ))}
@@ -567,7 +569,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
             <CardHeader>
               <CardTitle className="text-xl text-stone-100 flex items-center gap-2">
                 <Lightbulb className="w-5 h-5 text-amber-400" />
-                Problem Statement
+                {t('stepUI.problemStatement')}
               </CardTitle>
               <CardDescription>
                 {isAppathonMode && !selectedProblem
@@ -577,7 +579,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-stone-300 mb-2 block">Your Problem Statement</Label>
+                <Label className="text-stone-300 mb-2 block">{t('stepUI.yourProblemStatement')}</Label>
                 <Textarea
                   value={problemStatement}
                   onChange={(e) => setProblemStatement(e.target.value)}
@@ -589,7 +591,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
               <div className="grid md:grid-cols-2 gap-6 pt-4">
                 <div>
                   <Label className="text-stone-300 mb-3 block">
-                    Pain Level: <span className="text-amber-400 font-bold">{painLevel}/10</span>
+                    {t('stepUI.painLevel')}: <span className="text-amber-400 font-bold">{painLevel}/10</span>
                   </Label>
                   <Slider
                     value={[painLevel]}
@@ -600,13 +602,13 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
                     className="py-4"
                   />
                   <div className="flex justify-between text-xs text-stone-500">
-                    <span>Mild annoyance</span>
-                    <span>Extremely painful</span>
+                    <span>{t('stepUI.mildAnnoyance')}</span>
+                    <span>{t('stepUI.extremelyPainful')}</span>
                   </div>
                 </div>
 
                 <div>
-                  <Label className="text-stone-300 mb-3 block">How often does this occur?</Label>
+                  <Label className="text-stone-300 mb-3 block">{t('stepUI.howOftenOccur')}</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {FREQUENCY_OPTIONS.map((opt) => (
                       <button
@@ -628,14 +630,14 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
 
               <div className="flex justify-end gap-3 pt-4">
                 <Button variant="outline" onClick={() => setCurrentTab('questions')}>
-                  Back to Questions
+                  {t('stepUI.backToQuestions')}
                 </Button>
                 <Button
                   onClick={() => setCurrentTab('refine')}
                   disabled={!hasProblemStatement}
                   className="bg-amber-500 hover:bg-amber-600 text-stone-900"
                 >
-                  Continue to Refine
+                  {t('stepUI.continueToRefine')}
                   <ChevronRight className="ml-1 w-4 h-4" />
                 </Button>
               </div>
@@ -647,34 +649,34 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
         <TabsContent value="refine" className="mt-6">
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle className="text-xl text-stone-100">Refine Your Problem</CardTitle>
+              <CardTitle className="text-xl text-stone-100">{t('stepUI.refineProblem')}</CardTitle>
               <CardDescription>
-                Make your problem statement more specific and actionable.
+                {t('stepUI.refineDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Original statement */}
               <div className="p-4 bg-stone-800/30 rounded-lg">
-                <Label className="text-stone-400 text-sm mb-2 block">Original Statement</Label>
+                <Label className="text-stone-400 text-sm mb-2 block">{t('stepUI.originalStatement')}</Label>
                 <p className="text-stone-300">{problemStatement}</p>
               </div>
 
               {/* Refinement tips */}
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                  <div className="text-amber-400 font-medium mb-1">Be Specific</div>
+                  <div className="text-amber-400 font-medium mb-1">{t('stepUI.beSpecific')}</div>
                   <p className="text-sm text-stone-400">
                     &quot;Students&quot; → &quot;2nd year CS students at JKKN&quot;
                   </p>
                 </div>
                 <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                  <div className="text-amber-400 font-medium mb-1">Quantify</div>
+                  <div className="text-amber-400 font-medium mb-1">{t('stepUI.quantify')}</div>
                   <p className="text-sm text-stone-400">
                     &quot;Takes too long&quot; → &quot;Takes 3+ hours per week&quot;
                   </p>
                 </div>
                 <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                  <div className="text-amber-400 font-medium mb-1">Add Context</div>
+                  <div className="text-amber-400 font-medium mb-1">{t('stepUI.addContext')}</div>
                   <p className="text-sm text-stone-400">
                     &quot;When?&quot; → &quot;During exam preparation&quot;
                   </p>
@@ -683,11 +685,11 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
 
               {/* Refined statement */}
               <div>
-                <Label className="text-stone-300 mb-2 block">Refined Problem Statement</Label>
+                <Label className="text-stone-300 mb-2 block">{t('stepUI.refinedStatement')}</Label>
                 <Textarea
                   value={refinedStatement}
                   onChange={(e) => setRefinedStatement(e.target.value)}
-                  placeholder="Write a more specific, quantified version of your problem statement..."
+                  placeholder={t('stepUI.refinedStatementPlaceholder')}
                   className="min-h-[150px] bg-stone-800/50 border-stone-700 focus:border-amber-500 text-lg"
                 />
               </div>
@@ -701,7 +703,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
                         <Check className="w-5 h-5 text-emerald-400" />
                       </div>
                       <div>
-                        <h4 className="font-medium text-emerald-400 mb-1">Ready to proceed!</h4>
+                        <h4 className="font-medium text-emerald-400 mb-1">{t('stepUI.readyToProceed')}</h4>
                         <p className="text-sm text-stone-400">
                           Your refined problem statement: &quot;{refinedStatement}&quot;
                         </p>
@@ -721,7 +723,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
 
               <div className="flex justify-between pt-4">
                 <Button variant="outline" onClick={() => setCurrentTab('statement')}>
-                  Back to Statement
+                  {t('common.back')}
                 </Button>
                 <div className="flex gap-3">
                   <Button
@@ -730,14 +732,14 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
                     disabled={isPending}
                   >
                     <Save className="mr-2 w-4 h-4" />
-                    Save Draft
+                    {t('stepUI.saveDraft')}
                   </Button>
                   <Button
                     onClick={completeStep}
                     disabled={!hasRefinement || isPending}
                     className="bg-emerald-500 hover:bg-emerald-600 text-white"
                   >
-                    {isPending ? 'Saving...' : 'Complete & Continue'}
+                    {isPending ? t('common.saving') : t('stepUI.completeAndContinue')}
                     <ChevronRight className="ml-1 w-4 h-4" />
                   </Button>
                 </div>

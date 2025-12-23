@@ -11,6 +11,8 @@ import { InstitutionChangeRequest } from '@/components/settings/InstitutionChang
 import { Suspense } from 'react';
 import { GeminiSetup } from '@/components/settings/GeminiSetup';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
+import { createTranslator } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n/types';
 
 interface UserProfile {
   id: string;
@@ -55,6 +57,8 @@ export default async function SettingsPage() {
     .single();
 
   const profile = profileData as UserProfile | null;
+  const locale = (profile?.language as Locale) || 'en';
+  const t = createTranslator(locale);
 
   // Fetch user's institution if they have one
   let userInstitution: Institution | null = null;
@@ -84,10 +88,10 @@ export default async function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="font-display text-2xl sm:text-3xl font-bold text-stone-100">
-          Settings
+          {t('settings.title')}
         </h1>
         <p className="mt-1 text-stone-400">
-          Manage your profile and preferences
+          {t('settings.subtitle')}
         </p>
       </div>
 
@@ -96,9 +100,9 @@ export default async function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-stone-100">
             <User className="w-5 h-5 text-amber-400" />
-            Profile
+            {t('settings.profile')}
           </CardTitle>
-          <CardDescription>Your account information</CardDescription>
+          <CardDescription>{t('settings.accountInfo')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Avatar and Name */}
@@ -108,7 +112,7 @@ export default async function SettingsPage() {
             </div>
             <div>
               <div className="text-lg font-semibold text-stone-100">
-                {profile?.name || effectiveUser.name || 'Learner'}
+                {profile?.name || effectiveUser.name || t('common.learner')}
               </div>
               <div className="text-sm text-stone-400">{effectiveUser.email}</div>
               <Badge variant="outline" className="mt-1 text-amber-400 border-amber-500/50">
@@ -121,11 +125,11 @@ export default async function SettingsPage() {
           <div className="grid grid-cols-2 gap-4 p-4 bg-stone-800/50 rounded-lg">
             <div className="text-center">
               <div className="text-2xl font-bold text-amber-400">{cycleCount || 0}</div>
-              <div className="text-sm text-stone-400">Cycles Started</div>
+              <div className="text-sm text-stone-400">{t('settings.cyclesStarted')}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-emerald-400">{completedCount || 0}</div>
-              <div className="text-sm text-stone-400">Completed</div>
+              <div className="text-sm text-stone-400">{t('settings.completed')}</div>
             </div>
           </div>
         </CardContent>
@@ -139,10 +143,10 @@ export default async function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-stone-100">
             <Trophy className="w-5 h-5 text-amber-400" />
-            Competition Mode
+            {t('settings.competitionMode')}
           </CardTitle>
           <CardDescription>
-            Enable special features for hackathons and competitions
+            {t('settings.competitionDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -165,29 +169,26 @@ export default async function SettingsPage() {
       />
 
       {/* Language Preference */}
-      <LanguageSettings
-        userId={effectiveUser.id}
-        currentLanguage={profile?.language ?? null}
-      />
+      <LanguageSettings />
 
       {/* Account Info */}
       <Card className="glass-card border-stone-700">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-stone-100">
             <Shield className="w-5 h-5 text-stone-400" />
-            Account
+            {t('settings.account')}
           </CardTitle>
-          <CardDescription>Account security and details</CardDescription>
+          <CardDescription>{t('settings.accountDetails')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label className="text-stone-400">Email</Label>
+            <Label className="text-stone-400">{t('settings.email')}</Label>
             <div className="mt-1 text-stone-200">{effectiveUser.email}</div>
           </div>
           <div>
-            <Label className="text-stone-400">Account Created</Label>
+            <Label className="text-stone-400">{t('settings.created')}</Label>
             <div className="mt-1 text-stone-200">
-              {new Date(profile?.created_at || new Date()).toLocaleDateString('en-US', {
+              {new Date(profile?.created_at || new Date()).toLocaleDateString(locale === 'ta' ? 'ta-IN' : 'en-US', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
@@ -195,15 +196,15 @@ export default async function SettingsPage() {
             </div>
           </div>
           <div>
-            <Label className="text-stone-400">Last Updated</Label>
+            <Label className="text-stone-400">{t('settings.lastUpdated')}</Label>
             <div className="mt-1 text-stone-200">
               {profile?.updated_at
-                ? new Date(profile.updated_at).toLocaleDateString('en-US', {
+                ? new Date(profile.updated_at).toLocaleDateString(locale === 'ta' ? 'ta-IN' : 'en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   })
-                : 'Never'
+                : t('common.never')
               }
             </div>
           </div>
