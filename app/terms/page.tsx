@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Terms of Service | Flywheel Coach',
@@ -133,9 +134,9 @@ export default function TermsPage() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-stone-800">
-          <a href="/" className="text-teal-400 hover:text-teal-300">
+          <Link href="/" className="text-teal-400 hover:text-teal-300">
             ← Back to Flywheel Coach
-          </a>
+          </Link>
         </div>
       </div>
     </div>
