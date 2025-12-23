@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n/LanguageContext';
 
 interface WorkflowClassifierProps {
   cycle: Cycle;
@@ -101,6 +102,7 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
+  const { t } = useTranslation();
 
   // Support multi-select with backward compatibility for single selection
   const [selectedTypes, setSelectedTypes] = useState<WorkflowType[]>(() => {
@@ -131,12 +133,12 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
 
   const saveWorkflow = async (complete = false) => {
     if (selectedTypes.length === 0) {
-      toast.error('Please select at least one workflow type.');
+      toast.error(t('stepUI.selectWorkflowError'));
       return;
     }
 
     if (selectedTypes.includes('custom') && !customDescription.trim()) {
-      toast.error('Please describe your custom workflow.');
+      toast.error(t('stepUI.describeCustomError'));
       return;
     }
 
@@ -207,10 +209,10 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
           .eq('id', cycle.id);
         if (cycleError) throw cycleError;
 
-        toast.success('Workflow classified!');
+        toast.success(t('stepUI.workflowClassified'));
         router.push(`/cycle/${cycle.id}/step/5`);
       } else {
-        toast.success('Saved!');
+        toast.success(t('common.saved'));
         router.refresh();
       }
     } catch (error: unknown) {
@@ -229,7 +231,7 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
       {cycle.problem && (
         <Card className="glass-card border-amber-500/30">
           <CardContent className="pt-6">
-            <p className="text-sm text-stone-400 mb-1">Classifying workflow for:</p>
+            <p className="text-sm text-stone-400 mb-1">{t('stepUI.classifyingWorkflowFor')}</p>
             <p className="text-stone-200 font-medium">
               &quot;{cycle.problem.refinedStatement || cycle.problem.statement}&quot;
             </p>
@@ -241,15 +243,15 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
         <CardHeader>
           <CardTitle className="text-xl text-stone-100 flex items-center gap-2">
             <Cog className="w-5 h-5 text-amber-400" />
-            Choose Your Workflow Type
+            {t('stepUI.chooseWorkflowType')}
           </CardTitle>
           <CardDescription>
-            Select the workflow pattern that best matches your solution. This helps generate a better prompt.
+            {t('stepUI.chooseWorkflowTypeDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-amber-400/80 mb-3">
-            You can select multiple workflow types to create a hybrid solution.
+            {t('stepUI.multiSelectHint')}
           </p>
           <div className="grid md:grid-cols-2 gap-3">
             {WORKFLOW_TYPES.map((workflow) => {
@@ -283,7 +285,7 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
                       animate={{ opacity: 1, height: 'auto' }}
                       className="mt-3 pt-3 border-t border-stone-700"
                     >
-                      <p className="text-xs text-stone-500 mb-1">Examples:</p>
+                      <p className="text-xs text-stone-500 mb-1">{t('stepUI.examples')}</p>
                       <div className="flex flex-wrap gap-1">
                         {workflow.examples.map((ex) => (
                           <Badge key={ex} variant="outline" className="text-xs">
@@ -315,7 +317,7 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
             </CardTitle>
             {selectedWorkflows.length > 1 && (
               <p className="text-sm text-stone-400 mt-1">
-                Hybrid workflow combining {selectedWorkflows.length} types
+                {t('stepUI.hybridWorkflow').replace('{count}', String(selectedWorkflows.length))}
               </p>
             )}
           </CardHeader>
@@ -323,29 +325,29 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
             {selectedTypes.includes('custom') && (
               <div>
                 <Label className="text-stone-300 mb-2 block">
-                  Describe your custom workflow <span className="text-red-400">*</span>
+                  {t('stepUI.describeCustomWorkflow')} <span className="text-red-400">*</span>
                 </Label>
                 <Textarea
                   value={customDescription}
                   onChange={(e) => setCustomDescription(e.target.value)}
-                  placeholder="Describe the workflow pattern that fits your solution. What are the main steps? What inputs and outputs does it have?"
+                  placeholder={t('stepUI.customWorkflowPlaceholder')}
                   className="bg-stone-800/50 border-stone-700 focus:border-amber-500 min-h-[100px]"
                 />
                 <p className="text-xs text-stone-500 mt-1">
-                  Be specific about the flow: who does what, in what order, and what the outcome is.
+                  {t('stepUI.customWorkflowHint')}
                 </p>
               </div>
             )}
             <div>
               <Label className="text-stone-300 mb-2 block">
-                Why {selectedWorkflows.length > 1 ? 'do these workflows fit' : 'does this workflow fit'} your problem?
+                {selectedWorkflows.length > 1 ? t('stepUI.whyWorkflowsFit') : t('stepUI.whyWorkflowFits')}
               </Label>
               <Textarea
                 value={reasoning}
                 onChange={(e) => setReasoning(e.target.value)}
                 placeholder={selectedWorkflows.length > 1
-                  ? "Explain why these workflow types together match your problem..."
-                  : "Explain why this workflow type matches your problem..."
+                  ? t('stepUI.whyWorkflowsPlaceholder')
+                  : t('stepUI.whyWorkflowPlaceholder')
                 }
                 className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
               />
@@ -353,7 +355,7 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
 
             <div className="p-4 bg-stone-800/30 rounded-lg">
               <p className="text-sm text-stone-400 mb-2">
-                {selectedWorkflows.length > 1 ? 'These workflows typically include:' : 'This workflow typically includes:'}
+                {selectedWorkflows.length > 1 ? t('stepUI.workflowsInclude') : t('stepUI.workflowIncludes')}
               </p>
               <ul className="text-sm text-stone-300 space-y-1">
                 {selectedTypes.includes('form-to-output') && (
@@ -435,19 +437,19 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
       {/* Actions */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/3`)}>
-          Back to Value
+          {t('stepUI.backToValue')}
         </Button>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => saveWorkflow(false)} disabled={isPending || selectedTypes.length === 0}>
             <Save className="mr-2 w-4 h-4" />
-            Save Draft
+            {t('stepUI.saveDraft')}
           </Button>
           <Button
             onClick={() => saveWorkflow(true)}
             disabled={selectedTypes.length === 0 || isPending}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
-            {isPending ? 'Saving...' : 'Complete & Continue'}
+            {isPending ? t('common.saving') : t('stepUI.completeAndContinue')}
             <ChevronRight className="ml-1 w-4 h-4" />
           </Button>
         </div>

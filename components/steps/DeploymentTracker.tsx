@@ -11,6 +11,7 @@ import { Check, ChevronRight, ExternalLink, Rocket, Save, Share2 } from 'lucide-
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n/LanguageContext';
 
 interface DeploymentTrackerProps {
   cycle: Cycle;
@@ -20,6 +21,7 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
+  const { t } = useTranslation();
 
   const [deployedUrl, setDeployedUrl] = useState(cycle.build?.projectUrl || '');
   const [shareMessage, setShareMessage] = useState('');
@@ -51,10 +53,10 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
           .eq('id', cycle.id);
         if (cycleError) throw cycleError;
 
-        toast.success('Deployment tracked!');
+        toast.success(t('stepUI.deploymentSaved'));
         router.push(`/cycle/${cycle.id}/step/8`);
       } else {
-        toast.success('Saved!');
+        toast.success(t('common.saved'));
         router.refresh();
       }
     } catch (error: unknown) {
@@ -96,10 +98,10 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
         <CardHeader>
           <CardTitle className="text-xl text-stone-100 flex items-center gap-2">
             <Rocket className="w-5 h-5 text-amber-400" />
-            Deploy Your Solution
+            {t('stepUI.deploymentSetup')}
           </CardTitle>
           <CardDescription>
-            Get your solution live and accessible to users.
+            {t('stepUI.deploymentSetupDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -108,10 +110,10 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
             <div className="p-4 bg-stone-800/30 rounded-lg border border-stone-700">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-lg">🏠</span>
-                <span className="font-medium text-stone-200">Lovable Hosting</span>
+                <span className="font-medium text-stone-200">{t('stepUI.lovableHosting')}</span>
               </div>
               <p className="text-sm text-stone-400 mb-3">
-                Your project is automatically hosted on Lovable&apos;s subdomain.
+                {t('stepUI.lovableHostingDesc')}
               </p>
               <Button
                 variant="outline"
@@ -119,20 +121,20 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
                 onClick={() => window.open(cycle.build?.lovableUrl || 'https://lovable.dev', '_blank')}
               >
                 <ExternalLink className="mr-2 w-4 h-4" />
-                View on Lovable
+                {t('stepUI.viewOnLovable')}
               </Button>
             </div>
 
             <div className="p-4 bg-stone-800/30 rounded-lg border border-stone-700">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-lg">🌐</span>
-                <span className="font-medium text-stone-200">Custom Domain</span>
+                <span className="font-medium text-stone-200">{t('stepUI.customDomain')}</span>
               </div>
               <p className="text-sm text-stone-400 mb-3">
-                Connect a custom domain for a professional look.
+                {t('stepUI.customDomainDesc')}
               </p>
               <Button variant="outline" size="sm" disabled>
-                Coming Soon
+                {t('stepUI.comingSoon')}
               </Button>
             </div>
           </div>
@@ -140,12 +142,12 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
           {/* Deployed URL */}
           <div>
             <Label className="text-stone-300 mb-2 block">
-              Your Live URL
+              {t('stepUI.liveUrl')}
             </Label>
             <Input
               value={deployedUrl}
               onChange={(e) => setDeployedUrl(e.target.value)}
-              placeholder="https://your-project.lovable.app"
+              placeholder={t('stepUI.liveUrlPlaceholder')}
               className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
             />
           </div>
@@ -158,7 +160,7 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
                 variant="outline"
               >
                 <ExternalLink className="mr-2 w-4 h-4" />
-                Test Live Site
+                {t('stepUI.testLiveSite')}
               </Button>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -167,7 +169,7 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
                   onChange={(e) => setIsLive(e.target.checked)}
                   className="w-4 h-4 rounded border-stone-600 bg-stone-800 text-amber-500 focus:ring-amber-500"
                 />
-                <span className="text-stone-300">Verified - it&apos;s working!</span>
+                <span className="text-stone-300">{t('stepUI.verifiedWorking')}</span>
               </label>
             </div>
           )}
@@ -180,15 +182,15 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
           <CardHeader>
             <CardTitle className="text-lg text-blue-400 flex items-center gap-2">
               <Share2 className="w-5 h-5" />
-              Share Your Work
+              {t('stepUI.shareYourWork')}
             </CardTitle>
             <CardDescription>
-              Let others know what you built! Building in public accelerates learning.
+              {t('stepUI.shareYourWorkDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-stone-300 mb-2 block">Share message</Label>
+              <Label className="text-stone-300 mb-2 block">{t('stepUI.shareMessage')}</Label>
               <Textarea
                 value={shareMessage || generateShareMessage()}
                 onChange={(e) => setShareMessage(e.target.value)}
@@ -203,16 +205,16 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
                   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
                 }}
               >
-                Share on X/Twitter
+                {t('stepUI.shareOnTwitter')}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => {
                   navigator.clipboard.writeText(shareMessage || generateShareMessage());
-                  toast.success('Copied to clipboard!');
+                  toast.success(t('toasts.copied'));
                 }}
               >
-                Copy Message
+                {t('stepUI.copyMessage')}
               </Button>
             </div>
           </CardContent>
@@ -228,9 +230,9 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
                 <Check className="w-6 h-6 text-emerald-400" />
               </div>
               <div>
-                <p className="text-emerald-400 font-medium text-lg">You shipped it!</p>
+                <p className="text-emerald-400 font-medium text-lg">{t('stepUI.youShippedIt')}</p>
                 <p className="text-sm text-stone-400">
-                  Your solution is live. Now let&apos;s measure the impact.
+                  {t('stepUI.youShippedItDesc')}
                 </p>
               </div>
             </div>
@@ -241,19 +243,19 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
       {/* Actions */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/6`)}>
-          Back to Building
+          {t('stepUI.backToBuild')}
         </Button>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => saveDeployment(false)} disabled={isPending}>
             <Save className="mr-2 w-4 h-4" />
-            Save Draft
+            {t('stepUI.saveDraft')}
           </Button>
           <Button
             onClick={() => saveDeployment(true)}
             disabled={!hasDeployedUrl || !isLive || isPending}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
-            {isPending ? 'Saving...' : 'Continue to Impact'}
+            {isPending ? t('common.saving') : t('stepUI.continueToImpact')}
             <ChevronRight className="ml-1 w-4 h-4" />
           </Button>
         </div>

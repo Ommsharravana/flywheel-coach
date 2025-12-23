@@ -11,53 +11,65 @@ import { Check, ChevronRight, Diamond, Save, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n/LanguageContext';
 
 interface ValueDiscoveryProps {
   cycle: Cycle;
 }
 
-const DESPERATE_USER_CRITERIA = [
-  {
-    id: 'activelySearching',
-    title: 'Actively Searching',
-    question: 'Are they actively looking for a solution?',
-    description: 'They\'ve searched online, asked friends, or tried to find alternatives.',
-    weight: 20,
-  },
-  {
-    id: 'triedAlternatives',
-    title: 'Tried Alternatives',
-    question: 'Have they tried and rejected other solutions?',
-    description: 'They\'ve used workarounds, hacks, or competing products but found them lacking.',
-    weight: 20,
-  },
-  {
-    id: 'willingToPay',
-    title: 'Willing to Pay',
-    question: 'Would they pay money to solve this?',
-    description: 'They value the solution enough to spend money, not just time.',
-    weight: 25,
-  },
-  {
-    id: 'urgentNeed',
-    title: 'Urgent Need',
-    question: 'Is this problem urgent for them?',
-    description: 'They need a solution soon, not "someday".',
-    weight: 20,
-  },
-  {
-    id: 'frequentProblem',
-    title: 'Frequent Problem',
-    question: 'Do they encounter this problem frequently?',
-    description: 'They deal with this daily or weekly, not just occasionally.',
-    weight: 15,
-  },
-];
+const CRITERIA_IDS = ['activelySearching', 'triedAlternatives', 'willingToPay', 'urgentNeed', 'frequentProblem'] as const;
+const CRITERIA_WEIGHTS: Record<string, number> = {
+  activelySearching: 20,
+  triedAlternatives: 20,
+  willingToPay: 25,
+  urgentNeed: 20,
+  frequentProblem: 15,
+};
 
 export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
+  const { t } = useTranslation();
+
+  // Build criteria with translations
+  const DESPERATE_USER_CRITERIA = [
+    {
+      id: 'activelySearching',
+      title: t('stepUI.activelySearching'),
+      question: t('stepUI.activelySearchingQ'),
+      description: t('stepUI.activelySearchingDesc'),
+      weight: 20,
+    },
+    {
+      id: 'triedAlternatives',
+      title: t('stepUI.triedAlternatives'),
+      question: t('stepUI.triedAlternativesQ'),
+      description: t('stepUI.triedAlternativesDesc'),
+      weight: 20,
+    },
+    {
+      id: 'willingToPay',
+      title: t('stepUI.willingToPayTitle'),
+      question: t('stepUI.willingToPayQ'),
+      description: t('stepUI.willingToPayDesc'),
+      weight: 25,
+    },
+    {
+      id: 'urgentNeed',
+      title: t('stepUI.urgentNeed'),
+      question: t('stepUI.urgentNeedQ'),
+      description: t('stepUI.urgentNeedDesc'),
+      weight: 20,
+    },
+    {
+      id: 'frequentProblem',
+      title: t('stepUI.frequentProblem'),
+      question: t('stepUI.frequentProblemQ'),
+      description: t('stepUI.frequentProblemDesc'),
+      weight: 15,
+    },
+  ];
 
   const [criteria, setCriteria] = useState<Record<string, boolean>>(
     cycle.valueAssessment?.criteria || {
@@ -175,7 +187,7 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
       {cycle.problem && (
         <Card className="glass-card border-amber-500/30">
           <CardContent className="pt-6">
-            <p className="text-sm text-stone-400 mb-1">Validating value for:</p>
+            <p className="text-sm text-stone-400 mb-1">{t('stepUI.validatingValueFor')}</p>
             <p className="text-stone-200 font-medium">
               &quot;{cycle.problem.refinedStatement || cycle.problem.statement}&quot;
             </p>
@@ -187,10 +199,10 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
         <CardHeader>
           <CardTitle className="text-xl text-stone-100 flex items-center gap-2">
             <Diamond className="w-5 h-5 text-amber-400" />
-            The Desperate User Test
+            {t('stepUI.desperateUserTest')}
           </CardTitle>
           <CardDescription>
-            Evaluate whether users are desperate enough for your solution to succeed.
+            {t('stepUI.desperateUserTestDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -230,7 +242,7 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
               <Textarea
                 value={evidence[c.id] || ''}
                 onChange={(e) => setEvidence({ ...evidence, [c.id]: e.target.value })}
-                placeholder="Evidence: What have you observed or heard that supports this?"
+                placeholder={t('stepUI.evidencePlaceholder')}
                 className="bg-stone-800/50 border-stone-700 focus:border-amber-500 text-sm"
               />
             </div>
@@ -251,7 +263,7 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <Label className="text-stone-400">Desperate User Score</Label>
+              <Label className="text-stone-400">{t('stepUI.desperateUserScore')}</Label>
               <div className="text-4xl font-bold text-stone-100">{score}/100</div>
             </div>
             <div
@@ -263,9 +275,9 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
                   : 'bg-red-500/20 text-red-400'
               }`}
             >
-              {decision === 'proceed' && 'PROCEED'}
-              {decision === 'pivot' && 'CONSIDER PIVOTING'}
-              {decision === 'abandon' && 'RETHINK THIS'}
+              {decision === 'proceed' && t('stepUI.proceed')}
+              {decision === 'pivot' && t('stepUI.considerPivoting')}
+              {decision === 'abandon' && t('stepUI.rethinkThis')}
             </div>
           </div>
 
@@ -285,24 +297,9 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
 
           {/* Decision guidance */}
           <div className="text-sm text-stone-400">
-            {decision === 'proceed' && (
-              <p>
-                Strong signal! Users are desperate enough for this solution. Proceed to workflow
-                classification.
-              </p>
-            )}
-            {decision === 'pivot' && (
-              <p>
-                Mixed signals. Consider refining your problem or target audience. You can still
-                proceed, but be prepared to iterate.
-              </p>
-            )}
-            {decision === 'abandon' && (
-              <p>
-                Weak signal. Users may not value this enough. Consider going back to Problem
-                Discovery with a different problem.
-              </p>
-            )}
+            {decision === 'proceed' && <p>{t('stepUI.proceedGuidance')}</p>}
+            {decision === 'pivot' && <p>{t('stepUI.pivotGuidance')}</p>}
+            {decision === 'abandon' && <p>{t('stepUI.abandonGuidance')}</p>}
           </div>
         </CardContent>
       </Card>
@@ -310,19 +307,19 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
       {/* Actions */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/2`)}>
-          Back to Context
+          {t('stepUI.backToContext')}
         </Button>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => saveValue(false)} disabled={isPending}>
             <Save className="mr-2 w-4 h-4" />
-            Save Draft
+            {t('stepUI.saveDraft')}
           </Button>
           <Button
             onClick={() => saveValue(true)}
             disabled={score === 0 || isPending}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
-            {isPending ? 'Saving...' : 'Complete & Continue'}
+            {isPending ? t('common.saving') : t('stepUI.completeAndContinue')}
             <ChevronRight className="ml-1 w-4 h-4" />
           </Button>
         </div>

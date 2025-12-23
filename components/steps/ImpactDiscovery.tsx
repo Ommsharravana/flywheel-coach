@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n/LanguageContext';
 
 interface ImpactDiscoveryProps {
   cycle: Cycle;
@@ -22,6 +23,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
+  const { t } = useTranslation();
 
   const [usersReached, setUsersReached] = useState(cycle.impact?.usersReached || 0);
   const [timeSavedMinutes, setTimeSavedMinutes] = useState(cycle.impact?.timeSavedMinutes || 0);
@@ -115,10 +117,10 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
           .eq('id', cycle.id);
         if (cycleError) throw cycleError;
 
-        toast.success('Cycle complete! You shipped it!');
+        toast.success(t('stepUI.cycleCompleted'));
         router.push(`/cycle/${cycle.id}`);
       } else {
-        toast.success('Saved!');
+        toast.success(t('stepUI.impactSaved'));
         router.refresh();
       }
     } catch (error: unknown) {
@@ -136,7 +138,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
     const firstProblem = newProblems.find((p) => p.trim());
 
     if (!firstProblem) {
-      toast.error('Add at least one new problem to start a new cycle.');
+      toast.error(t('stepUI.addProblemFirst'));
       return;
     }
 
@@ -177,7 +179,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
       });
       if (problemError) throw problemError;
 
-      toast.success('New cycle started from discovered problem!');
+      toast.success(t('stepUI.newCycleStarted'));
       router.push(`/cycle/${newCycleId}/step/1`);
     } catch (error: unknown) {
       console.error('Error starting new cycle:', error);
@@ -198,7 +200,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
             <div className="flex items-center gap-3">
               <Trophy className="w-6 h-6 text-emerald-400" />
               <div>
-                <p className="text-emerald-400 font-medium">You shipped!</p>
+                <p className="text-emerald-400 font-medium">{t('stepUI.youShippedIt')}</p>
                 <a
                   href={cycle.build.projectUrl}
                   target="_blank"
@@ -217,10 +219,10 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
         <CardHeader>
           <CardTitle className="text-xl text-stone-100 flex items-center gap-2">
             <Target className="w-5 h-5 text-amber-400" />
-            Measure Your Impact
+            {t('stepUI.measureImpact')}
           </CardTitle>
           <CardDescription>
-            Track the real-world impact of your solution. These metrics help you learn and improve.
+            {t('stepUI.measureImpactDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -229,7 +231,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
             <div className="p-4 bg-stone-800/30 rounded-lg border border-stone-700">
               <div className="flex items-center gap-2 mb-3">
                 <Users className="w-5 h-5 text-blue-400" />
-                <Label className="text-stone-300">Users Reached</Label>
+                <Label className="text-stone-300">{t('stepUI.usersReached')}</Label>
               </div>
               <Input
                 type="number"
@@ -238,13 +240,13 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
                 min={0}
                 className="bg-stone-800/50 border-stone-700 focus:border-amber-500 text-2xl font-bold"
               />
-              <p className="text-xs text-stone-500 mt-1">How many people used your solution?</p>
+              <p className="text-xs text-stone-500 mt-1">{t('stepUI.usersReachedDesc')}</p>
             </div>
 
             <div className="p-4 bg-stone-800/30 rounded-lg border border-stone-700">
               <div className="flex items-center gap-2 mb-3">
                 <Target className="w-5 h-5 text-emerald-400" />
-                <Label className="text-stone-300">Time Saved (mins)</Label>
+                <Label className="text-stone-300">{t('stepUI.timeSavedMinutes')}</Label>
               </div>
               <Input
                 type="number"
@@ -253,13 +255,13 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
                 min={0}
                 className="bg-stone-800/50 border-stone-700 focus:border-amber-500 text-2xl font-bold"
               />
-              <p className="text-xs text-stone-500 mt-1">Total time saved per use</p>
+              <p className="text-xs text-stone-500 mt-1">{t('stepUI.timeSavedDesc')}</p>
             </div>
 
             <div className="p-4 bg-stone-800/30 rounded-lg border border-stone-700">
               <div className="flex items-center gap-2 mb-3">
                 <Trophy className="w-5 h-5 text-amber-400" />
-                <Label className="text-stone-300">Satisfaction (1-10)</Label>
+                <Label className="text-stone-300">{t('stepUI.satisfactionScore')}</Label>
               </div>
               <Input
                 type="number"
@@ -269,28 +271,28 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
                 max={10}
                 className="bg-stone-800/50 border-stone-700 focus:border-amber-500 text-2xl font-bold"
               />
-              <p className="text-xs text-stone-500 mt-1">Average user satisfaction</p>
+              <p className="text-xs text-stone-500 mt-1">{t('stepUI.satisfactionDesc')}</p>
             </div>
           </div>
 
           {/* Feedback */}
           <div>
-            <Label className="text-stone-300 mb-2 block">User Feedback</Label>
+            <Label className="text-stone-300 mb-2 block">{t('stepUI.userFeedback')}</Label>
             <Textarea
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
-              placeholder="What are users saying about your solution? Any quotes or reactions?"
+              placeholder={t('stepUI.userFeedbackPlaceholder')}
               className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
             />
           </div>
 
           {/* Lessons learned */}
           <div>
-            <Label className="text-stone-300 mb-2 block">Lessons Learned</Label>
+            <Label className="text-stone-300 mb-2 block">{t('stepUI.lessonsLearned')}</Label>
             <Textarea
               value={lessonsLearned}
               onChange={(e) => setLessonsLearned(e.target.value)}
-              placeholder="What did you learn from this cycle? What would you do differently?"
+              placeholder={t('stepUI.lessonsLearnedPlaceholder')}
               className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
             />
           </div>
@@ -302,10 +304,10 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
         <CardHeader>
           <CardTitle className="text-lg text-amber-400 flex items-center gap-2">
             <Lightbulb className="w-5 h-5" />
-            New Problems Discovered
+            {t('stepUI.newProblemsDiscovered')}
           </CardTitle>
           <CardDescription>
-            Every solution reveals new problems. This is how the flywheel keeps spinning!
+            {t('stepUI.newProblemsDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -319,7 +321,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
               <Input
                 value={problem}
                 onChange={(e) => updateProblem(index, e.target.value)}
-                placeholder="A new problem you noticed while building or from user feedback..."
+                placeholder={t('stepUI.newProblemPlaceholder')}
                 className="flex-1 bg-stone-800/50 border-stone-700 focus:border-amber-500"
               />
               {newProblems.length > 1 && (
@@ -335,7 +337,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
             </motion.div>
           ))}
           <Button variant="outline" onClick={addNewProblem} className="w-full">
-            + Add Another Problem
+            + {t('stepUI.addAnotherProblem')}
           </Button>
         </CardContent>
       </Card>
@@ -349,21 +351,21 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
                 <Check className="w-6 h-6 text-emerald-400" />
               </div>
               <div>
-                <p className="text-emerald-400 font-medium text-lg">Impact Measured!</p>
+                <p className="text-emerald-400 font-medium text-lg">{t('stepUI.impactMeasured')}</p>
                 <p className="text-sm text-stone-400">
-                  {usersReached} users reached, {timeSavedMinutes} minutes saved
+                  {t('stepUI.impactMeasuredDesc').replace('{users}', String(usersReached)).replace('{minutes}', String(timeSavedMinutes))}
                 </p>
               </div>
             </div>
 
             {/* Total impact calculation */}
             <div className="p-4 bg-stone-800/30 rounded-lg">
-              <p className="text-sm text-stone-400 mb-1">Total Time Saved</p>
+              <p className="text-sm text-stone-400 mb-1">{t('stepUI.totalTimeSaved')}</p>
               <p className="text-2xl font-bold text-emerald-400">
-                {(usersReached * timeSavedMinutes / 60).toFixed(1)} hours
+                {t('stepUI.hoursFormat').replace('{hours}', (usersReached * timeSavedMinutes / 60).toFixed(1))}
               </p>
               <p className="text-xs text-stone-500">
-                {usersReached} users × {timeSavedMinutes} minutes each
+                {t('stepUI.timeSavedCalc').replace('{users}', String(usersReached)).replace('{minutes}', String(timeSavedMinutes))}
               </p>
             </div>
           </CardContent>
@@ -373,12 +375,12 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
       {/* Actions */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/7`)}>
-          Back to Deployment
+          {t('stepUI.backToDeployment')}
         </Button>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => saveImpact(false)} disabled={isPending}>
             <Save className="mr-2 w-4 h-4" />
-            Save Draft
+            {t('stepUI.saveDraft')}
           </Button>
           {newProblems.some((p) => p.trim()) && (
             <Button
@@ -387,7 +389,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
               className="bg-amber-500 hover:bg-amber-600 text-stone-900"
             >
               <RefreshCcw className="mr-2 w-4 h-4" />
-              Start New Cycle
+              {t('stepUI.startNewCycle')}
             </Button>
           )}
           <Button
@@ -395,7 +397,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
             disabled={!hasMinimumData || isPending}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
-            {isPending ? 'Saving...' : 'Complete Cycle'}
+            {isPending ? t('common.saving') : t('stepUI.completeCycle')}
             <ChevronRight className="ml-1 w-4 h-4" />
           </Button>
         </div>

@@ -14,6 +14,7 @@ import { Check, ChevronRight, MessageSquare, Plus, Save, Trash2, User } from 'lu
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n/LanguageContext';
 
 interface ContextDiscoveryProps {
   cycle: Cycle;
@@ -32,6 +33,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
+  const { t } = useTranslation();
 
   const [who, setWho] = useState(cycle.context?.who || '');
   const [when, setWhen] = useState(cycle.context?.when || '');
@@ -201,7 +203,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
       {cycle.problem && (
         <Card className="glass-card border-amber-500/30">
           <CardContent className="pt-6">
-            <p className="text-sm text-stone-400 mb-1">You&apos;re exploring context for:</p>
+            <p className="text-sm text-stone-400 mb-1">{t('stepUI.youreExploring')}</p>
             <p className="text-stone-200 font-medium">
               &quot;{cycle.problem.refinedStatement || cycle.problem.statement}&quot;
             </p>
@@ -212,55 +214,55 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
       <Tabs value={currentTab} onValueChange={setCurrentTab}>
         <TabsList className="grid w-full grid-cols-2 bg-stone-800/50">
           <TabsTrigger value="context" className="data-[state=active]:bg-amber-500 data-[state=active]:text-stone-900">
-            Context Template
+            {t('stepUI.contextTemplate')}
           </TabsTrigger>
           <TabsTrigger value="interviews" className="data-[state=active]:bg-amber-500 data-[state=active]:text-stone-900">
-            Interviews ({interviews.filter((i) => i.personName.trim()).length})
+            {t('stepUI.userInterviews')} ({interviews.filter((i) => i.personName.trim()).length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="context" className="mt-6">
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle className="text-xl text-stone-100">Context Template</CardTitle>
+              <CardTitle className="text-xl text-stone-100">{t('stepUI.contextTemplate')}</CardTitle>
               <CardDescription>
-                Fill in the details to understand when and how this problem occurs.
+                {t('stepUI.contextTemplateDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label className="text-stone-300 mb-2 block">Who experiences this problem?</Label>
+                <Label className="text-stone-300 mb-2 block">{t('stepUI.whoExperiences')}</Label>
                 <Textarea
                   value={who}
                   onChange={(e) => setWho(e.target.value)}
-                  placeholder="e.g., 2nd year CS students who are preparing for placements..."
+                  placeholder={t('stepUI.whoExperiencesPlaceholder')}
                   className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <Label className="text-stone-300 mb-2 block">When does it happen?</Label>
+                <Label className="text-stone-300 mb-2 block">{t('stepUI.whenHappens')}</Label>
                 <Textarea
                   value={when}
                   onChange={(e) => setWhen(e.target.value)}
-                  placeholder="e.g., During exam preparation, when they need to revise multiple subjects..."
+                  placeholder={t('stepUI.whenHappensPlaceholder')}
                   className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <Label className="text-stone-300 mb-2 block">Where does it occur? (optional)</Label>
+                <Label className="text-stone-300 mb-2 block">{t('stepUI.whereOccurs')}</Label>
                 <Input
                   value={where}
                   onChange={(e) => setWhere(e.target.value)}
-                  placeholder="e.g., In the library, hostel room, during lab sessions..."
+                  placeholder={t('stepUI.whereOccursPlaceholder')}
                   className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
                 />
               </div>
 
               <div>
                 <Label className="text-stone-300 mb-3 block">
-                  How painful is this? <span className="text-amber-400 font-bold">{howPainful}/10</span>
+                  {t('stepUI.howPainful')} <span className="text-amber-400 font-bold">{howPainful}/10</span>
                 </Label>
                 <Slider
                   value={[howPainful]}
@@ -273,11 +275,11 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
               </div>
 
               <div>
-                <Label className="text-stone-300 mb-2 block">How do they currently solve it?</Label>
+                <Label className="text-stone-300 mb-2 block">{t('stepUI.howCurrentlySolve')}</Label>
                 <Textarea
                   value={currentSolution}
                   onChange={(e) => setCurrentSolution(e.target.value)}
-                  placeholder="e.g., They use multiple apps, ask seniors, or just struggle through..."
+                  placeholder={t('stepUI.howCurrentlySolvePlaceholder')}
                   className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
                 />
               </div>
@@ -288,7 +290,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                   disabled={!isContextComplete}
                   className="bg-amber-500 hover:bg-amber-600 text-stone-900"
                 >
-                  Continue to Interviews
+                  {t('stepUI.continueToInterviews')}
                   <ChevronRight className="ml-1 w-4 h-4" />
                 </Button>
               </div>
@@ -301,20 +303,20 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
             <CardHeader>
               <CardTitle className="text-xl text-stone-100 flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-amber-400" />
-                User Interviews
+                {t('stepUI.userInterviews')}
               </CardTitle>
               <CardDescription>
-                Talk to at least 3 people who experience this problem. Record what you learn.
+                {t('stepUI.userInterviewsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {interviews.length === 0 ? (
                 <div className="text-center py-8">
                   <User className="w-12 h-12 text-stone-600 mx-auto mb-3" />
-                  <p className="text-stone-400 mb-4">No interviews recorded yet</p>
+                  <p className="text-stone-400 mb-4">{t('stepUI.noInterviewsYet')}</p>
                   <Button onClick={addInterview} variant="outline">
                     <Plus className="mr-2 w-4 h-4" />
-                    Add First Interview
+                    {t('stepUI.addFirstInterview')}
                   </Button>
                 </div>
               ) : (
@@ -323,7 +325,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                     <Card key={interview.id} className="bg-stone-800/50 border-stone-700">
                       <CardContent className="pt-4 space-y-4">
                         <div className="flex items-center justify-between">
-                          <Badge variant="outline">Interview #{index + 1}</Badge>
+                          <Badge variant="outline">{t('stepUI.interviewNumber').replace('{number}', String(index + 1))}</Badge>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -336,31 +338,31 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
 
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
-                            <Label className="text-sm text-stone-400">Name</Label>
+                            <Label className="text-sm text-stone-400">{t('stepUI.personName')}</Label>
                             <Input
                               value={interview.personName}
                               onChange={(e) => updateInterview(interview.id, 'personName', e.target.value)}
-                              placeholder="Person's name"
+                              placeholder={t('stepUI.personNamePlaceholder')}
                               className="bg-stone-900/50 border-stone-600"
                             />
                           </div>
                           <div>
-                            <Label className="text-sm text-stone-400">Role</Label>
+                            <Label className="text-sm text-stone-400">{t('settings.department')}</Label>
                             <Input
                               value={interview.role}
                               onChange={(e) => updateInterview(interview.id, 'role', e.target.value)}
-                              placeholder="e.g., 2nd year student"
+                              placeholder={t('stepUI.rolePlaceholder')}
                               className="bg-stone-900/50 border-stone-600"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <Label className="text-sm text-stone-400">Key Insights</Label>
+                          <Label className="text-sm text-stone-400">{t('stepUI.keyInsights')}</Label>
                           <Textarea
                             value={interview.notes}
                             onChange={(e) => updateInterview(interview.id, 'notes', e.target.value)}
-                            placeholder="What did they say about the problem? What surprised you?"
+                            placeholder={t('stepUI.keyInsightsPlaceholder')}
                             className="bg-stone-900/50 border-stone-600 min-h-[80px]"
                           />
                         </div>
@@ -368,7 +370,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
                             <Label className="text-sm text-stone-400">
-                              Their Pain Level: {interview.painLevel}/10
+                              {t('stepUI.theirPainLevel').replace('{level}', String(interview.painLevel))}
                             </Label>
                             <Slider
                               value={[interview.painLevel]}
@@ -379,7 +381,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                             />
                           </div>
                           <div>
-                            <Label className="text-sm text-stone-400">Would they pay to solve this?</Label>
+                            <Label className="text-sm text-stone-400">{t('stepUI.wouldTheyPay')}</Label>
                             <div className="flex gap-2 mt-2">
                               <Button
                                 size="sm"
@@ -387,7 +389,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                                 onClick={() => updateInterview(interview.id, 'wouldPay', true)}
                                 className={interview.wouldPay ? 'bg-emerald-500' : ''}
                               >
-                                Yes
+                                {t('stepUI.yes')}
                               </Button>
                               <Button
                                 size="sm"
@@ -395,7 +397,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                                 onClick={() => updateInterview(interview.id, 'wouldPay', false)}
                                 className={!interview.wouldPay ? 'bg-red-500' : ''}
                               >
-                                No
+                                {t('stepUI.no')}
                               </Button>
                             </div>
                           </div>
@@ -406,7 +408,7 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
 
                   <Button onClick={addInterview} variant="outline" className="w-full">
                     <Plus className="mr-2 w-4 h-4" />
-                    Add Another Interview
+                    {t('stepUI.addAnotherInterview')}
                   </Button>
                 </div>
               )}
@@ -421,10 +423,10 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                   <Check className="w-6 h-6 text-emerald-400" />
                   <div>
                     <p className="text-emerald-400 font-medium">
-                      {interviews.filter((i) => i.personName.trim()).length} interview(s) recorded
+                      {t('stepUI.interviewsRecorded').replace('{count}', String(interviews.filter((i) => i.personName.trim()).length))}
                     </p>
                     <p className="text-sm text-stone-400">
-                      Average pain level:{' '}
+                      {t('stepUI.averagePainLevel')}{' '}
                       {(
                         interviews.filter((i) => i.personName.trim()).reduce((acc, i) => acc + i.painLevel, 0) /
                         interviews.filter((i) => i.personName.trim()).length
@@ -439,19 +441,19 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
 
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setCurrentTab('context')}>
-              Back to Context
+              {t('stepUI.backToContext')}
             </Button>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => saveContext(false)} disabled={isPending}>
                 <Save className="mr-2 w-4 h-4" />
-                Save Draft
+                {t('stepUI.saveDraft')}
               </Button>
               <Button
                 onClick={() => saveContext(true)}
                 disabled={!isContextComplete || !hasInterviews || isPending}
                 className="bg-emerald-500 hover:bg-emerald-600 text-white"
               >
-                {isPending ? 'Saving...' : 'Complete & Continue'}
+                {isPending ? t('common.saving') : t('stepUI.completeAndContinue')}
                 <ChevronRight className="ml-1 w-4 h-4" />
               </Button>
             </div>

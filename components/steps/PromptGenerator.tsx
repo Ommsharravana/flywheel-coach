@@ -25,6 +25,7 @@ import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { generatePromptSequence, getSequenceSummary, PromptStep } from '@/lib/prompts/sequences';
 import { PROMPT_TEMPLATES } from '@/lib/prompts/templates';
+import { useTranslation } from '@/lib/i18n/LanguageContext';
 
 interface PromptGeneratorProps {
   cycle: Cycle;
@@ -37,6 +38,7 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
   const [hasGoogleOAuth, setHasGoogleOAuth] = useState(false);
   const [aiPrompts, setAiPrompts] = useState<PromptStep[] | null>(null);
   const supabase = createClient();
+  const { t } = useTranslation();
 
   // Check if user has Google OAuth session with Gemini access
   useEffect(() => {
@@ -128,7 +130,7 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
       setAiPrompts(prompts);
       setEditedPrompts({}); // Reset edits when regenerating
       setCopiedPrompts(new Set()); // Reset copied status
-      toast.success('AI-personalized prompts generated!');
+      toast.success(t('stepUI.allPromptsSaved'));
     } catch (error) {
       console.error('Error generating AI prompts:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to generate AI prompts');
@@ -144,9 +146,9 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
     try {
       await navigator.clipboard.writeText(editedContent);
       setCopiedPrompts((prev) => new Set(prev).add(currentPromptIndex));
-      toast.success(`Prompt ${currentPromptIndex + 1} copied!`);
+      toast.success(t('stepUI.promptCopied').replace('{number}', String(currentPromptIndex + 1)));
     } catch {
-      toast.error('Failed to copy. Please select and copy manually.');
+      toast.error(t('errors.generic'));
     }
   };
 
@@ -160,9 +162,9 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
         .join('\n\n' + '='.repeat(50) + '\n\n');
 
       await navigator.clipboard.writeText(allPrompts);
-      toast.success('All 9 prompts copied to clipboard!');
+      toast.success(t('stepUI.allPromptsCopied'));
     } catch {
-      toast.error('Failed to copy. Please try copying individually.');
+      toast.error(t('errors.generic'));
     }
   };
 
@@ -219,10 +221,10 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
           .eq('id', cycle.id);
         if (cycleError) throw cycleError;
 
-        toast.success('All prompts saved!');
+        toast.success(t('stepUI.allPromptsSaved'));
         router.push(`/cycle/${cycle.id}/step/6`);
       } else {
-        toast.success('Progress saved!');
+        toast.success(t('stepUI.progressSaved'));
         router.refresh();
       }
     } catch (error: unknown) {
@@ -254,15 +256,15 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
       <Card className="glass-card border-amber-500/30">
         <CardHeader>
           <CardTitle className="text-lg text-amber-400 flex items-center gap-2">
-            <Layers className="w-5 h-5" />9 Prompts to Build Your App
+            <Layers className="w-5 h-5" />{t('stepUI.ninePromptsTitle')}
           </CardTitle>
           <CardDescription>
-            Complete prompt sequence for building a{' '}
+            {t('stepUI.promptSequenceDesc')}{' '}
             <span className="text-amber-400 font-medium">
               {workflowTypes.length > 1 ? (
                 <>
-                  hybrid ({workflowTypes.map(t =>
-                    PROMPT_TEMPLATES[t.toUpperCase()]?.name || t.replace('-', ' ')
+                  hybrid ({workflowTypes.map(wt =>
+                    PROMPT_TEMPLATES[wt.toUpperCase()]?.name || wt.replace('-', ' ')
                   ).join(' + ')})
                 </>
               ) : (
@@ -275,23 +277,23 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div className="p-3 bg-stone-800/50 rounded-lg">
-              <div className="text-stone-400 mb-1">Problem</div>
+              <div className="text-stone-400 mb-1">{t('stepUI.problem')}</div>
               <div className="text-stone-200 line-clamp-2">
-                {cycle.problem?.refinedStatement || cycle.problem?.statement || 'Not defined'}
+                {cycle.problem?.refinedStatement || cycle.problem?.statement || t('common.notAvailable')}
               </div>
             </div>
             <div className="p-3 bg-stone-800/50 rounded-lg">
-              <div className="text-stone-400 mb-1">Workflow Type{workflowTypes.length > 1 ? 's' : ''}</div>
+              <div className="text-stone-400 mb-1">{workflowTypes.length > 1 ? t('stepUI.workflowTypesLabel') : t('stepUI.workflowTypeLabel')}</div>
               <div className="text-stone-200 capitalize">
                 {workflowTypes.length > 0
-                  ? workflowTypes.map(t => t.replace('-', ' ')).join(' + ')
-                  : 'Not selected'}
+                  ? workflowTypes.map(wt => wt.replace('-', ' ')).join(' + ')
+                  : t('common.notAvailable')}
               </div>
             </div>
             <div className="p-3 bg-stone-800/50 rounded-lg">
-              <div className="text-stone-400 mb-1">Progress</div>
+              <div className="text-stone-400 mb-1">{t('stepUI.progress')}</div>
               <div className="text-stone-200">
-                {copiedPrompts.size}/9 prompts copied
+                {copiedPrompts.size}/9 {t('stepUI.promptsCopied')}
                 <div className="flex gap-1 mt-1">
                   {promptSequence.map((_, i) => (
                     <div
@@ -320,24 +322,24 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
                       {isGeneratingAI ? (
                         <>
                           <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                          Generating with Gemini...
+                          {t('stepUI.generatingWithGemini')}
                         </>
                       ) : (
                         <>
                           <Wand2 className="mr-2 w-4 h-4" />
-                          Generate AI-Personalized Prompts
+                          {t('stepUI.generateAIPrompts')}
                         </>
                       )}
                     </Button>
                     <span className="text-sm text-stone-400">
-                      Using template-based prompts. Click to personalize with Gemini AI.
+                      {t('stepUI.usingTemplatePrompts')}
                     </span>
                   </>
                 ) : (
                   <>
                     <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">
                       <Sparkles className="mr-1 w-3 h-3" />
-                      AI Generated
+                      {t('stepUI.aiGenerated')}
                     </Badge>
                     <Button
                       onClick={generateWithAI}
@@ -348,12 +350,12 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
                       {isGeneratingAI ? (
                         <>
                           <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                          Regenerating...
+                          {t('stepUI.regenerating')}
                         </>
                       ) : (
                         <>
                           <Wand2 className="mr-2 w-4 h-4" />
-                          Regenerate
+                          {t('stepUI.regenerate')}
                         </>
                       )}
                     </Button>
@@ -362,14 +364,14 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
                         setAiPrompts(null);
                         setEditedPrompts({});
                         setCopiedPrompts(new Set());
-                        toast.success('Reset to template prompts');
+                        toast.success(t('stepUI.resetToTemplates'));
                       }}
                       variant="outline"
                       size="sm"
                       className="text-stone-400 border-stone-600 hover:bg-stone-700/50"
                     >
                       <Sparkles className="mr-1 w-3 h-3" />
-                      Reset to Templates
+                      {t('stepUI.resetToTemplates')}
                     </Button>
                   </>
                 )}
@@ -378,7 +380,7 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
               <div className="flex items-center gap-2 text-sm text-stone-400">
                 <AlertCircle className="w-4 h-4" />
                 <span>
-                  Sign in with Google to generate AI-personalized prompts using Gemini.
+                  {t('stepUI.signInForAI')}
                 </span>
               </div>
             )}
@@ -390,7 +392,7 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
         {/* Sidebar - Prompt List */}
         <Card className="glass-card lg:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-stone-300">Prompt Sequence</CardTitle>
+            <CardTitle className="text-sm text-stone-300">{t('stepUI.promptSequence')}</CardTitle>
           </CardHeader>
           <CardContent className="p-2">
             <ScrollArea className="h-[400px]">
@@ -435,10 +437,10 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
             <div className="flex items-center justify-between">
               <div>
                 <Badge variant="outline" className={getPhaseColor(currentPrompt.phase)}>
-                  {currentPrompt.phase.charAt(0).toUpperCase() + currentPrompt.phase.slice(1)} Phase
+                  {currentPrompt.phase.charAt(0).toUpperCase() + currentPrompt.phase.slice(1)}
                 </Badge>
                 <CardTitle className="text-xl text-stone-100 mt-2">
-                  Prompt {currentPromptIndex + 1}: {currentPrompt.title}
+                  {t('stepUI.promptNumber').replace('{number}', String(currentPromptIndex + 1))}: {currentPrompt.title}
                 </CardTitle>
                 <CardDescription>{currentPrompt.description}</CardDescription>
               </div>
@@ -488,24 +490,24 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
               >
                 {copiedPrompts.has(currentPromptIndex) ? (
                   <>
-                    <Check className="mr-2 w-4 h-4" /> Copied!
+                    <Check className="mr-2 w-4 h-4" /> {t('stepUI.copied')}
                   </>
                 ) : (
                   <>
-                    <Copy className="mr-2 w-4 h-4" /> Copy This Prompt
+                    <Copy className="mr-2 w-4 h-4" /> {t('stepUI.copyThisPrompt')}
                   </>
                 )}
               </Button>
               <Button variant="outline" onClick={copyAllPrompts}>
                 <Layers className="mr-2 w-4 h-4" />
-                Copy All 9 Prompts
+                {t('stepUI.copyAllPrompts')}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => window.open('https://lovable.dev', '_blank')}
               >
                 <ExternalLink className="mr-2 w-4 h-4" />
-                Open Lovable
+                {t('stepUI.openLovable')}
               </Button>
               <Button
                 variant="outline"
@@ -520,7 +522,7 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
                 className="text-stone-400"
               >
                 <Sparkles className="mr-1 w-3 h-3" />
-                Reset to Original
+                {t('stepUI.resetToOriginal')}
               </Button>
             </div>
           </CardContent>
@@ -530,44 +532,32 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
       {/* Instructions Card */}
       <Card className="glass-card border-blue-500/30">
         <CardHeader>
-          <CardTitle className="text-lg text-blue-400">How to Use These Prompts</CardTitle>
+          <CardTitle className="text-lg text-blue-400">{t('stepUI.howToUsePrompts')}</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-stone-300 space-y-3">
           <div className="flex items-start gap-3">
             <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/50">
               1
             </Badge>
-            <div>
-              <strong>Start with Prompt 1</strong> - Copy and paste into Lovable to set up the
-              foundation
-            </div>
+            <div>{t('stepUI.promptStep1')}</div>
           </div>
           <div className="flex items-start gap-3">
             <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/50">
               2
             </Badge>
-            <div>
-              <strong>Wait for completion</strong> - Let Lovable finish building before sending the
-              next prompt
-            </div>
+            <div>{t('stepUI.promptStep2')}</div>
           </div>
           <div className="flex items-start gap-3">
             <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/50">
               3
             </Badge>
-            <div>
-              <strong>Continue in sequence</strong> - Each prompt builds on the previous one. Don&apos;t
-              skip prompts.
-            </div>
+            <div>{t('stepUI.promptStep3')}</div>
           </div>
           <div className="flex items-start gap-3">
             <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/50">
               4
             </Badge>
-            <div>
-              <strong>Edit if needed</strong> - Customize prompts to add specific requirements
-              before copying
-            </div>
+            <div>{t('stepUI.promptStep4')}</div>
           </div>
         </CardContent>
       </Card>
@@ -575,19 +565,19 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
       {/* Actions */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/4`)}>
-          Back to Workflow
+          {t('stepUI.backToWorkflow')}
         </Button>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => savePrompts(false)} disabled={isPending}>
             <Save className="mr-2 w-4 h-4" />
-            Save Progress
+            {t('stepUI.saveProgress')}
           </Button>
           <Button
             onClick={() => savePrompts(true)}
             disabled={isPending}
             className="bg-emerald-500 hover:bg-emerald-600 text-white"
           >
-            {isPending ? 'Saving...' : 'Continue to Building'}
+            {isPending ? t('common.saving') : t('stepUI.continueToBuilding')}
             <ChevronRight className="ml-1 w-4 h-4" />
           </Button>
         </div>
