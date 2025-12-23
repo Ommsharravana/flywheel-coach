@@ -1,22 +1,37 @@
 'use client'
 
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Header } from '@/components/shared/Header'
 import { FlywheelLogo } from '@/components/shared/FlywheelLogo'
-
-const flywheelSteps = [
-  { number: 1, name: 'Problem', description: 'Discover problems worth solving', icon: '🔍' },
-  { number: 2, name: 'Context', description: 'Understand who, when, how painful', icon: '🎯' },
-  { number: 3, name: 'Value', description: 'Validate with desperate users', icon: '💎' },
-  { number: 4, name: 'Workflow', description: 'Classify the AI workflow type', icon: '⚙️' },
-  { number: 5, name: 'Prompt', description: 'Generate Lovable-ready prompt', icon: '✨' },
-  { number: 6, name: 'Build', description: 'Create with Lovable AI', icon: '🔨' },
-  { number: 7, name: 'Deploy', description: 'Ship to real users', icon: '🚀' },
-  { number: 8, name: 'Impact', description: 'Measure and discover more', icon: '📊' },
-]
+import { LanguageToggle } from '@/components/shared/LanguageToggle'
+import { createTranslator, type Locale } from '@/lib/i18n'
 
 export default function Home() {
+  const [locale, setLocale] = useState<Locale>('en')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const saved = localStorage.getItem('flywheel-locale') as Locale | null
+    if (saved && (saved === 'en' || saved === 'ta')) {
+      setLocale(saved)
+    }
+  }, [])
+
+  const t = useMemo(() => createTranslator(locale), [locale])
+
+  const flywheelSteps = [
+    { number: 1, name: t('landing.step1Name'), description: t('landing.step1Desc'), icon: '🔍' },
+    { number: 2, name: t('landing.step2Name'), description: t('landing.step2Desc'), icon: '🎯' },
+    { number: 3, name: t('landing.step3Name'), description: t('landing.step3Desc'), icon: '💎' },
+    { number: 4, name: t('landing.step4Name'), description: t('landing.step4Desc'), icon: '⚙️' },
+    { number: 5, name: t('landing.step5Name'), description: t('landing.step5Desc'), icon: '✨' },
+    { number: 6, name: t('landing.step6Name'), description: t('landing.step6Desc'), icon: '🔨' },
+    { number: 7, name: t('landing.step7Name'), description: t('landing.step7Desc'), icon: '🚀' },
+    { number: 8, name: t('landing.step8Name'), description: t('landing.step8Desc'), icon: '📊' },
+  ]
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Background effects */}
@@ -36,16 +51,22 @@ export default function Home() {
 
             {/* Headline */}
             <h1 className="font-display text-4xl font-bold tracking-tight text-stone-100 sm:text-5xl md:text-6xl lg:text-7xl">
-              Turn Problems Into
-              <span className="block text-gradient">Working Solutions</span>
+              {t('landing.heroTitle1')}
+              <span className="block text-gradient">{t('landing.heroTitle2')}</span>
             </h1>
 
             {/* Subheadline */}
             <p className="mx-auto mt-6 max-w-2xl text-lg text-stone-400 sm:text-xl">
-              Master the Problem-to-Impact Flywheel with AI-guided coaching.
-              Find real problems, validate them, and ship AI-powered solutions
-              that make a difference.
+              {t('landing.heroSubtitle')}
             </p>
+
+            {/* Language Toggle - Prominent placement */}
+            <div className="mt-8 flex justify-center">
+              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-stone-900/80 border border-stone-700/50 backdrop-blur-sm">
+                <span className="text-sm text-stone-400">{t('landing.language')}:</span>
+                <LanguageToggle showLabel={false} />
+              </div>
+            </div>
 
             {/* CTA Buttons */}
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -54,7 +75,7 @@ export default function Home() {
                 asChild
                 className="bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-semibold hover:from-amber-400 hover:to-orange-500 shadow-lg shadow-orange-500/25 text-lg px-8 py-6"
               >
-                <Link href="/signup">Start Your Journey</Link>
+                <Link href="/signup">{t('landing.startJourney')}</Link>
               </Button>
               <Button
                 size="lg"
@@ -62,13 +83,13 @@ export default function Home() {
                 asChild
                 className="border-stone-700 text-stone-300 hover:bg-stone-800/50 hover:text-stone-100 text-lg px-8 py-6"
               >
-                <Link href="/login">Sign In</Link>
+                <Link href="/login">{t('landing.signIn')}</Link>
               </Button>
             </div>
 
             {/* Trust badge */}
             <p className="mt-8 text-sm text-stone-500">
-              JKKN Solution Studio • Powered by JKKN Institutions
+              {t('landing.poweredBy')}
             </p>
           </div>
 
@@ -95,11 +116,10 @@ export default function Home() {
           <div className="mx-auto max-w-6xl">
             <div className="text-center mb-16">
               <h2 className="font-display text-3xl font-bold text-stone-100 sm:text-4xl">
-                The 8-Step Flywheel
+                {t('landing.flywheelTitle')}
               </h2>
               <p className="mt-4 text-stone-400 max-w-2xl mx-auto">
-                A proven methodology to go from problem discovery to measurable impact.
-                Each spin of the flywheel builds momentum for the next.
+                {t('landing.flywheelSubtitle')}
               </p>
             </div>
 
@@ -141,11 +161,10 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="font-display text-xl font-semibold text-stone-100">
-                  AI-Guided Coaching
+                  {t('landing.feature1Title')}
                 </h3>
                 <p className="mt-3 text-stone-400">
-                  Your personal AI coach asks the right questions and guides you
-                  through each step without doing the work for you.
+                  {t('landing.feature1Desc')}
                 </p>
               </div>
 
@@ -157,11 +176,10 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="font-display text-xl font-semibold text-stone-100">
-                  Real-World Projects
+                  {t('landing.feature2Title')}
                 </h3>
                 <p className="mt-3 text-stone-400">
-                  Build actual solutions for real problems. Your portfolio grows
-                  with each completed flywheel cycle.
+                  {t('landing.feature2Desc')}
                 </p>
               </div>
 
@@ -173,11 +191,10 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="font-display text-xl font-semibold text-stone-100">
-                  Track Your Impact
+                  {t('landing.feature3Title')}
                 </h3>
                 <p className="mt-3 text-stone-400">
-                  Measure adoption, retention, and pain reduction. See the real
-                  impact of your solutions in numbers.
+                  {t('landing.feature3Desc')}
                 </p>
               </div>
             </div>
@@ -188,11 +205,10 @@ export default function Home() {
         <section className="relative py-24 px-4">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="font-display text-3xl font-bold text-stone-100 sm:text-4xl">
-              Ready to Start Solving Real Problems?
+              {t('landing.ctaTitle')}
             </h2>
             <p className="mt-4 text-stone-400">
-              Join JKKN Learners who are building AI-powered solutions that make a difference.
-              Your first flywheel cycle is just a click away.
+              {t('landing.ctaSubtitle')}
             </p>
             <div className="mt-10">
               <Button
@@ -200,7 +216,7 @@ export default function Home() {
                 asChild
                 className="bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-semibold hover:from-amber-400 hover:to-orange-500 shadow-lg shadow-orange-500/25 text-lg px-8 py-6"
               >
-                <Link href="/signup">Begin Your First Cycle</Link>
+                <Link href="/signup">{t('landing.ctaButton')}</Link>
               </Button>
             </div>
           </div>
@@ -212,13 +228,13 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <FlywheelLogo size="sm" />
               <span className="text-sm text-stone-500">
-                JKKN Solution Studio • JKKN Institutions
+                {t('landing.poweredBy')}
               </span>
             </div>
             <div className="flex gap-6 text-sm text-stone-500">
-              <Link href="/about" className="hover:text-stone-300">About</Link>
-              <Link href="/privacy" className="hover:text-stone-300">Privacy</Link>
-              <Link href="/terms" className="hover:text-stone-300">Terms</Link>
+              <Link href="/about" className="hover:text-stone-300">{t('landing.about')}</Link>
+              <Link href="/privacy" className="hover:text-stone-300">{t('landing.privacy')}</Link>
+              <Link href="/terms" className="hover:text-stone-300">{t('landing.terms')}</Link>
             </div>
           </div>
         </footer>
