@@ -509,5 +509,10 @@ export const en: Dictionary = {
     problemsSolved: 'Problems Solved',
     nextSteps: 'Next Steps',
     nextStepsPlaceholder: 'What will you do next?',
+    saveToProblemBank: 'Save to Problem Bank',
+    saveToProblemBankDesc: 'Add this validated problem to the JKKN Problem Bank for others to learn from',
+    problemSavedToBank: 'Problem saved to Problem Bank!',
+    problemAlreadyInBank: 'This problem is already in the Problem Bank',
+    viewInProblemBank: 'View in Problem Bank',
   },
 };

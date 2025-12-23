@@ -509,5 +509,10 @@ export const ta: Dictionary = {
     problemsSolved: 'தீர்க்கப்பட்ட பிரச்சனைகள்',
     nextSteps: 'அடுத்த படிகள்',
     nextStepsPlaceholder: 'அடுத்ததாக என்ன செய்வீர்கள்?',
+    saveToProblemBank: 'Problem Bank-க்கு சேமி',
+    saveToProblemBankDesc: 'இந்த validated பிரச்சனையை JKKN Problem Bank-க்கு சேர்',
+    problemSavedToBank: 'Problem Bank-க்கு சேமிக்கப்பட்டது!',
+    problemAlreadyInBank: 'இந்த பிரச்சனை ஏற்கனவே Problem Bank-ல் உள்ளது',
+    viewInProblemBank: 'Problem Bank-ல் பார்',
   },
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Check, ChevronRight, Lightbulb, RefreshCcw, Save, Target, Trophy, Users } from 'lucide-react';
+import { Check, ChevronRight, Database, Lightbulb, RefreshCcw, Save, Target, Trophy, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -31,6 +31,25 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
   const [feedback, setFeedback] = useState(cycle.impact?.feedback || '');
   const [lessonsLearned, setLessonsLearned] = useState(cycle.impact?.lessonsLearned || '');
   const [newProblems, setNewProblems] = useState<string[]>(cycle.impact?.newProblems || ['']);
+  const [isSavingToBank, setIsSavingToBank] = useState(false);
+  const [savedToBankId, setSavedToBankId] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  // Check if user is superadmin (Problem Bank is superadmin-only)
+  useEffect(() => {
+    async function checkSuperAdmin() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        setIsSuperAdmin(data?.role === 'superadmin');
+      }
+    }
+    checkSuperAdmin();
+  }, [supabase]);
 
   const hasMinimumData = usersReached > 0 || timeSavedMinutes > 0;
 
@@ -130,6 +149,39 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
       toast.error(`Failed to save: ${errorMessage}`);
     } finally {
       setIsPending(false);
+    }
+  };
+
+  const saveToProblemBank = async () => {
+    setIsSavingToBank(true);
+    try {
+      const response = await fetch('/api/problems/from-cycle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cycle_id: cycle.id,
+          source_event: 'Appathon 2.0', // TODO: Get from event context
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.status === 409) {
+        // Already exists
+        toast.info(t('stepUI.problemAlreadyInBank'));
+        setSavedToBankId(data.problem_id);
+      } else if (!response.ok) {
+        throw new Error(data.error || 'Failed to save');
+      } else {
+        toast.success(t('stepUI.problemSavedToBank'));
+        setSavedToBankId(data.problem_id);
+      }
+    } catch (error: unknown) {
+      console.error('Error saving to problem bank:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to save: ${errorMessage}`);
+    } finally {
+      setIsSavingToBank(false);
     }
   };
 
@@ -377,11 +429,35 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
         <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/7`)}>
           {t('stepUI.backToDeployment')}
         </Button>
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           <Button variant="outline" onClick={() => saveImpact(false)} disabled={isPending}>
             <Save className="mr-2 w-4 h-4" />
             {t('stepUI.saveDraft')}
           </Button>
+          {/* Problem Bank button - superadmin only */}
+          {isSuperAdmin && (
+            savedToBankId ? (
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/problem-bank/${savedToBankId}`)}
+                className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+              >
+                <Database className="mr-2 w-4 h-4" />
+                {t('stepUI.viewInProblemBank')}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={saveToProblemBank}
+                disabled={isSavingToBank || !hasMinimumData}
+                className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                title={t('stepUI.saveToProblemBankDesc')}
+              >
+                <Database className="mr-2 w-4 h-4" />
+                {isSavingToBank ? 'Saving...' : t('stepUI.saveToProblemBank')}
+              </Button>
+            )
+          )}
           {newProblems.some((p) => p.trim()) && (
             <Button
               onClick={startNewCycle}

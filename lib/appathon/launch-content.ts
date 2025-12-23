@@ -160,6 +160,11 @@ export const ELIGIBILITY = {
     'Cross-institutional teams allowed and encouraged',
     'No prior coding experience required',
   ],
+  notEligible: [
+    'External participants (non-JKKN)',
+    'Incomplete team registration',
+    'Using platforms other than Lovable',
+  ],
   teamComposition: {
     minSize: 2,
     maxSize: 4,

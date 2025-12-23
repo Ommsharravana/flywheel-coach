@@ -14,6 +14,7 @@ import {
   Trophy,
   Building2,
   FileQuestion,
+  Lightbulb,
 } from 'lucide-react';
 
 const navItems = [
@@ -41,6 +42,11 @@ const navItems = [
     label: 'Cycles',
     href: '/admin/cycles',
     icon: Repeat,
+  },
+  {
+    label: 'Problem Bank',
+    href: '/admin/problem-bank',
+    icon: Lightbulb,
   },
   {
     label: 'Change Requests',
