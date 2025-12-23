@@ -193,7 +193,7 @@ export default function PortfolioPage() {
     return (
       <div className="min-h-screen bg-stone-950">
         <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex items-center justify-center min-h-[60vh] pt-16">
           <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
         </div>
       </div>
@@ -204,7 +204,7 @@ export default function PortfolioPage() {
     <div className="min-h-screen bg-stone-950">
       <Header />
 
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
+      <main className="container mx-auto px-4 pt-24 pb-8 max-w-6xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
