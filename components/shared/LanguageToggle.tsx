@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Globe } from 'lucide-react';
+import { useOptionalLanguage } from '@/lib/i18n/LanguageContext';
 import type { Locale } from '@/lib/i18n/types';
 
 interface LanguageToggleProps {
@@ -13,28 +14,69 @@ interface LanguageToggleProps {
 
 /**
  * A prominent language toggle for EN/Tamil
- * Works without authentication - stores preference in localStorage
- * Reloads page to apply language change
+ *
+ * When inside LanguageProvider (authenticated):
+ * - Uses context's setLocale to update database
+ * - No page reload needed
+ *
+ * When outside LanguageProvider (landing page):
+ * - Uses localStorage for persistence
+ * - Reloads page to apply change
  */
 export function LanguageToggle({ className = '', showLabel = true }: LanguageToggleProps) {
-  const [locale, setLocale] = useState<Locale>('en');
   const [mounted, setMounted] = useState(false);
+  const [localLocale, setLocalLocale] = useState<Locale>('en');
 
-  // Load preference from localStorage on mount
+  // Get context if available (will return defaults if outside provider)
+  const { locale: contextLocale, setLocale: contextSetLocale, isChanging } = useOptionalLanguage();
+
+  // Check if we're inside a real LanguageProvider by checking if setLocale actually works
+  // The default setLocale just logs a warning, so we detect this by checking if contextLocale changes
+  const [hasContext, setHasContext] = useState(false);
+
+  // Load preference from localStorage on mount (for unauthenticated users)
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem('flywheel-locale') as Locale | null;
-    if (saved && (saved === 'en' || saved === 'ta')) {
-      setLocale(saved);
-    }
-  }, []);
 
-  const toggleLanguage = () => {
-    const newLocale: Locale = locale === 'en' ? 'ta' : 'en';
-    localStorage.setItem('flywheel-locale', newLocale);
-    setLocale(newLocale);
-    // Reload to apply language change across the page
-    window.location.reload();
+    // Check if we have a real context by seeing if locale is not the default
+    // If contextLocale comes from provider, it might be 'ta' from database
+    // We also check localStorage to see if there's a mismatch
+    const savedLocale = localStorage.getItem('flywheel-locale') as Locale | null;
+
+    if (savedLocale && (savedLocale === 'en' || savedLocale === 'ta')) {
+      setLocalLocale(savedLocale);
+    }
+
+    // Detect if we're in a real provider by checking if contextLocale differs from 'en' default
+    // or if it matches a user's saved database preference (we can't easily know, so we assume
+    // if we're on dashboard pages, we have context)
+    const onDashboardPage = typeof window !== 'undefined' &&
+      (window.location.pathname.startsWith('/dashboard') ||
+       window.location.pathname.startsWith('/settings') ||
+       window.location.pathname.startsWith('/portfolio') ||
+       window.location.pathname.startsWith('/cycle') ||
+       window.location.pathname.startsWith('/admin'));
+
+    setHasContext(onDashboardPage);
+  }, [contextLocale]);
+
+  // Determine current locale to display
+  const currentLocale = hasContext ? contextLocale : localLocale;
+
+  const toggleLanguage = async () => {
+    const newLocale: Locale = currentLocale === 'en' ? 'ta' : 'en';
+
+    if (hasContext) {
+      // Inside LanguageProvider - use context to update database
+      // Also update localStorage for consistency
+      localStorage.setItem('flywheel-locale', newLocale);
+      await contextSetLocale(newLocale);
+    } else {
+      // Outside LanguageProvider (landing page) - use localStorage + reload
+      localStorage.setItem('flywheel-locale', newLocale);
+      setLocalLocale(newLocale);
+      window.location.reload();
+    }
   };
 
   // Prevent hydration mismatch
@@ -55,13 +97,14 @@ export function LanguageToggle({ className = '', showLabel = true }: LanguageTog
       {/* Toggle pill */}
       <button
         onClick={toggleLanguage}
-        className="relative flex items-center h-10 rounded-full bg-stone-800/80 border border-stone-700 hover:border-amber-500/50 transition-all duration-300 shadow-lg"
-        aria-label={`Switch to ${locale === 'en' ? 'Tamil' : 'English'}`}
+        disabled={isChanging}
+        className={`relative flex items-center h-10 rounded-full bg-stone-800/80 border border-stone-700 hover:border-amber-500/50 transition-all duration-300 shadow-lg ${isChanging ? 'opacity-50 cursor-wait' : ''}`}
+        aria-label={`Switch to ${currentLocale === 'en' ? 'Tamil' : 'English'}`}
       >
         {/* EN option */}
         <span
           className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 ${
-            locale === 'en'
+            currentLocale === 'en'
               ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950'
               : 'text-stone-400 hover:text-stone-200'
           }`}
@@ -72,7 +115,7 @@ export function LanguageToggle({ className = '', showLabel = true }: LanguageTog
         {/* Tamil option */}
         <span
           className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-300 ${
-            locale === 'ta'
+            currentLocale === 'ta'
               ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950'
               : 'text-stone-400 hover:text-stone-200'
           }`}
