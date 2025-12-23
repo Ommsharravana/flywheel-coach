@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - superadmin only' }, { status: 403 });
     }
 
-    // Fetch ALL cycles with their problems
+    // Fetch ALL cycles with their problems (including all question columns)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query = (supabase as any)
       .from('cycles')
@@ -39,7 +39,16 @@ export async function GET(request: NextRequest) {
         updated_at,
         user_id,
         users!cycles_user_id_fkey (id, name, email),
-        problems (id, selected_question, refined_statement)
+        problems (
+          id,
+          selected_question,
+          refined_statement,
+          q_takes_too_long,
+          q_repetitive,
+          q_lookup_repeatedly,
+          q_complaints,
+          q_would_pay
+        )
       `)
       .order('updated_at', { ascending: false });
 
@@ -68,17 +77,47 @@ export async function GET(request: NextRequest) {
       (savedCycles || []).map((s: { original_cycle_id: string }) => s.original_cycle_id)
     );
 
+    // Helper to get the best available problem text from a problem record
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const getProblemText = (problem: any): string => {
+      if (!problem) return '';
+      // Priority: refined_statement > selected_question > any question answer
+      return (
+        problem.refined_statement ||
+        problem.selected_question ||
+        problem.q_takes_too_long ||
+        problem.q_repetitive ||
+        problem.q_lookup_repeatedly ||
+        problem.q_complaints ||
+        problem.q_would_pay ||
+        ''
+      );
+    };
+
+    // Helper to check if a problem has ANY data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hasProblemData = (problem: any): boolean => {
+      if (!problem) return false;
+      return !!(
+        problem.refined_statement ||
+        problem.selected_question ||
+        problem.q_takes_too_long ||
+        problem.q_repetitive ||
+        problem.q_lookup_repeatedly ||
+        problem.q_complaints ||
+        problem.q_would_pay
+      );
+    };
+
     // Transform data - include all cycles, mark which are saved and which are eligible
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allCycles = (cycles || [])
-      // Filter out cycles without problem statements (check refined_statement OR selected_question)
-      .filter((c: { problems: Array<{ selected_question: string; refined_statement: string }> }) =>
-        c.problems?.[0]?.refined_statement || c.problems?.[0]?.selected_question
-      )
+      // Filter out cycles without ANY problem data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((c: any) => c.problems?.[0] && hasProblemData(c.problems[0]))
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((c: any) => {
-        // Use refined_statement if available, otherwise fall back to selected_question
-        const problemText = c.problems?.[0]?.refined_statement || c.problems?.[0]?.selected_question || '';
+        const problemText = getProblemText(c.problems?.[0]);
         return {
           id: c.id,
           name: c.name,
