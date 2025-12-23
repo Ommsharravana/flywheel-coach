@@ -115,7 +115,7 @@ export function AppathonDetailsModal({
                   key={theme.id}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl bg-stone-800/50 border border-stone-700/50 hover:border-stone-600/50 transition-colors"
                 >
-                  <span className="text-xl">{theme.emoji}</span>
+                  <span className="text-xl">{theme.icon}</span>
                   <span className="text-sm text-stone-300">{theme.name}</span>
                 </div>
               ))}
