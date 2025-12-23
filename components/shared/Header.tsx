@@ -17,6 +17,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Shield } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
+import { LanguageToggle } from '@/components/shared/LanguageToggle'
 
 // Simplified user type that works with both auth user and effective user (impersonation)
 interface HeaderUser {
@@ -117,6 +118,9 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
 
           {/* Auth / User Menu */}
           <div className="flex items-center gap-3">
+            {/* Language Toggle - Always visible */}
+            <LanguageToggle showLabel={false} className="hidden sm:flex" />
+
             {user ? (
               mounted ? (
                 <DropdownMenu>
