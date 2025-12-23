@@ -88,9 +88,14 @@ export async function GET(request: NextRequest) {
       expiry: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
     };
 
-    // Skip validation for now - trust OAuth tokens from Google
-    // TODO: Add proper validation once we confirm the right API endpoint for peruserquota scope
-    const isValid = true;
+    // Validate credentials by making a test API call
+    const geminiProvider = new GeminiProvider(credentials);
+    const isValid = await geminiProvider.validateCredentials();
+
+    if (!isValid) {
+      console.error('Gemini OAuth credentials failed validation');
+      return NextResponse.redirect(`${baseUrl}/settings?gemini_error=invalid_credentials`);
+    }
 
     // Encrypt and store credentials
     const encryptedCredentials = encrypt(JSON.stringify(credentials));
