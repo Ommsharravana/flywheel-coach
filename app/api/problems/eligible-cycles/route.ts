@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         updated_at,
         user_id,
         users!cycles_user_id_fkey (id, name, email),
-        problems (id, what_problem)
+        problems (id, selected_question, refined_statement)
       `)
       .order('updated_at', { ascending: false });
 
@@ -71,24 +71,28 @@ export async function GET(request: NextRequest) {
     // Transform data - include all cycles, mark which are saved and which are eligible
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allCycles = (cycles || [])
-      // Filter out cycles without problem statements
-      .filter((c: { problems: Array<{ what_problem: string }> }) =>
-        c.problems?.[0]?.what_problem
+      // Filter out cycles without problem statements (check refined_statement OR selected_question)
+      .filter((c: { problems: Array<{ selected_question: string; refined_statement: string }> }) =>
+        c.problems?.[0]?.refined_statement || c.problems?.[0]?.selected_question
       )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        status: c.status,
-        current_step: c.current_step,
-        created_at: c.created_at,
-        updated_at: c.updated_at,
-        user_name: c.users?.name || 'Unknown',
-        user_email: c.users?.email || '',
-        problem_preview: c.problems?.[0]?.what_problem?.substring(0, 200) || 'No problem statement',
-        is_saved: savedCycleIds.has(c.id),
-        is_eligible: c.current_step >= 7, // Eligible for saving if at step 7+
-      }));
+      .map((c: any) => {
+        // Use refined_statement if available, otherwise fall back to selected_question
+        const problemText = c.problems?.[0]?.refined_statement || c.problems?.[0]?.selected_question || '';
+        return {
+          id: c.id,
+          name: c.name,
+          status: c.status,
+          current_step: c.current_step,
+          created_at: c.created_at,
+          updated_at: c.updated_at,
+          user_name: c.users?.name || 'Unknown',
+          user_email: c.users?.email || '',
+          problem_preview: problemText.substring(0, 200) || 'No problem statement',
+          is_saved: savedCycleIds.has(c.id),
+          is_eligible: c.current_step >= 7, // Eligible for saving if at step 7+
+        };
+      });
 
     // Separate into categories
     const eligible = allCycles.filter((c: { is_saved: boolean; is_eligible: boolean }) => !c.is_saved && c.is_eligible);
