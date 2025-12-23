@@ -489,5 +489,10 @@ export interface Dictionary {
     problemsSolved: string;
     nextSteps: string;
     nextStepsPlaceholder: string;
+    saveToProblemBank: string;
+    saveToProblemBankDesc: string;
+    problemSavedToBank: string;
+    problemAlreadyInBank: string;
+    viewInProblemBank: string;
   };
 }
