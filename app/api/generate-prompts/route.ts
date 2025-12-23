@@ -45,6 +45,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get user's language preference
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userProfile } = await (supabase as any)
+      .from('users')
+      .select('language')
+      .eq('id', user.id)
+      .single();
+
+    const userLanguage = (userProfile?.language as string) || 'en';
+
     // Get stored Gemini credentials (OAuth only - BYOS pattern)
     const geminiCredentials = await getUserCredentials(user.id, 'gemini');
 
@@ -94,6 +104,20 @@ ${evidencePoints.join('\n')}
       }
     }
 
+    // Build language instruction based on user preference
+    const languageInstruction = userLanguage === 'ta'
+      ? `
+
+LANGUAGE REQUIREMENT (CRITICAL):
+- Write ALL descriptions, titles, and explanatory text in Tamil (தமிழ்).
+- Keep technical terms like "Lovable", "auth", "API", "database" in English.
+- The prompt text itself can be in English (for Lovable to understand), but:
+  - title: Write in Tamil
+  - description: Write in Tamil
+- Example title: "அடிப்படை அமைப்பு" (Foundation Setup)
+- Example description: "உள்நுழைவு மற்றும் வழிசெலுத்தல் அமைக்கிறது" (Sets up login and navigation)`
+      : '';
+
     const systemPrompt = `You are an expert at writing prompts for Lovable.dev, an AI-powered app builder.
 Your job is to generate a sequence of 9 incremental prompts that will guide Lovable to build a complete, production-ready application.
 
@@ -116,7 +140,7 @@ Return a JSON array with exactly 9 objects, each having:
 - description: one sentence description
 - prompt: the full prompt text
 
-IMPORTANT: Make prompts highly specific to the user's problem, users, and validation evidence. Don't be generic.`;
+IMPORTANT: Make prompts highly specific to the user's problem, users, and validation evidence. Don't be generic.${languageInstruction}`;
 
     const userPrompt = `Generate 9 personalized Lovable prompts for this project:
 

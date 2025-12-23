@@ -4,12 +4,13 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { User, Globe, Shield, Trophy } from 'lucide-react';
+import { User, Shield, Trophy } from 'lucide-react';
 import { SettingsForm } from './SettingsForm';
 import { AppathonToggle } from '@/components/appathon/AppathonToggle';
 import { InstitutionChangeRequest } from '@/components/settings/InstitutionChangeRequest';
 import { Suspense } from 'react';
 import { GeminiSetup } from '@/components/settings/GeminiSetup';
+import { LanguageSettings } from '@/components/settings/LanguageSettings';
 
 interface UserProfile {
   id: string;
@@ -164,34 +165,10 @@ export default async function SettingsPage() {
       />
 
       {/* Language Preference */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-stone-100">
-            <Globe className="w-5 h-5 text-purple-400" />
-            Language
-          </CardTitle>
-          <CardDescription>Your preferred language for the app</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <Badge
-              variant={profile?.language === 'en' ? 'default' : 'outline'}
-              className={profile?.language === 'en' ? 'bg-amber-500 text-stone-900' : 'text-stone-400'}
-            >
-              English
-            </Badge>
-            <Badge
-              variant={profile?.language === 'ta' ? 'default' : 'outline'}
-              className={profile?.language === 'ta' ? 'bg-amber-500 text-stone-900' : 'text-stone-400'}
-            >
-              தமிழ் (Tamil)
-            </Badge>
-          </div>
-          <p className="mt-2 text-xs text-stone-500">
-            Tamil support coming soon in a future update.
-          </p>
-        </CardContent>
-      </Card>
+      <LanguageSettings
+        userId={effectiveUser.id}
+        currentLanguage={profile?.language ?? null}
+      />
 
       {/* Account Info */}
       <Card className="glass-card border-stone-700">
