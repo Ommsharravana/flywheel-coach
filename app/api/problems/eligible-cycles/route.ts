@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// GET /api/problems/eligible-cycles - Get cycles that can be saved to problem bank
-export async function GET() {
+// GET /api/problems/eligible-cycles - Get all cycles with problem statements
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
+    const searchParams = request.nextUrl.searchParams;
+    const showAll = searchParams.get('all') === 'true';
 
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -24,11 +26,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden - superadmin only' }, { status: 403 });
     }
 
-    // Fetch cycles that are eligible for saving to problem bank:
-    // - current_step >= 7 (at Impact Discovery or beyond)
-    // - NOT already saved to problem bank
+    // Fetch ALL cycles with their problems
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: cycles, error: cyclesError } = await (supabase as any)
+    let query = (supabase as any)
       .from('cycles')
       .select(`
         id,
@@ -41,8 +41,14 @@ export async function GET() {
         users!cycles_user_id_fkey (id, name, email),
         problems (id, what_problem)
       `)
-      .gte('current_step', 7)
       .order('updated_at', { ascending: false });
+
+    // If not showing all, only show step 7+
+    if (!showAll) {
+      query = query.gte('current_step', 7);
+    }
+
+    const { data: cycles, error: cyclesError } = await query;
 
     if (cyclesError) {
       console.error('Error fetching cycles:', cyclesError);
@@ -62,10 +68,13 @@ export async function GET() {
       (savedCycles || []).map((s: { original_cycle_id: string }) => s.original_cycle_id)
     );
 
-    // Filter out already saved cycles and transform data
+    // Transform data - include all cycles, mark which are saved and which are eligible
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const eligibleCycles = (cycles || [])
-      .filter((c: { id: string }) => !savedCycleIds.has(c.id))
+    const allCycles = (cycles || [])
+      // Filter out cycles without problem statements
+      .filter((c: { problems: Array<{ what_problem: string }> }) =>
+        c.problems?.[0]?.what_problem
+      )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((c: any) => ({
         id: c.id,
@@ -76,12 +85,21 @@ export async function GET() {
         updated_at: c.updated_at,
         user_name: c.users?.name || 'Unknown',
         user_email: c.users?.email || '',
-        problem_preview: c.problems?.[0]?.what_problem?.substring(0, 150) || 'No problem statement',
+        problem_preview: c.problems?.[0]?.what_problem?.substring(0, 200) || 'No problem statement',
+        is_saved: savedCycleIds.has(c.id),
+        is_eligible: c.current_step >= 7, // Eligible for saving if at step 7+
       }));
 
+    // Separate into categories
+    const eligible = allCycles.filter((c: { is_saved: boolean; is_eligible: boolean }) => !c.is_saved && c.is_eligible);
+    const inProgress = allCycles.filter((c: { is_saved: boolean; is_eligible: boolean }) => !c.is_saved && !c.is_eligible);
+    const saved = allCycles.filter((c: { is_saved: boolean }) => c.is_saved);
+
     return NextResponse.json({
-      eligible: eligibleCycles,
-      total: eligibleCycles.length,
+      eligible,
+      in_progress: inProgress,
+      saved,
+      total: allCycles.length,
       already_saved: savedCycleIds.size,
     });
 

@@ -20,6 +20,8 @@ import {
   Save,
   Loader2,
   FileCheck,
+  CircleDot,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   Select,
@@ -28,6 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import Link from 'next/link';
 import type {
   ProblemCardData,
@@ -44,7 +52,7 @@ import {
   getSeverityColor,
 } from '@/lib/types/problem-bank';
 
-interface EligibleCycle {
+interface CycleData {
   id: string;
   name: string;
   status: string;
@@ -54,10 +62,14 @@ interface EligibleCycle {
   user_name: string;
   user_email: string;
   problem_preview: string;
+  is_saved: boolean;
+  is_eligible: boolean;
 }
 
-interface EligibleCyclesResponse {
-  eligible: EligibleCycle[];
+interface CyclesResponse {
+  eligible: CycleData[];
+  in_progress: CycleData[];
+  saved: CycleData[];
   total: number;
   already_saved: number;
 }
@@ -67,11 +79,19 @@ export default function ProblemBankPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Eligible cycles
-  const [eligibleCycles, setEligibleCycles] = useState<EligibleCycle[]>([]);
-  const [eligibleLoading, setEligibleLoading] = useState(true);
-  const [alreadySaved, setAlreadySaved] = useState(0);
+  // All cycles data
+  const [cyclesData, setCyclesData] = useState<CyclesResponse>({
+    eligible: [],
+    in_progress: [],
+    saved: [],
+    total: 0,
+    already_saved: 0,
+  });
+  const [cyclesLoading, setCyclesLoading] = useState(true);
   const [savingCycleId, setSavingCycleId] = useState<string | null>(null);
+
+  // Active tab
+  const [activeTab, setActiveTab] = useState('all');
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -87,9 +107,9 @@ export default function ProblemBankPage() {
   // Stats
   const [stats, setStats] = useState({
     total: 0,
-    open: 0,
-    solved: 0,
-    validated: 0,
+    inProgress: 0,
+    eligible: 0,
+    saved: 0,
   });
 
   const fetchProblems = useCallback(async () => {
@@ -125,42 +145,25 @@ export default function ProblemBankPage() {
     }
   }, [page, search, theme, status, validationStatus]);
 
-  // Fetch stats
-  const fetchStats = useCallback(async () => {
+  // Fetch all cycles with problems
+  const fetchCycles = useCallback(async () => {
+    setCyclesLoading(true);
     try {
-      // Get all problems without filters for stats
-      const response = await fetch('/api/problems?per_page=1000');
+      const response = await fetch('/api/problems/eligible-cycles?all=true');
       if (response.ok) {
-        const data: PaginatedProblems = await response.json();
+        const data: CyclesResponse = await response.json();
+        setCyclesData(data);
         setStats({
           total: data.total,
-          open: data.data.filter(p => p.status === 'open').length,
-          solved: data.data.filter(p => p.status === 'solved').length,
-          validated: data.data.filter(p =>
-            p.validation_status === 'desperate_user_confirmed' ||
-            p.validation_status === 'market_validated'
-          ).length,
+          inProgress: data.in_progress.length,
+          eligible: data.eligible.length,
+          saved: data.already_saved,
         });
-      }
-    } catch {
-      // Stats are non-critical, silently fail
-    }
-  }, []);
-
-  // Fetch eligible cycles
-  const fetchEligibleCycles = useCallback(async () => {
-    setEligibleLoading(true);
-    try {
-      const response = await fetch('/api/problems/eligible-cycles');
-      if (response.ok) {
-        const data: EligibleCyclesResponse = await response.json();
-        setEligibleCycles(data.eligible);
-        setAlreadySaved(data.already_saved);
       }
     } catch {
       // Non-critical, silently fail
     } finally {
-      setEligibleLoading(false);
+      setCyclesLoading(false);
     }
   }, []);
 
@@ -179,12 +182,8 @@ export default function ProblemBankPage() {
         throw new Error(data.error || 'Failed to save problem');
       }
 
-      // Refresh both eligible cycles and problems
-      await Promise.all([
-        fetchEligibleCycles(),
-        fetchProblems(),
-        fetchStats(),
-      ]);
+      // Refresh cycles and problems
+      await Promise.all([fetchCycles(), fetchProblems()]);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to save problem');
     } finally {
@@ -197,12 +196,8 @@ export default function ProblemBankPage() {
   }, [fetchProblems]);
 
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
-
-  useEffect(() => {
-    fetchEligibleCycles();
-  }, [fetchEligibleCycles]);
+    fetchCycles();
+  }, [fetchCycles]);
 
   // Debounced search
   useEffect(() => {
@@ -231,6 +226,30 @@ export default function ProblemBankPage() {
     return steps[step] || `Step ${step}`;
   };
 
+  const getStepColor = (step: number) => {
+    if (step >= 7) return 'text-green-400 border-green-400/30';
+    if (step >= 4) return 'text-amber-400 border-amber-400/30';
+    return 'text-blue-400 border-blue-400/30';
+  };
+
+  // Get all cycles combined for "All" tab
+  const allCycles = [
+    ...cyclesData.in_progress,
+    ...cyclesData.eligible,
+  ];
+
+  // Filter cycles by search
+  const filterCycles = (cycles: CycleData[]) => {
+    if (!search) return cycles;
+    const searchLower = search.toLowerCase();
+    return cycles.filter(
+      c =>
+        c.name.toLowerCase().includes(searchLower) ||
+        c.problem_preview.toLowerCase().includes(searchLower) ||
+        c.user_name.toLowerCase().includes(searchLower)
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -239,7 +258,7 @@ export default function ProblemBankPage() {
           Problem Bank
         </h1>
         <p className="text-stone-400">
-          Repository of validated problems from across JKKN institutions
+          All problem statements from Flywheel cycles across JKKN institutions
         </p>
       </div>
 
@@ -261,25 +280,12 @@ export default function ProblemBankPage() {
         <Card className="glass-card">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/20">
-                <TrendingUp className="h-5 w-5 text-green-400" />
+              <div className="p-2 rounded-lg bg-blue-500/20">
+                <CircleDot className="h-5 w-5 text-blue-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-green-400">{stats.open}</div>
-                <p className="text-sm text-stone-500">Open for Attempts</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/20">
-                <CheckCircle className="h-5 w-5 text-purple-400" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-purple-400">{stats.solved}</div>
-                <p className="text-sm text-stone-500">Solved</p>
+                <div className="text-2xl font-bold text-blue-400">{stats.inProgress}</div>
+                <p className="text-sm text-stone-500">In Progress</p>
               </div>
             </div>
           </CardContent>
@@ -288,142 +294,290 @@ export default function ProblemBankPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-amber-500/20">
-                <Users className="h-5 w-5 text-amber-400" />
+                <FileCheck className="h-5 w-5 text-amber-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-amber-400">{stats.validated}</div>
-                <p className="text-sm text-stone-500">User Validated</p>
+                <div className="text-2xl font-bold text-amber-400">{stats.eligible}</div>
+                <p className="text-sm text-stone-500">Ready to Save</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/20">
+                <CheckCircle2 className="h-5 w-5 text-green-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-400">{stats.saved}</div>
+                <p className="text-sm text-stone-500">Saved to Bank</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Eligible Cycles Section */}
-      <Card className="glass-card border-amber-500/30">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileCheck className="h-5 w-5 text-amber-400" />
-              <CardTitle className="text-lg text-stone-100">
-                Eligible Cycles to Save
-              </CardTitle>
-            </div>
-            <Badge variant="outline" className="text-stone-400 border-stone-600">
-              {alreadySaved} already saved
-            </Badge>
-          </div>
-          <p className="text-sm text-stone-400">
-            Cycles at Impact Discovery stage or beyond that haven&apos;t been saved to the Problem Bank yet
-          </p>
-        </CardHeader>
-        <CardContent>
-          {eligibleLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
-            </div>
-          ) : eligibleCycles.length === 0 ? (
-            <div className="text-center py-8">
-              <CheckCircle className="h-10 w-10 text-green-400 mx-auto mb-3" />
-              <p className="text-stone-400">All eligible cycles have been saved!</p>
-              <p className="text-sm text-stone-500 mt-1">
-                New cycles will appear here when they reach the Impact Discovery stage.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {eligibleCycles.map((cycle) => (
-                <div
-                  key={cycle.id}
-                  className="flex items-start justify-between p-4 rounded-lg bg-stone-800/50 border border-stone-700 hover:border-amber-500/30 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-stone-100 truncate">
-                        {cycle.name}
-                      </h4>
-                      <Badge
-                        variant="outline"
-                        className={
-                          cycle.current_step === 8
-                            ? 'text-green-400 border-green-400/30'
-                            : 'text-amber-400 border-amber-400/30'
-                        }
-                      >
-                        {getStepLabel(cycle.current_step)}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-stone-400 line-clamp-2 mb-2">
-                      {cycle.problem_preview}
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-stone-500">
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {cycle.user_name}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(cycle.updated_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <Link href={`/cycles/${cycle.id}`} target="_blank">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-stone-400 hover:text-stone-100"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                    <Button
-                      size="sm"
-                      onClick={() => saveCycleToProblemBank(cycle.id)}
-                      disabled={savingCycleId === cycle.id}
-                      className="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30"
-                    >
-                      {savingCycleId === cycle.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 mr-1" />
-                          Save
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Filters */}
+      {/* Search */}
       <Card className="glass-card">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-stone-400" />
-              <CardTitle className="text-lg text-stone-100">Filter Problems</CardTitle>
-            </div>
-
-            {/* Search */}
-            <div className="relative flex-1 max-w-md">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
               <Input
-                placeholder="Search problems..."
+                placeholder="Search problems by name, content, or creator..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 bg-stone-800 border-stone-700"
               />
             </div>
+            {search && (
+              <Button
+                variant="outline"
+                onClick={() => setSearch('')}
+                className="border-stone-700 text-stone-300"
+              >
+                Clear
+              </Button>
+            )}
           </div>
-        </CardHeader>
-        <CardContent>
+        </CardContent>
+      </Card>
+
+      {/* Tabs for different views */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="bg-stone-800 border border-stone-700">
+          <TabsTrigger value="all" className="data-[state=active]:bg-stone-700">
+            All Problems ({allCycles.length})
+          </TabsTrigger>
+          <TabsTrigger value="in-progress" className="data-[state=active]:bg-stone-700">
+            In Progress ({cyclesData.in_progress.length})
+          </TabsTrigger>
+          <TabsTrigger value="eligible" className="data-[state=active]:bg-stone-700">
+            Ready to Save ({cyclesData.eligible.length})
+          </TabsTrigger>
+          <TabsTrigger value="saved" className="data-[state=active]:bg-stone-700">
+            Saved ({cyclesData.saved.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* All Problems Tab */}
+        <TabsContent value="all" className="mt-4">
+          <CyclesList
+            cycles={filterCycles(allCycles)}
+            loading={cyclesLoading}
+            savingCycleId={savingCycleId}
+            onSave={saveCycleToProblemBank}
+            getStepLabel={getStepLabel}
+            getStepColor={getStepColor}
+            emptyMessage="No problem statements found. Cycles will appear here once learners define their problems."
+          />
+        </TabsContent>
+
+        {/* In Progress Tab */}
+        <TabsContent value="in-progress" className="mt-4">
+          <CyclesList
+            cycles={filterCycles(cyclesData.in_progress)}
+            loading={cyclesLoading}
+            savingCycleId={savingCycleId}
+            onSave={saveCycleToProblemBank}
+            getStepLabel={getStepLabel}
+            getStepColor={getStepColor}
+            emptyMessage="No cycles in progress. Problems appear here when learners are still working on their cycles."
+          />
+        </TabsContent>
+
+        {/* Ready to Save Tab */}
+        <TabsContent value="eligible" className="mt-4">
+          <CyclesList
+            cycles={filterCycles(cyclesData.eligible)}
+            loading={cyclesLoading}
+            savingCycleId={savingCycleId}
+            onSave={saveCycleToProblemBank}
+            getStepLabel={getStepLabel}
+            getStepColor={getStepColor}
+            showSaveButton
+            emptyMessage="No cycles ready to save. Cycles at Impact Discovery stage or beyond will appear here."
+          />
+        </TabsContent>
+
+        {/* Saved Tab */}
+        <TabsContent value="saved" className="mt-4">
+          <SavedProblemsSection
+            problems={problems}
+            loading={loading}
+            error={error}
+            search={search}
+            theme={theme}
+            status={status}
+            validationStatus={validationStatus}
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            setTheme={setTheme}
+            setStatus={setStatus}
+            setValidationStatus={setValidationStatus}
+            setPage={setPage}
+            handleFilterChange={handleFilterChange}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// Cycles List Component
+function CyclesList({
+  cycles,
+  loading,
+  savingCycleId,
+  onSave,
+  getStepLabel,
+  getStepColor,
+  showSaveButton = false,
+  emptyMessage,
+}: {
+  cycles: CycleData[];
+  loading: boolean;
+  savingCycleId: string | null;
+  onSave: (id: string) => void;
+  getStepLabel: (step: number) => string;
+  getStepColor: (step: number) => string;
+  showSaveButton?: boolean;
+  emptyMessage: string;
+}) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
+      </div>
+    );
+  }
+
+  if (cycles.length === 0) {
+    return (
+      <Card className="glass-card">
+        <CardContent className="pt-6 text-center py-12">
+          <Database className="h-12 w-12 text-stone-500 mx-auto mb-4" />
+          <p className="text-stone-400">{emptyMessage}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {cycles.map((cycle) => (
+        <Card
+          key={cycle.id}
+          className="glass-card hover:ring-1 hover:ring-stone-600 transition-all"
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <h3 className="font-semibold text-stone-100">
+                    {cycle.name}
+                  </h3>
+                  <Badge variant="outline" className={getStepColor(cycle.current_step)}>
+                    {getStepLabel(cycle.current_step)}
+                  </Badge>
+                  {cycle.is_saved && (
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                      Saved
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-stone-300 mb-3">
+                  {cycle.problem_preview}
+                </p>
+                <div className="flex items-center gap-4 text-xs text-stone-500">
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {cycle.user_name}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {new Date(cycle.updated_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link href={`/cycle/${cycle.id}`} target="_blank">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-stone-400 hover:text-stone-100"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </Link>
+                {(showSaveButton || cycle.is_eligible) && !cycle.is_saved && (
+                  <Button
+                    size="sm"
+                    onClick={() => onSave(cycle.id)}
+                    disabled={savingCycleId === cycle.id}
+                    className="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30"
+                  >
+                    {savingCycleId === cycle.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-1" />
+                        Save
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// Saved Problems Section (with filters)
+function SavedProblemsSection({
+  problems,
+  loading,
+  error,
+  search,
+  theme,
+  status,
+  validationStatus,
+  page,
+  totalPages,
+  total,
+  setTheme,
+  setStatus,
+  setValidationStatus,
+  setPage,
+  handleFilterChange,
+}: {
+  problems: ProblemCardData[];
+  loading: boolean;
+  error: string | null;
+  search: string;
+  theme: ProblemTheme | 'all';
+  status: ProblemStatus | 'all';
+  validationStatus: ValidationStatus | 'all';
+  page: number;
+  totalPages: number;
+  total: number;
+  setTheme: (t: ProblemTheme | 'all') => void;
+  setStatus: (s: ProblemStatus | 'all') => void;
+  setValidationStatus: (v: ValidationStatus | 'all') => void;
+  setPage: (p: number | ((prev: number) => number)) => void;
+  handleFilterChange: () => void;
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Filters */}
+      <Card className="glass-card">
+        <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4">
-            {/* Theme Filter */}
             <Select
               value={theme}
               onValueChange={(value) => {
@@ -444,7 +598,6 @@ export default function ProblemBankPage() {
               </SelectContent>
             </Select>
 
-            {/* Status Filter */}
             <Select
               value={status}
               onValueChange={(value) => {
@@ -465,7 +618,6 @@ export default function ProblemBankPage() {
               </SelectContent>
             </Select>
 
-            {/* Validation Status Filter */}
             <Select
               value={validationStatus}
               onValueChange={(value) => {
@@ -486,11 +638,9 @@ export default function ProblemBankPage() {
               </SelectContent>
             </Select>
 
-            {/* Reset Filters */}
             <Button
               variant="outline"
               onClick={() => {
-                setSearch('');
                 setTheme('all');
                 setStatus('all');
                 setValidationStatus('all');
@@ -505,49 +655,47 @@ export default function ProblemBankPage() {
       </Card>
 
       {/* Problems Grid */}
-      <div>
-        {loading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="glass-card animate-pulse">
-                <CardContent className="pt-6">
-                  <div className="h-4 bg-stone-700 rounded w-3/4 mb-3" />
-                  <div className="h-3 bg-stone-700 rounded w-full mb-2" />
-                  <div className="h-3 bg-stone-700 rounded w-2/3" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : error ? (
-          <Card className="glass-card">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3 text-red-400">
-                <AlertTriangle className="h-5 w-5" />
-                <p>{error}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : problems.length === 0 ? (
-          <Card className="glass-card">
-            <CardContent className="pt-6 text-center py-12">
-              <Database className="h-12 w-12 text-stone-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-stone-100">No problems found</h3>
-              <p className="text-stone-400 mt-2">
-                {search || theme !== 'all' || status !== 'all' || validationStatus !== 'all'
-                  ? 'Try adjusting your filters'
-                  : 'Save eligible cycles above to populate the Problem Bank'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {problems.map((problem) => (
-              <ProblemCard key={problem.id} problem={problem} />
-            ))}
-          </div>
-        )}
-      </div>
+      {loading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="glass-card animate-pulse">
+              <CardContent className="pt-6">
+                <div className="h-4 bg-stone-700 rounded w-3/4 mb-3" />
+                <div className="h-3 bg-stone-700 rounded w-full mb-2" />
+                <div className="h-3 bg-stone-700 rounded w-2/3" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : error ? (
+        <Card className="glass-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3 text-red-400">
+              <AlertTriangle className="h-5 w-5" />
+              <p>{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : problems.length === 0 ? (
+        <Card className="glass-card">
+          <CardContent className="pt-6 text-center py-12">
+            <Database className="h-12 w-12 text-stone-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-stone-100">No saved problems yet</h3>
+            <p className="text-stone-400 mt-2">
+              {search || theme !== 'all' || status !== 'all' || validationStatus !== 'all'
+                ? 'Try adjusting your filters'
+                : 'Save eligible cycles from the "Ready to Save" tab to add them here'
+              }
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {problems.map((problem) => (
+            <ProblemCard key={problem.id} problem={problem} />
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -593,7 +741,6 @@ function ProblemCard({ problem }: { problem: ProblemCardData }) {
   return (
     <Card className="glass-card hover:ring-1 hover:ring-stone-700 transition-all">
       <CardContent className="pt-6">
-        {/* Header with theme and status */}
         <div className="flex items-start justify-between mb-3">
           {themeInfo && (
             <span className={`text-sm ${themeInfo.color}`}>
@@ -603,17 +750,14 @@ function ProblemCard({ problem }: { problem: ProblemCardData }) {
           <Badge className={statusInfo.color}>{statusInfo.label}</Badge>
         </div>
 
-        {/* Title */}
         <h3 className="text-lg font-semibold text-stone-100 line-clamp-2 mb-2">
           {problem.title}
         </h3>
 
-        {/* Problem statement preview */}
         <p className="text-sm text-stone-400 line-clamp-3 mb-4">
           {problem.problem_statement}
         </p>
 
-        {/* Metadata */}
         <div className="flex flex-wrap gap-2 mb-4">
           <Badge variant="outline" className={validationInfo.color}>
             {validationInfo.label}
@@ -630,7 +774,6 @@ function ProblemCard({ problem }: { problem: ProblemCardData }) {
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t border-stone-800">
           <div className="text-xs text-stone-500">
             {problem.institution_short && (
