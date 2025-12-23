@@ -29,15 +29,14 @@ const workflowColors: Record<string, string> = {
 export function WorkflowPieChart({ data, title = 'Workflow Distribution' }: WorkflowPieChartProps) {
   const total = data.reduce((acc, d) => acc + d.count, 0);
 
-  // Calculate cumulative degrees for pie slices
-  let cumulative = 0;
-  const slices = data.map((item) => {
+  // Calculate cumulative degrees for pie slices using reduce (immutable)
+  const slices = data.reduce<Array<WorkflowData & { percentage: number; startDeg: number; endDeg: number }>>((acc, item) => {
     const percentage = total > 0 ? (item.count / total) * 100 : 0;
-    const startDeg = cumulative * 3.6;
-    cumulative += percentage;
-    const endDeg = cumulative * 3.6;
-    return { ...item, percentage, startDeg, endDeg };
-  });
+    const prevEndDeg = acc.length > 0 ? acc[acc.length - 1].endDeg : 0;
+    const startDeg = prevEndDeg;
+    const endDeg = startDeg + (percentage * 3.6);
+    return [...acc, { ...item, percentage, startDeg, endDeg }];
+  }, []);
 
   // Build conic gradient
   const gradientStops = slices.map((slice, index) => {

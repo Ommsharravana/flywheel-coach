@@ -201,9 +201,9 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
       {cycle.problem && (
         <Card className="glass-card border-amber-500/30">
           <CardContent className="pt-6">
-            <p className="text-sm text-stone-400 mb-1">You're exploring context for:</p>
+            <p className="text-sm text-stone-400 mb-1">You&apos;re exploring context for:</p>
             <p className="text-stone-200 font-medium">
-              "{cycle.problem.refinedStatement || cycle.problem.statement}"
+              &quot;{cycle.problem.refinedStatement || cycle.problem.statement}&quot;
             </p>
           </CardContent>
         </Card>

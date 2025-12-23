@@ -111,7 +111,7 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
                 <span className="font-medium text-stone-200">Lovable Hosting</span>
               </div>
               <p className="text-sm text-stone-400 mb-3">
-                Your project is automatically hosted on Lovable's subdomain.
+                Your project is automatically hosted on Lovable&apos;s subdomain.
               </p>
               <Button
                 variant="outline"
@@ -167,7 +167,7 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
                   onChange={(e) => setIsLive(e.target.checked)}
                   className="w-4 h-4 rounded border-stone-600 bg-stone-800 text-amber-500 focus:ring-amber-500"
                 />
-                <span className="text-stone-300">Verified - it's working!</span>
+                <span className="text-stone-300">Verified - it&apos;s working!</span>
               </label>
             </div>
           )}
@@ -230,7 +230,7 @@ export function DeploymentTracker({ cycle }: DeploymentTrackerProps) {
               <div>
                 <p className="text-emerald-400 font-medium text-lg">You shipped it!</p>
                 <p className="text-sm text-stone-400">
-                  Your solution is live. Now let's measure the impact.
+                  Your solution is live. Now let&apos;s measure the impact.
                 </p>
               </div>
             </div>

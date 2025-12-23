@@ -231,7 +231,7 @@ export function WorkflowClassifier({ cycle }: WorkflowClassifierProps) {
           <CardContent className="pt-6">
             <p className="text-sm text-stone-400 mb-1">Classifying workflow for:</p>
             <p className="text-stone-200 font-medium">
-              "{cycle.problem.refinedStatement || cycle.problem.statement}"
+              &quot;{cycle.problem.refinedStatement || cycle.problem.statement}&quot;
             </p>
           </CardContent>
         </Card>

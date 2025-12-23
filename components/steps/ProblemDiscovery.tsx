@@ -664,19 +664,19 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
                 <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
                   <div className="text-amber-400 font-medium mb-1">Be Specific</div>
                   <p className="text-sm text-stone-400">
-                    "Students" → "2nd year CS students at JKKN"
+                    &quot;Students&quot; → &quot;2nd year CS students at JKKN&quot;
                   </p>
                 </div>
                 <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
                   <div className="text-amber-400 font-medium mb-1">Quantify</div>
                   <p className="text-sm text-stone-400">
-                    "Takes too long" → "Takes 3+ hours per week"
+                    &quot;Takes too long&quot; → &quot;Takes 3+ hours per week&quot;
                   </p>
                 </div>
                 <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
                   <div className="text-amber-400 font-medium mb-1">Add Context</div>
                   <p className="text-sm text-stone-400">
-                    "When?" → "During exam preparation"
+                    &quot;When?&quot; → &quot;During exam preparation&quot;
                   </p>
                 </div>
               </div>
@@ -703,7 +703,7 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
                       <div>
                         <h4 className="font-medium text-emerald-400 mb-1">Ready to proceed!</h4>
                         <p className="text-sm text-stone-400">
-                          Your refined problem statement: "{refinedStatement}"
+                          Your refined problem statement: &quot;{refinedStatement}&quot;
                         </p>
                         <div className="flex gap-4 mt-2 text-sm">
                           <span className="text-stone-400">

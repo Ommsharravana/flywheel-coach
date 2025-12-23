@@ -177,7 +177,7 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
           <CardContent className="pt-6">
             <p className="text-sm text-stone-400 mb-1">Validating value for:</p>
             <p className="text-stone-200 font-medium">
-              "{cycle.problem.refinedStatement || cycle.problem.statement}"
+              &quot;{cycle.problem.refinedStatement || cycle.problem.statement}&quot;
             </p>
           </CardContent>
         </Card>

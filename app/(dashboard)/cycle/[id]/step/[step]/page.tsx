@@ -36,7 +36,7 @@ export default async function StepPage({ params }: StepPageProps) {
   }
 
   // Check if user is in Appathon mode
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { data: userData } = await supabase
     .from('users')
     .select('active_event_id')
@@ -45,7 +45,7 @@ export default async function StepPage({ params }: StepPageProps) {
 
   let isAppathonMode = false;
   if (userData?.active_event_id) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { data: eventData } = await supabase
       .from('events')
       .select('config')
@@ -373,7 +373,7 @@ export default async function StepPage({ params }: StepPageProps) {
                   {stepNumber === 1 && (
                     <>
                       <p>Be specific about the problem. Vague problems lead to vague solutions.</p>
-                      <p>Think about problems you personally experience - you'll understand them better.</p>
+                      <p>Think about problems you personally experience - you&apos;ll understand them better.</p>
                     </>
                   )}
                   {stepNumber === 2 && (
@@ -384,7 +384,7 @@ export default async function StepPage({ params }: StepPageProps) {
                   )}
                   {stepNumber === 3 && (
                     <>
-                      <p>The Desperate User Test separates "nice to have" from "must have" problems.</p>
+                      <p>The Desperate User Test separates &quot;nice to have&quot; from &quot;must have&quot; problems.</p>
                       <p>Look for evidence, not just opinions.</p>
                     </>
                   )}
@@ -402,7 +402,7 @@ export default async function StepPage({ params }: StepPageProps) {
                   )}
                   {stepNumber === 6 && (
                     <>
-                      <p>Don't try to build everything at once. Start with the core flow.</p>
+                      <p>Don&apos;t try to build everything at once. Start with the core flow.</p>
                       <p>Get something working, then iterate.</p>
                     </>
                   )}
@@ -414,8 +414,8 @@ export default async function StepPage({ params }: StepPageProps) {
                   )}
                   {stepNumber === 8 && (
                     <>
-                      <p>Measure what matters. Don't track vanity metrics.</p>
-                      <p>Every completed cycle reveals new problems - that's the flywheel!</p>
+                      <p>Measure what matters. Don&apos;t track vanity metrics.</p>
+                      <p>Every completed cycle reveals new problems - that&apos;s the flywheel!</p>
                     </>
                   )}
                   {stepNumber === 9 && (

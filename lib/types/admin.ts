@@ -145,9 +145,9 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-export interface AdminUsersResponse extends PaginatedResponse<AdminUser> {}
-export interface AdminCyclesResponse extends PaginatedResponse<AdminCycle> {}
-export interface AdminActivityResponse extends PaginatedResponse<AdminActivityLog> {}
+export type AdminUsersResponse = PaginatedResponse<AdminUser>;
+export type AdminCyclesResponse = PaginatedResponse<AdminCycle>;
+export type AdminActivityResponse = PaginatedResponse<AdminActivityLog>;
 
 // Filter types
 export interface UserFilters {

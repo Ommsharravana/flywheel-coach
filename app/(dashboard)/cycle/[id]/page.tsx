@@ -162,7 +162,7 @@ export default async function CyclePage({ params }: CyclePageProps) {
                 </CardHeader>
                 <CardContent>
                   <p className="text-stone-300 mb-4">
-                    Congratulations! You've completed the full Problem-to-Impact Flywheel.
+                    Congratulations! You&apos;ve completed the full Problem-to-Impact Flywheel.
                     Your solution is live and making an impact. Ready to solve the next problem?
                   </p>
                   <div className="space-y-3">
@@ -267,7 +267,7 @@ export default async function CyclePage({ params }: CyclePageProps) {
                 </CardHeader>
                 <CardContent>
                   <p className="text-stone-300 italic">
-                    "{cycle.problem.refinedStatement || cycle.problem.statement}"
+                    &quot;{cycle.problem.refinedStatement || cycle.problem.statement}&quot;
                   </p>
                   <div className="flex gap-4 mt-4 text-sm">
                     <div className="text-stone-400">

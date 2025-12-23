@@ -37,7 +37,7 @@ export async function GET() {
     }
 
     // Build query based on role
-    let query = supabase
+    const query = supabase
       .from('admin_pending_change_requests')
       .select('*');
 

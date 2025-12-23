@@ -556,7 +556,7 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
               3
             </Badge>
             <div>
-              <strong>Continue in sequence</strong> - Each prompt builds on the previous one. Don't
+              <strong>Continue in sequence</strong> - Each prompt builds on the previous one. Don&apos;t
               skip prompts.
             </div>
           </div>

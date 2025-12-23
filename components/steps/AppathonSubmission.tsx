@@ -425,7 +425,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
               )}
               <p className="text-stone-400 max-w-md">
                 Your app <span className="text-stone-200 font-medium">{appName}</span> has been
-                submitted to {activeEvent?.name || 'the Appathon'}. We'll review your submission
+                submitted to {activeEvent?.name || 'the Appathon'}. We&apos;ll review your submission
                 and notify you of the results.
               </p>
             </div>
