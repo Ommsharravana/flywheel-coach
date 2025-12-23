@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  Clock,
+  Save,
+  Loader2,
+  FileCheck,
 } from 'lucide-react';
 import {
   Select,
@@ -41,11 +44,34 @@ import {
   getSeverityColor,
 } from '@/lib/types/problem-bank';
 
+interface EligibleCycle {
+  id: string;
+  name: string;
+  status: string;
+  current_step: number;
+  created_at: string;
+  updated_at: string;
+  user_name: string;
+  user_email: string;
+  problem_preview: string;
+}
+
+interface EligibleCyclesResponse {
+  eligible: EligibleCycle[];
+  total: number;
+  already_saved: number;
+}
+
 export default function ProblemBankPage() {
-  const supabase = createClient();
   const [problems, setProblems] = useState<ProblemCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Eligible cycles
+  const [eligibleCycles, setEligibleCycles] = useState<EligibleCycle[]>([]);
+  const [eligibleLoading, setEligibleLoading] = useState(true);
+  const [alreadySaved, setAlreadySaved] = useState(0);
+  const [savingCycleId, setSavingCycleId] = useState<string | null>(null);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -121,6 +147,51 @@ export default function ProblemBankPage() {
     }
   }, []);
 
+  // Fetch eligible cycles
+  const fetchEligibleCycles = useCallback(async () => {
+    setEligibleLoading(true);
+    try {
+      const response = await fetch('/api/problems/eligible-cycles');
+      if (response.ok) {
+        const data: EligibleCyclesResponse = await response.json();
+        setEligibleCycles(data.eligible);
+        setAlreadySaved(data.already_saved);
+      }
+    } catch {
+      // Non-critical, silently fail
+    } finally {
+      setEligibleLoading(false);
+    }
+  }, []);
+
+  // Save cycle to problem bank
+  const saveCycleToProblemBank = async (cycleId: string) => {
+    setSavingCycleId(cycleId);
+    try {
+      const response = await fetch('/api/problems/from-cycle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cycle_id: cycleId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to save problem');
+      }
+
+      // Refresh both eligible cycles and problems
+      await Promise.all([
+        fetchEligibleCycles(),
+        fetchProblems(),
+        fetchStats(),
+      ]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to save problem');
+    } finally {
+      setSavingCycleId(null);
+    }
+  };
+
   useEffect(() => {
     fetchProblems();
   }, [fetchProblems]);
@@ -128,6 +199,10 @@ export default function ProblemBankPage() {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
+
+  useEffect(() => {
+    fetchEligibleCycles();
+  }, [fetchEligibleCycles]);
 
   // Debounced search
   useEffect(() => {
@@ -140,6 +215,20 @@ export default function ProblemBankPage() {
 
   const handleFilterChange = () => {
     setPage(1);
+  };
+
+  const getStepLabel = (step: number) => {
+    const steps: Record<number, string> = {
+      1: 'Problem Discovery',
+      2: 'Context Discovery',
+      3: 'Value Discovery',
+      4: 'Workflow Classification',
+      5: 'Lovable Prompting',
+      6: 'Build & Iterate',
+      7: 'Impact Discovery',
+      8: 'Complete',
+    };
+    return steps[step] || `Step ${step}`;
   };
 
   return (
@@ -209,6 +298,107 @@ export default function ProblemBankPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Eligible Cycles Section */}
+      <Card className="glass-card border-amber-500/30">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-amber-400" />
+              <CardTitle className="text-lg text-stone-100">
+                Eligible Cycles to Save
+              </CardTitle>
+            </div>
+            <Badge variant="outline" className="text-stone-400 border-stone-600">
+              {alreadySaved} already saved
+            </Badge>
+          </div>
+          <p className="text-sm text-stone-400">
+            Cycles at Impact Discovery stage or beyond that haven&apos;t been saved to the Problem Bank yet
+          </p>
+        </CardHeader>
+        <CardContent>
+          {eligibleLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+            </div>
+          ) : eligibleCycles.length === 0 ? (
+            <div className="text-center py-8">
+              <CheckCircle className="h-10 w-10 text-green-400 mx-auto mb-3" />
+              <p className="text-stone-400">All eligible cycles have been saved!</p>
+              <p className="text-sm text-stone-500 mt-1">
+                New cycles will appear here when they reach the Impact Discovery stage.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {eligibleCycles.map((cycle) => (
+                <div
+                  key={cycle.id}
+                  className="flex items-start justify-between p-4 rounded-lg bg-stone-800/50 border border-stone-700 hover:border-amber-500/30 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium text-stone-100 truncate">
+                        {cycle.name}
+                      </h4>
+                      <Badge
+                        variant="outline"
+                        className={
+                          cycle.current_step === 8
+                            ? 'text-green-400 border-green-400/30'
+                            : 'text-amber-400 border-amber-400/30'
+                        }
+                      >
+                        {getStepLabel(cycle.current_step)}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-stone-400 line-clamp-2 mb-2">
+                      {cycle.problem_preview}
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-stone-500">
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {cycle.user_name}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {new Date(cycle.updated_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <Link href={`/cycles/${cycle.id}`} target="_blank">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-stone-400 hover:text-stone-100"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Button
+                      size="sm"
+                      onClick={() => saveCycleToProblemBank(cycle.id)}
+                      disabled={savingCycleId === cycle.id}
+                      className="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30"
+                    >
+                      {savingCycleId === cycle.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-1" />
+                          Save
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <Card className="glass-card">
@@ -345,7 +535,7 @@ export default function ProblemBankPage() {
               <p className="text-stone-400 mt-2">
                 {search || theme !== 'all' || status !== 'all' || validationStatus !== 'all'
                   ? 'Try adjusting your filters'
-                  : 'Problems will appear here when extracted from completed cycles'
+                  : 'Save eligible cycles above to populate the Problem Bank'
                 }
               </p>
             </CardContent>
