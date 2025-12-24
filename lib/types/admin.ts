@@ -1,6 +1,6 @@
 // Admin-specific types for JKKN Solution Studio Super Admin Dashboard
 
-export type UserRole = 'learner' | 'facilitator' | 'admin' | 'superadmin';
+export type UserRole = 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
 
 export interface AdminUser {
   id: string;

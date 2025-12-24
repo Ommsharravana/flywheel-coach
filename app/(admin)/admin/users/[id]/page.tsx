@@ -20,7 +20,7 @@ interface UserRow {
   id: string;
   email: string;
   name: string | null;
-  role: 'learner' | 'facilitator' | 'admin' | 'superadmin';
+  role: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
@@ -39,6 +39,8 @@ const roleColors: Record<string, string> = {
   learner: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   facilitator: 'bg-green-500/20 text-green-400 border-green-500/30',
   admin: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  event_admin: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  institution_admin: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
   superadmin: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
 };
 

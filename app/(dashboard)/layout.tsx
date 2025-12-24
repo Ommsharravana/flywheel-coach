@@ -10,7 +10,7 @@ import { redirect } from 'next/navigation'
 import type { Event } from '@/lib/events/types'
 
 interface ProfileRow {
-  role: 'learner' | 'facilitator' | 'admin' | 'superadmin';
+  role: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
   active_event_id: string | null;
   language: string | null;
 }

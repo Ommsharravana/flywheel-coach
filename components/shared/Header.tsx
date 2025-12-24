@@ -31,7 +31,7 @@ interface HeaderUser {
 
 interface HeaderProps {
   user?: HeaderUser | null
-  role?: 'learner' | 'facilitator' | 'admin' | 'superadmin' | null
+  role?: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin' | null
   isImpersonating?: boolean
 }
 
@@ -111,11 +111,11 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
               <NavLink href="/settings" active={pathname === '/settings'}>
                 {t('nav.settings')}
               </NavLink>
-              {role === 'superadmin' && (
+              {(role === 'superadmin' || role === 'institution_admin' || role === 'event_admin') && (
                 <NavLink href="/admin" active={pathname.startsWith('/admin')}>
                   <span className="flex items-center gap-1.5">
                     <Shield className="h-3.5 w-3.5" />
-                    {t('nav.superAdmin')}
+                    {role === 'superadmin' ? t('nav.superAdmin') : t('nav.admin') || 'Admin'}
                   </span>
                 </NavLink>
               )}

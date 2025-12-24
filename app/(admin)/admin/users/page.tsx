@@ -12,7 +12,7 @@ interface UserRow {
   id: string;
   email: string;
   name: string | null;
-  role: 'learner' | 'facilitator' | 'admin' | 'institution_admin' | 'superadmin';
+  role: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
   avatar_url: string | null;
   created_at: string;
   institution_id: string | null;

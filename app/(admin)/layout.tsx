@@ -7,7 +7,7 @@ interface ProfileRow {
   name: string | null;
   email: string | null;
   avatar_url: string | null;
-  role: 'learner' | 'facilitator' | 'admin' | 'institution_admin' | 'superadmin';
+  role: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
   institution_id: string | null;
 }
 
@@ -36,7 +36,7 @@ export default async function AdminLayout({
   const profile = profileData as unknown as ProfileRow | null;
 
   // Double-check admin role (middleware should catch this, but belt-and-suspenders)
-  const allowedRoles = ['superadmin', 'institution_admin'];
+  const allowedRoles = ['superadmin', 'institution_admin', 'event_admin'];
   if (!profile || !allowedRoles.includes(profile.role)) {
     redirect('/dashboard');
   }

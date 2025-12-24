@@ -30,7 +30,7 @@ interface User {
   id: string;
   email: string;
   name: string | null;
-  role: 'learner' | 'facilitator' | 'admin' | 'superadmin';
+  role: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
   avatar_url: string | null;
 }
 
@@ -170,6 +170,8 @@ export function UserEditForm({ user }: UserEditFormProps) {
                   <SelectItem value="learner">Learner</SelectItem>
                   <SelectItem value="facilitator">Facilitator</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="event_admin">Event Admin</SelectItem>
+                  <SelectItem value="institution_admin">Institution Admin</SelectItem>
                   <SelectItem value="superadmin">Super Admin</SelectItem>
                 </SelectContent>
               </Select>
