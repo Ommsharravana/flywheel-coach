@@ -29,6 +29,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ProblemCardData, ProblemTheme } from '@/lib/types/problem-bank';
+import { InstitutionLeaderboard } from '@/components/problem-bank/InstitutionLeaderboard';
 import {
   PROBLEM_THEMES,
   VALIDATION_STATUSES,
@@ -157,47 +158,49 @@ export default function PublicProblemsPage() {
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
-          <Card className="bg-stone-900/50 border-stone-800">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/20">
-                  <Database className="h-5 w-5 text-amber-400" />
-                </div>
-                <div>
+        {/* Stats and Leaderboard */}
+        <div className="grid gap-6 lg:grid-cols-3 mb-8">
+          {/* Stats */}
+          <div className="lg:col-span-2 grid gap-4 grid-cols-3">
+            <Card className="bg-stone-900/50 border-stone-800">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center">
+                  <div className="p-2 rounded-lg bg-amber-500/20 mb-2">
+                    <Database className="h-5 w-5 text-amber-400" />
+                  </div>
                   <div className="text-2xl font-bold text-stone-100">{stats.total}</div>
                   <p className="text-sm text-stone-500">Open Problems</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-stone-900/50 border-stone-800">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-500/20">
-                  <Target className="h-5 w-5 text-blue-400" />
-                </div>
-                <div>
+              </CardContent>
+            </Card>
+            <Card className="bg-stone-900/50 border-stone-800">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center">
+                  <div className="p-2 rounded-lg bg-blue-500/20 mb-2">
+                    <Target className="h-5 w-5 text-blue-400" />
+                  </div>
                   <div className="text-2xl font-bold text-stone-100">{stats.themes}</div>
                   <p className="text-sm text-stone-500">Themes</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-stone-900/50 border-stone-800">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-500/20">
-                  <Building2 className="h-5 w-5 text-green-400" />
-                </div>
-                <div>
+              </CardContent>
+            </Card>
+            <Card className="bg-stone-900/50 border-stone-800">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center">
+                  <div className="p-2 rounded-lg bg-green-500/20 mb-2">
+                    <Building2 className="h-5 w-5 text-green-400" />
+                  </div>
                   <div className="text-2xl font-bold text-stone-100">{stats.institutions}</div>
                   <p className="text-sm text-stone-500">Institutions</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Institution Leaderboard */}
+          <div className="lg:col-span-1">
+            <InstitutionLeaderboard />
+          </div>
         </div>
 
         {/* Search and Filters */}
