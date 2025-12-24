@@ -38,7 +38,13 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at,
         user_id,
-        users!cycles_user_id_fkey (id, name, email),
+        users!cycles_user_id_fkey (
+          id,
+          name,
+          email,
+          institution_id,
+          institutions (id, name, short_name)
+        ),
         problems (
           id,
           selected_question,
@@ -109,6 +115,38 @@ export async function GET(request: NextRequest) {
       );
     };
 
+    // Auto-detect theme from problem text (aligned with Appathon 2.0 Bioconvergence Themes)
+    const detectTheme = (text: string): string | null => {
+      const lowerText = text.toLowerCase();
+
+      // Healthcare + AI
+      if (/health|patient|hospital|clinic|medical|doctor|nurse|pharma|drug|medicine|dental|tooth|teeth|prescription|opd|ward|diagnosis|treatment|therapy/i.test(lowerText)) {
+        return 'healthcare';
+      }
+      // Education + AI
+      if (/education|student|learner|teacher|school|college|course|exam|study|class|syllabus|grade|marks|attendance|learning|curriculum/i.test(lowerText)) {
+        return 'education';
+      }
+      // Agriculture + AI
+      if (/farm|crop|agriculture|soil|harvest|irrigation|farmer|plant|seed|pesticide|livestock|cattle|poultry|fishery/i.test(lowerText)) {
+        return 'agriculture';
+      }
+      // Environment + AI
+      if (/environment|waste|pollution|water|air|climate|sustainability|recycle|plastic|green|carbon|ecology|conservation/i.test(lowerText)) {
+        return 'environment';
+      }
+      // Community + AI
+      if (/community|social|village|society|public|welfare|volunteer|ngo|help|civic|neighborhood|local/i.test(lowerText)) {
+        return 'community';
+      }
+      // MyJKKN Data Apps (special track)
+      if (/myjkkn|jkkn|institution|campus|college management|admin|erp|portal/i.test(lowerText)) {
+        return 'myjkkn';
+      }
+
+      return 'other';
+    };
+
     // Transform data - include all cycles, mark which are saved and which are eligible
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allCycles = (cycles || [])
@@ -127,7 +165,11 @@ export async function GET(request: NextRequest) {
           updated_at: c.updated_at,
           user_name: c.users?.name || 'Unknown',
           user_email: c.users?.email || '',
+          institution_id: c.users?.institution_id || null,
+          institution_name: c.users?.institutions?.name || null,
+          institution_short: c.users?.institutions?.short_name || null,
           problem_preview: problemText.substring(0, 200) || 'No problem statement',
+          theme: detectTheme(problemText),
           is_saved: savedCycleIds.has(c.id),
           is_eligible: c.current_step >= 7, // Eligible for saving if at step 7+
         };

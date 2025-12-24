@@ -64,6 +64,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fetch the cycle creator's institution_id (not the superadmin's)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: cycleCreator } = await (supabase as any)
+      .from('users')
+      .select('institution_id')
+      .eq('id', cycle.user_id)
+      .single();
+
+    const creatorInstitutionId = (cycleCreator as { institution_id: string | null } | null)?.institution_id || null;
+
     // Fetch problem data
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: problem } = await (supabase as any)
@@ -96,10 +106,10 @@ export async function POST(request: NextRequest) {
       .eq('cycle_id', cycle_id)
       .single();
 
-    // Build the problem title from selected_question or cycle name
-    const title = problem?.selected_question || cycle.name || 'Untitled Problem';
+    // Build the problem title from available problem data
+    const title = getProblemTitle(problem, cycle);
 
-    // Build problem statement from context
+    // Build problem statement from all available data
     const problemStatement = buildProblemStatement(problem, context);
 
     // Determine validation status based on value assessment
@@ -134,7 +144,7 @@ export async function POST(request: NextRequest) {
         desperate_user_count: valueAssessment?.desperate_user_count || 0,
         desperate_user_score: desperateUserScore,
 
-        institution_id: (userProfile as { institution_id: string | null } | null)?.institution_id || null,
+        institution_id: creatorInstitutionId,
         submitted_by: user.id,
 
         status: impactAssessment?.completed ? 'solved' : 'open',
@@ -193,14 +203,70 @@ export async function POST(request: NextRequest) {
 
 // Helper functions
 
+// Get the best available problem title from various sources
+function getProblemTitle(
+  problem: Record<string, unknown> | null,
+  cycle: Record<string, unknown>
+): string {
+  // Priority: refined_statement > selected_question > individual questions > cycle name
+  if (problem?.refined_statement) {
+    const statement = String(problem.refined_statement);
+    return statement.length > 200 ? statement.substring(0, 197) + '...' : statement;
+  }
+
+  if (problem?.selected_question) {
+    const question = String(problem.selected_question);
+    return question.length > 200 ? question.substring(0, 197) + '...' : question;
+  }
+
+  // Check individual questions
+  const questionFields = [
+    'q_takes_too_long',
+    'q_repetitive',
+    'q_lookup_repeatedly',
+    'q_complaints',
+    'q_would_pay',
+  ];
+
+  for (const field of questionFields) {
+    if (problem?.[field]) {
+      const answer = String(problem[field]);
+      return answer.length > 200 ? answer.substring(0, 197) + '...' : answer;
+    }
+  }
+
+  return String(cycle.name || 'Untitled Problem');
+}
+
 function buildProblemStatement(
   problem: Record<string, unknown> | null,
   context: Record<string, unknown> | null
 ): string {
   const parts: string[] = [];
 
-  if (problem?.selected_question) {
+  // Add refined statement if available
+  if (problem?.refined_statement) {
+    parts.push(String(problem.refined_statement));
+  }
+
+  // Add selected question if different from refined
+  if (problem?.selected_question && problem.selected_question !== problem?.refined_statement) {
     parts.push(String(problem.selected_question));
+  }
+
+  // Add individual question answers (the 5 discovery questions)
+  const questionMap: Record<string, string> = {
+    q_takes_too_long: 'Takes too long',
+    q_repetitive: 'Repetitive task',
+    q_lookup_repeatedly: 'Need to look up repeatedly',
+    q_complaints: 'Common complaints',
+    q_would_pay: 'Would pay to solve',
+  };
+
+  for (const [field, label] of Object.entries(questionMap)) {
+    if (problem?.[field] && !parts.includes(String(problem[field]))) {
+      parts.push(`**${label}:** ${problem[field]}`);
+    }
   }
 
   if (context?.problem_description) {
@@ -259,27 +325,30 @@ function detectTheme(
     context?.where_occurs,
   ].filter(Boolean).join(' ').toLowerCase();
 
-  // Simple keyword-based theme detection
-  if (/health|patient|hospital|clinic|medical|doctor|nurse|pharma|drug|medicine/i.test(text)) {
+  // Keyword-based theme detection (aligned with Appathon 2.0 Bioconvergence Themes)
+  // Healthcare + AI
+  if (/health|patient|hospital|clinic|medical|doctor|nurse|pharma|drug|medicine|dental|tooth|teeth|prescription|opd|ward|diagnosis|treatment|therapy/i.test(text)) {
     return 'healthcare';
   }
-  if (/education|student|learner|teacher|school|college|course|exam|study/i.test(text)) {
+  // Education + AI
+  if (/education|student|learner|teacher|school|college|course|exam|study|class|syllabus|grade|marks|attendance|learning|curriculum/i.test(text)) {
     return 'education';
   }
-  if (/farm|crop|agriculture|soil|harvest|irrigation|farmer|plant/i.test(text)) {
+  // Agriculture + AI
+  if (/farm|crop|agriculture|soil|harvest|irrigation|farmer|plant|seed|pesticide|livestock|cattle|poultry|fishery/i.test(text)) {
     return 'agriculture';
   }
-  if (/environment|waste|pollution|water|air|climate|sustainability|recycle/i.test(text)) {
+  // Environment + AI
+  if (/environment|waste|pollution|water|air|climate|sustainability|recycle|plastic|green|carbon|ecology|conservation/i.test(text)) {
     return 'environment';
   }
-  if (/community|social|village|society|public|welfare|volunteer/i.test(text)) {
+  // Community + AI
+  if (/community|social|village|society|public|welfare|volunteer|ngo|help|civic|neighborhood|local/i.test(text)) {
     return 'community';
   }
-  if (/process|workflow|efficiency|management|operation|system|automat/i.test(text)) {
-    return 'operations';
-  }
-  if (/productive|time|schedule|task|work|effici/i.test(text)) {
-    return 'productivity';
+  // MyJKKN Data Apps (special track)
+  if (/myjkkn|jkkn|institution|campus|college management|admin|erp|portal/i.test(text)) {
+    return 'myjkkn';
   }
 
   return 'other';

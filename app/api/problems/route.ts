@@ -146,3 +146,97 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// POST /api/problems - Create a new problem manually (superadmin only)
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is superadmin and get institution_id
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userProfile } = await (supabase as any)
+      .from('users')
+      .select('role, institution_id')
+      .eq('id', user.id)
+      .single();
+
+    if ((userProfile as { role: string } | null)?.role !== 'superadmin') {
+      return NextResponse.json({ error: 'Forbidden - superadmin only' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const {
+      title,
+      problem_statement,
+      theme,
+      who_affected,
+      when_occurs,
+      where_occurs,
+      frequency,
+      severity_rating,
+      source_type = 'manual',
+      source_event,
+      validation_status = 'unvalidated',
+      status = 'open',
+    } = body;
+
+    if (!title || !problem_statement) {
+      return NextResponse.json(
+        { error: 'Missing required fields: title and problem_statement' },
+        { status: 400 }
+      );
+    }
+
+    // Insert into problem_bank
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: newProblem, error: insertError } = await (supabase as any)
+      .from('problem_bank')
+      .insert({
+        title: title.substring(0, 200),
+        problem_statement,
+        theme: theme || 'other',
+        who_affected: who_affected || null,
+        when_occurs: when_occurs || null,
+        where_occurs: where_occurs || null,
+        frequency: frequency || null,
+        severity_rating: severity_rating || null,
+        source_type,
+        source_event: source_event || null,
+        source_year: new Date().getFullYear(),
+        validation_status,
+        status,
+        is_open_for_attempts: true,
+        institution_id: (userProfile as { institution_id: string | null } | null)?.institution_id || null,
+        submitted_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error inserting problem:', insertError);
+      return NextResponse.json(
+        { error: 'Failed to create problem', details: insertError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      problem_id: newProblem.id,
+      message: 'Problem created successfully',
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('Error in POST /api/problems:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

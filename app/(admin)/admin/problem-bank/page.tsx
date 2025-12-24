@@ -22,6 +22,14 @@ import {
   FileCheck,
   CircleDot,
   CheckCircle2,
+  Download,
+  BarChart3,
+  PieChart,
+  Plus,
+  Sparkles,
+  Building2,
+  Trophy,
+  Medal,
 } from 'lucide-react';
 import {
   Select,
@@ -61,7 +69,11 @@ interface CycleData {
   updated_at: string;
   user_name: string;
   user_email: string;
+  institution_id: string | null;
+  institution_name: string | null;
+  institution_short: string | null;
   problem_preview: string;
+  theme: string | null;
   is_saved: boolean;
   is_eligible: boolean;
 }
@@ -72,6 +84,29 @@ interface CyclesResponse {
   saved: CycleData[];
   total: number;
   already_saved: number;
+}
+
+interface LeaderboardEntry {
+  id: string;
+  name: string;
+  short_name: string;
+  total_cycles: number;
+  completed_cycles: number;
+  problems_identified: number;
+  problems_saved: number;
+  problems_solved: number;
+  problems_validated: number;
+}
+
+interface LeaderboardResponse {
+  leaderboard: LeaderboardEntry[];
+  totals: {
+    total_cycles: number;
+    completed_cycles: number;
+    problems_identified: number;
+    problems_saved: number;
+    institutions: number;
+  };
 }
 
 export default function ProblemBankPage() {
@@ -89,6 +124,8 @@ export default function ProblemBankPage() {
   });
   const [cyclesLoading, setCyclesLoading] = useState(true);
   const [savingCycleId, setSavingCycleId] = useState<string | null>(null);
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
 
   // Active tab
   const [activeTab, setActiveTab] = useState('all');
@@ -111,6 +148,31 @@ export default function ProblemBankPage() {
     eligible: 0,
     saved: 0,
   });
+
+  // Analytics
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState<{
+    total: number;
+    themeDistribution: { theme: string; count: number }[];
+    institutionDistribution: { id: string; name: string; short_name: string; count: number }[];
+    statusDistribution: { status: string; count: number }[];
+    avgSeverity: number | null;
+  } | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  // Leaderboard
+  const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
+  // Quick Submit
+  const [showQuickSubmit, setShowQuickSubmit] = useState(false);
+  const [quickSubmitData, setQuickSubmitData] = useState({
+    title: '',
+    problem_statement: '',
+    theme: 'other' as string,
+    who_affected: '',
+  });
+  const [quickSubmitting, setQuickSubmitting] = useState(false);
 
   const fetchProblems = useCallback(async () => {
     setLoading(true);
@@ -167,6 +229,48 @@ export default function ProblemBankPage() {
     }
   }, []);
 
+  // Fetch analytics data
+  const fetchAnalytics = useCallback(async () => {
+    if (analyticsData) return; // Already fetched
+    setAnalyticsLoading(true);
+    try {
+      const response = await fetch('/api/problems/stats');
+      if (response.ok) {
+        const data = await response.json();
+        setAnalyticsData(data);
+      }
+    } catch {
+      // Non-critical
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, [analyticsData]);
+
+  // Fetch leaderboard
+  const fetchLeaderboard = useCallback(async () => {
+    if (leaderboard) return; // Already fetched
+    setLeaderboardLoading(true);
+    try {
+      const response = await fetch('/api/problems/leaderboard');
+      if (response.ok) {
+        const data = await response.json();
+        setLeaderboard(data);
+      }
+    } catch {
+      // Non-critical
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  }, [leaderboard]);
+
+  // Fetch analytics and leaderboard when panel opens
+  useEffect(() => {
+    if (showAnalytics) {
+      if (!analyticsData) fetchAnalytics();
+      if (!leaderboard) fetchLeaderboard();
+    }
+  }, [showAnalytics, analyticsData, leaderboard, fetchAnalytics, fetchLeaderboard]);
+
   // Save cycle to problem bank
   const saveCycleToProblemBank = async (cycleId: string) => {
     setSavingCycleId(cycleId);
@@ -189,6 +293,154 @@ export default function ProblemBankPage() {
     } finally {
       setSavingCycleId(null);
     }
+  };
+
+  // Bulk save all eligible cycles
+  const saveAllEligible = async () => {
+    if (cyclesData.eligible.length === 0) return;
+
+    setBulkSaving(true);
+    setBulkProgress({ current: 0, total: cyclesData.eligible.length });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < cyclesData.eligible.length; i++) {
+      const cycle = cyclesData.eligible[i];
+      setBulkProgress({ current: i + 1, total: cyclesData.eligible.length });
+
+      try {
+        const response = await fetch('/api/problems/from-cycle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cycle_id: cycle.id }),
+        });
+
+        if (response.ok) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch {
+        failCount++;
+      }
+    }
+
+    // Refresh data
+    await Promise.all([fetchCycles(), fetchProblems()]);
+
+    setBulkSaving(false);
+    setBulkProgress({ current: 0, total: 0 });
+
+    alert(`Saved ${successCount} problems to bank. ${failCount > 0 ? `${failCount} failed.` : ''}`);
+  };
+
+  // Export functions
+  const exportToJSON = () => {
+    const allData = [...cyclesData.in_progress, ...cyclesData.eligible, ...cyclesData.saved];
+    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `problem-bank-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportToCSV = () => {
+    const allData = [...cyclesData.in_progress, ...cyclesData.eligible, ...cyclesData.saved];
+    const headers = ['Name', 'Problem Preview', 'Theme', 'Step', 'User', 'Status', 'Created At'];
+    const rows = allData.map(c => [
+      c.name,
+      c.problem_preview.replace(/,/g, ';').replace(/\n/g, ' '),
+      c.theme || 'other',
+      c.current_step,
+      c.user_name,
+      c.is_saved ? 'Saved' : c.is_eligible ? 'Eligible' : 'In Progress',
+      new Date(c.created_at).toLocaleDateString(),
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `problem-bank-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Quick Submit
+  const handleQuickSubmit = async () => {
+    if (!quickSubmitData.title || !quickSubmitData.problem_statement) {
+      alert('Please fill in title and problem statement');
+      return;
+    }
+
+    setQuickSubmitting(true);
+    try {
+      const response = await fetch('/api/problems', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: quickSubmitData.title,
+          problem_statement: quickSubmitData.problem_statement,
+          theme: quickSubmitData.theme,
+          who_affected: quickSubmitData.who_affected || null,
+          source_type: 'manual',
+          validation_status: 'unvalidated',
+          status: 'open',
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to submit problem');
+      }
+
+      // Reset form and refresh
+      setQuickSubmitData({ title: '', problem_statement: '', theme: 'other', who_affected: '' });
+      setShowQuickSubmit(false);
+      await Promise.all([fetchCycles(), fetchProblems()]);
+      alert('Problem submitted successfully!');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to submit problem');
+    } finally {
+      setQuickSubmitting(false);
+    }
+  };
+
+  // Calculate theme distribution for analytics
+  const getThemeDistribution = () => {
+    const allCycles = [...cyclesData.in_progress, ...cyclesData.eligible, ...cyclesData.saved];
+    const distribution: Record<string, number> = {};
+    allCycles.forEach(c => {
+      const t = c.theme || 'other';
+      distribution[t] = (distribution[t] || 0) + 1;
+    });
+    return Object.entries(distribution)
+      .sort((a, b) => b[1] - a[1])
+      .map(([theme, count]) => ({ theme, count }));
+  };
+
+  // Calculate institution distribution from cycles data (fallback when problem_bank is empty)
+  const getInstitutionDistribution = () => {
+    const allCycles = [...cyclesData.in_progress, ...cyclesData.eligible, ...cyclesData.saved];
+    const distribution: Record<string, { name: string; short_name: string; count: number }> = {};
+    allCycles.forEach(c => {
+      if (c.institution_id && c.institution_name) {
+        if (!distribution[c.institution_id]) {
+          distribution[c.institution_id] = {
+            name: c.institution_name,
+            short_name: c.institution_short || c.institution_name,
+            count: 0,
+          };
+        }
+        distribution[c.institution_id].count++;
+      }
+    });
+    return Object.entries(distribution)
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([id, { name, short_name, count }]) => ({ id, name, short_name, count }));
   };
 
   useEffect(() => {
@@ -318,6 +570,368 @@ export default function ProblemBankPage() {
         </Card>
       </div>
 
+      {/* Action Bar: Analytics, Export, Quick Submit */}
+      <div className="flex flex-wrap gap-3">
+        <Button
+          variant="outline"
+          onClick={() => setShowAnalytics(!showAnalytics)}
+          className="border-stone-700 text-stone-300 hover:bg-stone-800"
+        >
+          <BarChart3 className="h-4 w-4 mr-2" />
+          {showAnalytics ? 'Hide' : 'Show'} Analytics
+        </Button>
+        <Button
+          variant="outline"
+          onClick={exportToJSON}
+          className="border-stone-700 text-stone-300 hover:bg-stone-800"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export JSON
+        </Button>
+        <Button
+          variant="outline"
+          onClick={exportToCSV}
+          className="border-stone-700 text-stone-300 hover:bg-stone-800"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export CSV
+        </Button>
+        <Button
+          onClick={() => setShowQuickSubmit(!showQuickSubmit)}
+          className="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Quick Submit
+        </Button>
+      </div>
+
+      {/* Analytics Dashboard */}
+      {showAnalytics && (
+        <div className="space-y-6">
+          {/* Theme Distribution */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-stone-100 flex items-center gap-2">
+                <PieChart className="h-5 w-5 text-amber-400" />
+                Problems by Theme (Appathon 2.0 Tracks)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+                </div>
+              ) : (() => {
+                // Use saved problem_bank data if available, otherwise fall back to cycles
+                const themeData = (analyticsData?.themeDistribution && analyticsData.themeDistribution.length > 0)
+                  ? analyticsData.themeDistribution
+                  : getThemeDistribution();
+                const total = (analyticsData?.total && analyticsData.total > 0) ? analyticsData.total : stats.total;
+
+                if (themeData.length === 0) {
+                  return (
+                    <p className="text-stone-500 text-center py-4">
+                      No theme data available yet. Problems will be categorized by theme as they are added.
+                    </p>
+                  );
+                }
+
+                return (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {themeData.map(({ theme, count }) => {
+                      const themeInfo = PROBLEM_THEMES[theme as keyof typeof PROBLEM_THEMES];
+                      const percentage = Math.round((count / total) * 100) || 0;
+                      return (
+                        <div key={theme} className="p-4 rounded-lg bg-stone-800/50 border border-stone-700">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xl">{themeInfo?.emoji || '📋'}</span>
+                            <span className={`font-medium ${themeInfo?.color || 'text-stone-300'}`}>
+                              {themeInfo?.label || 'Other'}
+                            </span>
+                          </div>
+                          <div className="flex items-end justify-between">
+                            <span className="text-2xl font-bold text-stone-100">{count}</span>
+                            <span className="text-sm text-stone-500">{percentage}%</span>
+                          </div>
+                          <div className="mt-2 h-2 bg-stone-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-amber-500 rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+          {/* Institution Distribution */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-stone-100 flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-blue-400" />
+                Problems by Institution
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                </div>
+              ) : (() => {
+                // Use saved problem_bank data if available, otherwise fall back to cycles
+                const institutionData = (analyticsData?.institutionDistribution && analyticsData.institutionDistribution.length > 0)
+                  ? analyticsData.institutionDistribution
+                  : getInstitutionDistribution();
+                const total = (analyticsData?.total && analyticsData.total > 0) ? analyticsData.total : stats.total;
+
+                if (institutionData.length === 0) {
+                  return (
+                    <div className="text-center py-6">
+                      <Building2 className="h-8 w-8 text-stone-600 mx-auto mb-2" />
+                      <p className="text-stone-400 font-medium">No institution data available</p>
+                      <p className="text-stone-500 text-sm mt-1">
+                        Institution breakdown will appear once cycles are linked to institutions.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {institutionData.map(({ id, name, short_name, count }) => {
+                      const percentage = Math.round((count / total) * 100) || 0;
+                      return (
+                        <div key={id} className="flex items-center gap-4">
+                          <div className="w-24 text-sm font-medium text-stone-300 truncate" title={name}>
+                            {short_name || name}
+                          </div>
+                          <div className="flex-1 h-6 bg-stone-800 rounded overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500/70 rounded flex items-center justify-end pr-2 transition-all"
+                              style={{ width: `${Math.max(percentage, 10)}%` }}
+                            >
+                              <span className="text-xs font-medium text-white">{count}</span>
+                            </div>
+                          </div>
+                          <div className="w-12 text-right text-sm text-stone-500">
+                            {percentage}%
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+          {/* Institution Leaderboard */}
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-stone-100 flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-amber-400" />
+                Institution Leaderboard
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {leaderboardLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+                </div>
+              ) : !leaderboard || leaderboard.leaderboard.length === 0 ? (
+                <div className="text-center py-6">
+                  <Trophy className="h-8 w-8 text-stone-600 mx-auto mb-2" />
+                  <p className="text-stone-400 font-medium">No leaderboard data yet</p>
+                  <p className="text-stone-500 text-sm mt-1">
+                    Rankings will appear as institutions submit problems.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-4 gap-4 p-4 rounded-lg bg-stone-800/50 border border-stone-700">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-stone-100">{leaderboard.totals.institutions}</div>
+                      <div className="text-xs text-stone-500">Institutions</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-400">{leaderboard.totals.total_cycles}</div>
+                      <div className="text-xs text-stone-500">Total Cycles</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-400">{leaderboard.totals.completed_cycles}</div>
+                      <div className="text-xs text-stone-500">Completed</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-amber-400">{leaderboard.totals.problems_identified}</div>
+                      <div className="text-xs text-stone-500">Problems Found</div>
+                    </div>
+                  </div>
+
+                  {/* Leaderboard Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-stone-700">
+                          <th className="text-left py-3 px-2 text-stone-400 font-medium">Rank</th>
+                          <th className="text-left py-3 px-2 text-stone-400 font-medium">Institution</th>
+                          <th className="text-center py-3 px-2 text-stone-400 font-medium">Cycles</th>
+                          <th className="text-center py-3 px-2 text-stone-400 font-medium">Completed</th>
+                          <th className="text-center py-3 px-2 text-stone-400 font-medium">Problems</th>
+                          <th className="text-center py-3 px-2 text-stone-400 font-medium">Saved</th>
+                          <th className="text-center py-3 px-2 text-stone-400 font-medium">Validated</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leaderboard.leaderboard.map((entry, index) => (
+                          <tr
+                            key={entry.id}
+                            className={`border-b border-stone-800 ${index < 3 ? 'bg-stone-800/30' : ''}`}
+                          >
+                            <td className="py-3 px-2">
+                              <div className="flex items-center gap-2">
+                                {index === 0 && <Medal className="h-5 w-5 text-yellow-400" />}
+                                {index === 1 && <Medal className="h-5 w-5 text-gray-300" />}
+                                {index === 2 && <Medal className="h-5 w-5 text-amber-600" />}
+                                {index > 2 && <span className="text-stone-500 w-5 text-center">{index + 1}</span>}
+                              </div>
+                            </td>
+                            <td className="py-3 px-2">
+                              <div>
+                                <div className="font-medium text-stone-100">{entry.short_name}</div>
+                                <div className="text-xs text-stone-500 truncate max-w-[200px]">{entry.name}</div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-2 text-center text-stone-300">{entry.total_cycles}</td>
+                            <td className="py-3 px-2 text-center">
+                              <span className="text-green-400">{entry.completed_cycles}</span>
+                              <span className="text-stone-600">/{entry.total_cycles}</span>
+                            </td>
+                            <td className="py-3 px-2 text-center">
+                              <span className="font-semibold text-amber-400">{entry.problems_identified}</span>
+                            </td>
+                            <td className="py-3 px-2 text-center text-blue-400">{entry.problems_saved}</td>
+                            <td className="py-3 px-2 text-center">
+                              {entry.problems_validated > 0 ? (
+                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                                  {entry.problems_validated}
+                                </Badge>
+                              ) : (
+                                <span className="text-stone-600">0</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Quick Submit Form */}
+      {showQuickSubmit && (
+        <Card className="glass-card border-amber-500/30">
+          <CardHeader>
+            <CardTitle className="text-stone-100 flex items-center gap-2">
+              <Plus className="h-5 w-5 text-amber-400" />
+              Quick Submit Problem
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-stone-300 mb-2">
+                Problem Title *
+              </label>
+              <Input
+                value={quickSubmitData.title}
+                onChange={(e) => setQuickSubmitData(d => ({ ...d, title: e.target.value }))}
+                placeholder="Brief title describing the problem..."
+                className="bg-stone-800 border-stone-700"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-300 mb-2">
+                Problem Statement *
+              </label>
+              <textarea
+                value={quickSubmitData.problem_statement}
+                onChange={(e) => setQuickSubmitData(d => ({ ...d, problem_statement: e.target.value }))}
+                placeholder="Describe the problem in detail..."
+                rows={3}
+                className="w-full px-3 py-2 rounded-md bg-stone-800 border border-stone-700 text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-2">
+                  Theme
+                </label>
+                <Select
+                  value={quickSubmitData.theme}
+                  onValueChange={(value) => setQuickSubmitData(d => ({ ...d, theme: value }))}
+                >
+                  <SelectTrigger className="bg-stone-800 border-stone-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PROBLEM_THEMES).map(([key, { label, emoji }]) => (
+                      <SelectItem key={key} value={key}>
+                        {emoji} {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-2">
+                  Who is affected?
+                </label>
+                <Input
+                  value={quickSubmitData.who_affected}
+                  onChange={(e) => setQuickSubmitData(d => ({ ...d, who_affected: e.target.value }))}
+                  placeholder="e.g., Hospital staff, Students..."
+                  className="bg-stone-800 border-stone-700"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={handleQuickSubmit}
+                disabled={quickSubmitting}
+                className="bg-amber-500 text-stone-900 hover:bg-amber-400"
+              >
+                {quickSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Submit Problem
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowQuickSubmit(false)}
+                className="border-stone-700 text-stone-300"
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Search */}
       <Card className="glass-card">
         <CardContent className="pt-6">
@@ -389,6 +1003,30 @@ export default function ProblemBankPage() {
 
         {/* Ready to Save Tab */}
         <TabsContent value="eligible" className="mt-4">
+          {cyclesData.eligible.length > 0 && (
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-stone-400">
+                {cyclesData.eligible.length} problem{cyclesData.eligible.length !== 1 ? 's' : ''} ready to save
+              </p>
+              <Button
+                onClick={saveAllEligible}
+                disabled={bulkSaving}
+                className="bg-amber-500 text-stone-900 hover:bg-amber-400"
+              >
+                {bulkSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving {bulkProgress.current}/{bulkProgress.total}...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Save All {cyclesData.eligible.length} to Bank
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
           <CyclesList
             cycles={filterCycles(cyclesData.eligible)}
             loading={cyclesLoading}
@@ -476,12 +1114,22 @@ function CyclesList({
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  {cycle.theme && PROBLEM_THEMES[cycle.theme as keyof typeof PROBLEM_THEMES] && (
+                    <span className={`text-sm ${PROBLEM_THEMES[cycle.theme as keyof typeof PROBLEM_THEMES].color}`}>
+                      {PROBLEM_THEMES[cycle.theme as keyof typeof PROBLEM_THEMES].emoji}
+                    </span>
+                  )}
                   <h3 className="font-semibold text-stone-100">
                     {cycle.name}
                   </h3>
                   <Badge variant="outline" className={getStepColor(cycle.current_step)}>
                     {getStepLabel(cycle.current_step)}
                   </Badge>
+                  {cycle.theme && PROBLEM_THEMES[cycle.theme as keyof typeof PROBLEM_THEMES] && (
+                    <Badge variant="outline" className={`${PROBLEM_THEMES[cycle.theme as keyof typeof PROBLEM_THEMES].color} border-current/30`}>
+                      {PROBLEM_THEMES[cycle.theme as keyof typeof PROBLEM_THEMES].label}
+                    </Badge>
+                  )}
                   {cycle.is_saved && (
                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                       Saved

@@ -22,9 +22,12 @@ import {
   X,
   Trash2,
   ExternalLink,
+  GitFork,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ProblemWithDetails } from '@/lib/types/problem-bank';
+import { SimilarProblems } from '@/components/problem-bank/SimilarProblems';
 import {
   PROBLEM_THEMES,
   PROBLEM_STATUSES,
@@ -61,6 +64,10 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ id: st
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [startingAttempt, setStartingAttempt] = useState(false);
+  const [showAttemptForm, setShowAttemptForm] = useState(false);
+  const [attemptTeamName, setAttemptTeamName] = useState('');
+  const [forking, setForking] = useState(false);
 
   // Edit state
   const [editTitle, setEditTitle] = useState('');
@@ -132,6 +139,61 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ id: st
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete');
       setDeleting(false);
+    }
+  };
+
+  const handleStartAttempt = async () => {
+    setStartingAttempt(true);
+    try {
+      const response = await fetch(`/api/problems/${id}/attempts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          team_name: attemptTeamName || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to start attempt');
+      }
+
+      // Refresh problem data to show new attempt
+      const refreshResponse = await fetch(`/api/problems/${id}`);
+      if (refreshResponse.ok) {
+        const data = await refreshResponse.json();
+        setProblem(data);
+      }
+
+      setShowAttemptForm(false);
+      setAttemptTeamName('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start attempt');
+    } finally {
+      setStartingAttempt(false);
+    }
+  };
+
+  const handleFork = async () => {
+    setForking(true);
+    try {
+      const response = await fetch('/api/problems/fork', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problem_id: id }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to fork problem');
+      }
+
+      const data = await response.json();
+      // Redirect to the new cycle
+      router.push(`/cycle/${data.cycle_id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fork problem');
+      setForking(false);
     }
   };
 
@@ -208,6 +270,17 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ id: st
             </>
           ) : (
             <>
+              <Button
+                onClick={handleFork}
+                disabled={forking}
+                className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30"
+              >
+                {forking ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Forking...</>
+                ) : (
+                  <><GitFork className="h-4 w-4 mr-2" /> Fork to New Cycle</>
+                )}
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => setEditing(true)}
@@ -397,10 +470,60 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ id: st
           {/* Attempts Section */}
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg text-stone-100">
-                <Target className="h-5 w-5" />
-                Solution Attempts ({problem.attempt_count || 0})
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg text-stone-100">
+                  <Target className="h-5 w-5" />
+                  Solution Attempts ({problem.attempt_count || 0})
+                </CardTitle>
+                {problem.is_open_for_attempts && problem.status === 'open' && (
+                  <Button
+                    onClick={() => setShowAttemptForm(!showAttemptForm)}
+                    className="bg-amber-500 hover:bg-amber-400 text-stone-950"
+                  >
+                    Start Attempt
+                  </Button>
+                )}
+              </div>
+              {showAttemptForm && (
+                <div className="mt-4 p-4 bg-stone-800/50 rounded-lg border border-stone-700">
+                  <p className="text-sm text-stone-400 mb-3">
+                    Start working on a solution for this problem. Your attempt will be tracked.
+                  </p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm text-stone-300 block mb-1">
+                        Team Name (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={attemptTeamName}
+                        onChange={(e) => setAttemptTeamName(e.target.value)}
+                        placeholder="Enter your team name..."
+                        className="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-lg text-stone-100 placeholder:text-stone-500"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleStartAttempt}
+                        disabled={startingAttempt}
+                        className="bg-green-600 hover:bg-green-500 text-white"
+                      >
+                        {startingAttempt ? 'Starting...' : 'Claim This Problem'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setShowAttemptForm(false);
+                          setAttemptTeamName('');
+                        }}
+                        className="text-stone-400"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               {problem.attempts && problem.attempts.length > 0 ? (
@@ -571,6 +694,9 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ id: st
               </CardContent>
             </Card>
           )}
+
+          {/* Similar Problems */}
+          <SimilarProblems problemId={id} variant="admin" />
 
           {/* Original Cycle Link */}
           {problem.original_cycle_id && (

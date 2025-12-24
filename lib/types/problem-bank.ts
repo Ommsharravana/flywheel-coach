@@ -4,14 +4,14 @@
 // ENUMS / UNION TYPES
 // ============================================
 
+// Aligned with Appathon 2.0 Bioconvergence Themes
 export type ProblemTheme =
-  | 'healthcare'
-  | 'education'
-  | 'agriculture'
-  | 'environment'
-  | 'community'
-  | 'operations'
-  | 'productivity'
+  | 'healthcare'   // Healthcare + AI
+  | 'education'    // Education + AI
+  | 'agriculture'  // Agriculture + AI
+  | 'environment'  // Environment + AI
+  | 'community'    // Community + AI
+  | 'myjkkn'       // MyJKKN Data Integration Track
   | 'other';
 
 export type ProblemStatus = 'open' | 'claimed' | 'in_progress' | 'solved' | 'archived';
@@ -409,13 +409,12 @@ export interface ProblemAttemptStats {
  * Theme display info
  */
 export const PROBLEM_THEMES: Record<ProblemTheme, { label: string; emoji: string; color: string }> = {
-  healthcare: { label: 'Healthcare', emoji: '🏥', color: 'text-red-500' },
-  education: { label: 'Education', emoji: '📚', color: 'text-blue-500' },
-  agriculture: { label: 'Agriculture', emoji: '🌾', color: 'text-green-500' },
-  environment: { label: 'Environment', emoji: '🌍', color: 'text-emerald-500' },
-  community: { label: 'Community', emoji: '👥', color: 'text-purple-500' },
-  operations: { label: 'Operations', emoji: '⚙️', color: 'text-gray-500' },
-  productivity: { label: 'Productivity', emoji: '📈', color: 'text-orange-500' },
+  healthcare: { label: 'Healthcare + AI', emoji: '🏥', color: 'text-red-500' },
+  education: { label: 'Education + AI', emoji: '📚', color: 'text-blue-500' },
+  agriculture: { label: 'Agriculture + AI', emoji: '🌾', color: 'text-green-500' },
+  environment: { label: 'Environment + AI', emoji: '🌍', color: 'text-emerald-500' },
+  community: { label: 'Community + AI', emoji: '👥', color: 'text-purple-500' },
+  myjkkn: { label: 'MyJKKN Apps', emoji: '📱', color: 'text-cyan-500' },
   other: { label: 'Other', emoji: '💡', color: 'text-yellow-500' },
 };
 
