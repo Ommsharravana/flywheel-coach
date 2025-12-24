@@ -146,13 +146,26 @@ export default async function DashboardPage() {
             <p className="mt-2 text-stone-400">
               {t('dashboard.beginJourney')}
             </p>
-            <Button
-              asChild
-              size="lg"
-              className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-semibold hover:from-amber-400 hover:to-orange-500 shadow-lg shadow-orange-500/25"
-            >
-              <Link href="/cycle/new">{t('dashboard.beginNewCycle')}</Link>
-            </Button>
+            <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                asChild
+                size="lg"
+                className="bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-semibold hover:from-amber-400 hover:to-orange-500 shadow-lg shadow-orange-500/25"
+              >
+                <Link href="/cycle/new">{t('dashboard.beginNewCycle')}</Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-stone-600 text-stone-200 hover:bg-stone-800 hover:text-stone-100"
+              >
+                <Link href="/appathon/problems">Browse Problem Bank</Link>
+              </Button>
+            </div>
+            <p className="mt-4 text-xs text-stone-500">
+              💡 Or fork a validated problem from the Problem Bank
+            </p>
           </div>
         </div>
       )}

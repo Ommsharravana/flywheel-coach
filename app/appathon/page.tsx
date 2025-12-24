@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import {
   Trophy, Calendar, Clock, Users, Zap, ChevronRight,
   ExternalLink, CheckCircle, AlertCircle, BookOpen,
-  Sparkles, Medal, Gift, Code, Target, Smartphone, HelpCircle
+  Sparkles, Medal, Gift, Code, Target, Smartphone, HelpCircle,
+  Database
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -485,6 +486,22 @@ export default function AppathonGuidePage() {
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-stone-500 group-hover:text-amber-400 transition-colors" />
+            </Link>
+
+            <Link
+              href="/appathon/problems"
+              className="flex items-center justify-between p-4 rounded-xl bg-stone-800/50 border border-stone-700/50 hover:border-orange-500/50 transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-orange-500/20">
+                  <Database className="w-5 h-5 text-orange-400" />
+                </div>
+                <div>
+                  <span className="font-semibold text-stone-100">Problem Bank</span>
+                  <p className="text-xs text-stone-500">Fork Validated Problems</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-stone-500 group-hover:text-orange-400 transition-colors" />
             </Link>
 
             <a
