@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
   // Institution selection is a special protected route (needs auth but no institution)
   const isSelectInstitutionRoute = request.nextUrl.pathname === '/select-institution'
 
+  // Redirect unauthenticated users from protected routes to login
   if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
@@ -55,7 +56,14 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // For protected routes (except select-institution), check if user has institution
+  // Institution selection also requires authentication
+  if (isSelectInstitutionRoute && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // For protected routes, check if user has institution (or is superadmin)
   if (user && (isProtectedRoute || isSelectInstitutionRoute)) {
     // Fetch user profile to check role and institution
     // Use maybeSingle() to avoid error when profile doesn't exist
