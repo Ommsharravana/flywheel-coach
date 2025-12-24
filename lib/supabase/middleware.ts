@@ -58,11 +58,12 @@ export async function updateSession(request: NextRequest) {
   // For protected routes (except select-institution), check if user has institution
   if (user && (isProtectedRoute || isSelectInstitutionRoute)) {
     // Fetch user profile to check role and institution
+    // Use maybeSingle() to avoid error when profile doesn't exist
     const { data: profile } = await supabase
       .from('users')
       .select('role, institution_id')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     // If no institution set and not on select-institution page, redirect there
     if (!profile?.institution_id && !isSelectInstitutionRoute) {

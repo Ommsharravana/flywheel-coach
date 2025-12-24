@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-// POST /api/user/institution - Set user's institution (first-time or change)
+// POST /api/user/institution - Set user's institution (first-time setup)
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -38,38 +38,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already has an institution
+    // Check if user already has an institution set
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: profileData } = await (supabase as any)
+    const { data: existingProfile } = await (supabase as any)
       .from('users')
-      .select('institution_id')
+      .select('id, institution_id')
       .eq('id', user.id)
-      .single();
+      .maybeSingle(); // Use maybeSingle to avoid error when no row exists
 
-    const profile = profileData as { institution_id: string | null } | null;
-
-    // If user already has an institution, they need to use the change request flow
-    if (profile?.institution_id) {
+    // If user already has an institution, don't allow change via this endpoint
+    if (existingProfile?.institution_id) {
       return NextResponse.json(
-        { error: 'You already have an institution. Use the change request flow to switch.' },
+        { error: 'You already have an institution. Contact admin to change it.' },
         { status: 400 }
       );
     }
 
-    // Set the user's institution
+    // Use UPSERT to handle both cases:
+    // - User profile doesn't exist → Creates it
+    // - User profile exists but no institution → Updates it
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updateError } = await (supabase as any)
+    const { error: upsertError } = await (supabase as any)
       .from('users')
-      .update({ institution_id })
-      .eq('id', user.id);
+      .upsert(
+        {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || user.user_metadata?.full_name || null,
+          institution_id,
+        },
+        {
+          onConflict: 'id',
+          ignoreDuplicates: false // We want to update if exists
+        }
+      );
 
-    if (updateError) {
-      console.error('Error setting institution:', updateError);
+    if (upsertError) {
+      console.error('Error setting institution (upsert):', upsertError);
       return NextResponse.json(
-        { error: 'Failed to set institution' },
+        { error: 'Failed to set institution', message: upsertError.message, code: upsertError.code },
         { status: 500 }
       );
     }
+
+    console.log(`Institution ${institution.short_name} set for user ${user.id}`);
 
     return NextResponse.json({
       success: true,
@@ -96,7 +108,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's institution
+    // Get user's institution using maybeSingle to handle non-existent profiles
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profileData, error: profileError } = await (supabase as any)
       .from('users')
@@ -111,7 +123,7 @@ export async function GET() {
         )
       `)
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
       console.error('Error fetching user institution:', profileError);
@@ -121,11 +133,17 @@ export async function GET() {
       );
     }
 
-    const profile = profileData as { institution_id: string | null; institutions: unknown } | null;
+    // Profile might not exist yet for new users
+    if (!profileData) {
+      return NextResponse.json({
+        institution_id: null,
+        institution: null,
+      });
+    }
 
     return NextResponse.json({
-      institution_id: profile?.institution_id,
-      institution: profile?.institutions || null,
+      institution_id: profileData.institution_id,
+      institution: profileData.institutions || null,
     });
   } catch (error) {
     console.error('Error in GET /api/user/institution:', error);

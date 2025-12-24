@@ -51,7 +51,8 @@ export default function SelectInstitutionPage() {
         router.push('/dashboard');
       } else {
         const error = await response.json();
-        toast.error(error.message || 'Failed to set institution');
+        console.error('Institution set error:', error);
+        toast.error(error.message || error.error || 'Failed to set institution');
         setSelectedId(null);
       }
     } catch (err) {

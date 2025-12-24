@@ -40,13 +40,16 @@ export async function GET(request: Request) {
 
     if (!error && data.user && data.session) {
       // Check if user has institution set
+      // Use maybeSingle() to avoid error when profile doesn't exist
       const { data: profile } = await supabase
         .from('users')
         .select('institution_id')
         .eq('id', data.user.id)
-        .single()
+        .maybeSingle()
 
-      // If no institution, redirect to institution selection
+      console.log('Auth callback - User:', data.user.id, 'Profile:', profile)
+
+      // If no institution (either no profile or profile without institution), redirect to selection
       if (!profile?.institution_id) {
         return NextResponse.redirect(`${origin}/select-institution`)
       }
