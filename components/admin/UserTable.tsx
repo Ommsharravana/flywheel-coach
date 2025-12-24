@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Table,
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MoreHorizontal, Eye, Pencil, UserCog, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Eye, Pencil, UserCog, Trash2, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface UserWithCycles {
@@ -54,6 +55,20 @@ const roleColors: Record<string, string> = {
 export function UserTable({ users, onImpersonate, onDelete, showInstitution = false }: UserTableProps) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter users based on search query
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+
+    const query = searchQuery.toLowerCase();
+    return users.filter((user) =>
+      user.name?.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) ||
+      user.role.toLowerCase().includes(query) ||
+      user.institution_name?.toLowerCase().includes(query)
+    );
+  }, [users, searchQuery]);
 
   const handleImpersonate = async (userId: string) => {
     setLoadingId(userId);
@@ -76,7 +91,19 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
   };
 
   return (
-    <div className="rounded-lg border border-stone-800 overflow-hidden">
+    <div className="space-y-4">
+      {/* Search Input */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
+        <Input
+          placeholder="Search by name, email, role, or institution..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9 w-full md:w-80 bg-stone-800 border-stone-700"
+        />
+      </div>
+
+      <div className="rounded-lg border border-stone-800 overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow className="bg-stone-900/50 hover:bg-stone-900/50">
@@ -91,14 +118,14 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <TableRow>
               <TableCell colSpan={showInstitution ? 6 : 5} className="text-center py-8 text-stone-500">
-                No users found
+                {searchQuery ? `No users found matching "${searchQuery}"` : 'No users found'}
               </TableCell>
             </TableRow>
           ) : (
-            users.map((user) => (
+            filteredUsers.map((user) => (
               <TableRow
                 key={user.id}
                 className="hover:bg-stone-800/50 border-stone-800"
@@ -194,6 +221,7 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
           )}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

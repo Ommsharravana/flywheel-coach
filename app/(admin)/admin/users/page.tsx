@@ -3,8 +3,7 @@ import { redirect } from 'next/navigation';
 import { UserTable } from '@/components/admin/UserTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { UserPlus, Search, Building2 } from 'lucide-react';
+import { UserPlus, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { ExportButton } from '@/components/admin/ExportButton';
 
@@ -166,21 +165,10 @@ export default async function AdminUsersPage() {
         </Card>
       </div>
 
-      {/* Search and Filters */}
+      {/* Users Table */}
       <Card className="glass-card">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg text-stone-100">All Users</CardTitle>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
-                <Input
-                  placeholder="Search users..."
-                  className="pl-9 w-64 bg-stone-800 border-stone-700"
-                />
-              </div>
-            </div>
-          </div>
+          <CardTitle className="text-lg text-stone-100">All Users</CardTitle>
         </CardHeader>
         <CardContent>
           <UserTable users={usersWithCycles} showInstitution={!isInstitutionAdmin} />
