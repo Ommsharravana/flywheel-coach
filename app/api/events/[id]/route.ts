@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Event } from '@/lib/events/types';
+import { checkEventAdminAccess } from '@/lib/methodologies/helpers';
 
 // Helper to check if user is superadmin
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,6 +16,15 @@ async function isSuperAdmin(supabase: any): Promise<boolean> {
     .single();
 
   return (profile as { role: string } | null)?.role === 'superadmin';
+}
+
+// Helper to check if user can manage this event
+async function canManageEvent(supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never, eventId: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { isAdmin } = await checkEventAdminAccess(user.id, eventId);
+  return isAdmin;
 }
 
 interface RouteParams {
@@ -56,13 +66,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// PATCH /api/events/[id] - Update event (superadmin only)
+// PATCH /api/events/[id] - Update event (event admin or superadmin)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
     const supabase = await createClient();
 
-    if (!(await isSuperAdmin(supabase))) {
+    // Allow event admins to update their events
+    if (!(await canManageEvent(supabase, id))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

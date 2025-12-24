@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getEffectiveUserId } from '@/lib/supabase/effective-user';
-import { Cycle, FLYWHEEL_STEPS, getFlywheelSteps } from '@/lib/types/cycle';
+import { Cycle } from '@/lib/types/cycle';
+import { getMethodologyForCycle } from '@/lib/methodologies/helpers';
 import { FlywheelNavigator } from '@/components/flywheel/FlywheelNavigator';
 import { MobileStepNavigation } from '@/components/flywheel/MobileStepNavigation';
 import { ProblemDiscovery } from '@/components/steps/ProblemDiscovery';
@@ -35,30 +36,17 @@ export default async function StepPage({ params }: StepPageProps) {
     redirect('/login');
   }
 
-  // Check if user is in Appathon mode
-   
-  const { data: userData } = await supabase
-    .from('users')
-    .select('active_event_id')
-    .eq('id', effectiveUserId)
-    .single() as { data: { active_event_id: string | null } | null };
+  // Get methodology for this cycle (determines steps, features, etc.)
+  const { methodology, eventSlug, eventName } = await getMethodologyForCycle(id);
+  const maxStep = methodology.steps.length;
 
-  let isAppathonMode = false;
-  if (userData?.active_event_id) {
-     
-    const { data: eventData } = await supabase
-      .from('events')
-      .select('config')
-      .eq('id', userData.active_event_id)
-      .single() as { data: { config: { type?: string } } | null };
-    isAppathonMode = eventData?.config?.type === 'appathon';
-  }
-
-  // Validate step number (allow Step 9 only in Appathon mode)
-  const maxStep = isAppathonMode ? 9 : 8;
+  // Validate step number based on methodology
   if (isNaN(stepNumber) || stepNumber < 1 || stepNumber > maxStep) {
     redirect(`/cycle/${id}`);
   }
+
+  // Check if this is an Appathon-type event (for component-level logic)
+  const isAppathonMode = methodology.features?.submission === true;
 
   // Fetch the cycle using effective user ID
   const { data: rawCycleData, error } = await supabase
@@ -251,7 +239,8 @@ export default async function StepPage({ params }: StepPageProps) {
     }
   }
 
-  const allSteps = getFlywheelSteps(isAppathonMode);
+  // Use methodology steps instead of hardcoded steps
+  const allSteps = methodology.steps;
   const stepInfo = allSteps[stepNumber - 1];
   const prevStep = stepNumber > 1 ? stepNumber - 1 : null;
   const nextStep = stepNumber < maxStep ? stepNumber + 1 : null;

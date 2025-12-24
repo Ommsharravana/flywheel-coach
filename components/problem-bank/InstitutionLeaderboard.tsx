@@ -17,6 +17,11 @@ interface LeaderboardEntry {
 }
 
 interface LeaderboardData {
+  event?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
   leaderboard: LeaderboardEntry[];
   totals: {
     total_cycles: number;
@@ -27,7 +32,11 @@ interface LeaderboardData {
   };
 }
 
-export function InstitutionLeaderboard() {
+interface InstitutionLeaderboardProps {
+  eventSlug?: string; // Optional: defaults to appathon-2
+}
+
+export function InstitutionLeaderboard({ eventSlug = 'appathon-2' }: InstitutionLeaderboardProps) {
   const [data, setData] = useState<LeaderboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +44,7 @@ export function InstitutionLeaderboard() {
   useEffect(() => {
     async function fetchLeaderboard() {
       try {
-        const response = await fetch('/api/problems/leaderboard/public');
+        const response = await fetch(`/api/problems/leaderboard/public?event=${eventSlug}`);
         if (!response.ok) {
           throw new Error('Failed to fetch leaderboard');
         }
@@ -49,7 +58,7 @@ export function InstitutionLeaderboard() {
     }
 
     fetchLeaderboard();
-  }, []);
+  }, [eventSlug]);
 
   if (loading) {
     return (
