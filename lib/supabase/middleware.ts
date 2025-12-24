@@ -65,15 +65,18 @@ export async function updateSession(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle()
 
-    // If no institution set and not on select-institution page, redirect there
-    if (!profile?.institution_id && !isSelectInstitutionRoute) {
+    // Superadmins don't need an institution - they manage the entire system
+    const isSuperadmin = profile?.role === 'superadmin'
+
+    // If no institution set, not a superadmin, and not on select-institution page, redirect there
+    if (!profile?.institution_id && !isSuperadmin && !isSelectInstitutionRoute) {
       const url = request.nextUrl.clone()
       url.pathname = '/select-institution'
       return NextResponse.redirect(url)
     }
 
-    // If has institution and on select-institution page, redirect to dashboard
-    if (profile?.institution_id && isSelectInstitutionRoute) {
+    // If has institution OR is superadmin, and on select-institution page, redirect to dashboard
+    if ((profile?.institution_id || isSuperadmin) && isSelectInstitutionRoute) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)
