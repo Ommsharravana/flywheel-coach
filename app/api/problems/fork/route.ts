@@ -1,14 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { getEffectiveUserId } from '@/lib/supabase/effective-user';
 
 // POST /api/problems/fork - Fork a problem from the bank to start a new cycle
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    // Get effective user ID (respects impersonation)
+    const effectiveUserId = await getEffectiveUserId();
+    if (!effectiveUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -37,15 +38,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get user's active event and institution
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userProfile } = await (supabase as any)
+      .from('users')
+      .select('active_event_id, institution_id')
+      .eq('id', effectiveUserId)
+      .single();
+
     // Create a new cycle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: newCycle, error: cycleError } = await (supabase as any)
       .from('cycles')
       .insert({
         name: `Fork: ${problem.title.substring(0, 100)}`,
-        user_id: user.id,
+        user_id: effectiveUserId,
         status: 'active',
         current_step: 2, // Start at Context Discovery (problem already defined)
+        theme: problem.theme || null,
+        event_id: userProfile?.active_event_id || problem.event_id || null,
+        forked_from_problem_id: problem_id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

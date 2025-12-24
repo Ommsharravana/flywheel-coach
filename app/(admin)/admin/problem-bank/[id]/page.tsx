@@ -24,10 +24,14 @@ import {
   ExternalLink,
   GitFork,
   Loader2,
+  Rocket,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ProblemWithDetails } from '@/lib/types/problem-bank';
 import { SimilarProblems } from '@/components/problem-bank/SimilarProblems';
+import { ProblemScoring } from '@/components/problem-bank/ProblemScoring';
+import { ProblemOutcomes } from '@/components/problem-bank/ProblemOutcomes';
+import { AIRefinements } from '@/components/problem-bank/AIRefinements';
 import {
   PROBLEM_THEMES,
   PROBLEM_STATUSES,
@@ -68,6 +72,8 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ id: st
   const [showAttemptForm, setShowAttemptForm] = useState(false);
   const [attemptTeamName, setAttemptTeamName] = useState('');
   const [forking, setForking] = useState(false);
+  const [isInPipeline, setIsInPipeline] = useState(false);
+  const [addingToPipeline, setAddingToPipeline] = useState(false);
 
   // Edit state
   const [editTitle, setEditTitle] = useState('');
@@ -94,8 +100,46 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ id: st
       }
     }
 
+    async function checkPipeline() {
+      try {
+        const response = await fetch(`/api/pipeline?include_stats=false`);
+        if (response.ok) {
+          const data = await response.json();
+          const inPipeline = data.candidates?.some(
+            (c: { problem_id: string }) => c.problem_id === id
+          );
+          setIsInPipeline(inPipeline);
+        }
+      } catch {
+        // Ignore errors - just won't show pipeline status
+      }
+    }
+
     fetchProblem();
+    checkPipeline();
   }, [id]);
+
+  const handleAddToPipeline = async () => {
+    setAddingToPipeline(true);
+    try {
+      const response = await fetch('/api/pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problem_id: id }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to add to pipeline');
+      }
+
+      setIsInPipeline(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add to pipeline');
+    } finally {
+      setAddingToPipeline(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -582,6 +626,31 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ id: st
               )}
             </CardContent>
           </Card>
+
+          {/* Learning Flywheel Section */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Problem Outcomes */}
+            <ProblemOutcomes
+              problemId={id}
+              onOutcomeAdded={() => {
+                // Refresh problem data
+                fetch(`/api/problems/${id}`)
+                  .then(res => res.json())
+                  .then(data => setProblem(data))
+                  .catch(console.error);
+              }}
+            />
+
+            {/* AI Refinements */}
+            <AIRefinements
+              problemId={id}
+              currentStatement={problem.problem_statement}
+              onStatementUpdated={(newStatement) => {
+                setProblem({ ...problem, problem_statement: newStatement });
+                setEditStatement(newStatement);
+              }}
+            />
+          </div>
         </div>
 
         {/* Right Column - Sidebar */}
@@ -623,6 +692,35 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </CardContent>
           </Card>
+
+          {/* Problem Scoring Card */}
+          <ProblemScoring
+            problemId={id}
+            isInPipeline={isInPipeline}
+            onAddToPipeline={handleAddToPipeline}
+          />
+
+          {/* Pipeline Status */}
+          {isInPipeline && (
+            <Card className="glass-card border-orange-500/30">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3 text-orange-400 mb-3">
+                  <div className="p-2 rounded-lg bg-orange-500/20">
+                    <Rocket className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">In NIF Pipeline</p>
+                    <p className="text-sm text-stone-400">Being tracked for incubation</p>
+                  </div>
+                </div>
+                <Link href="/admin/nif-pipeline">
+                  <Button variant="outline" className="w-full border-orange-500/30 text-orange-400 hover:bg-orange-500/10">
+                    View Pipeline
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Source Card */}
           <Card className="glass-card">

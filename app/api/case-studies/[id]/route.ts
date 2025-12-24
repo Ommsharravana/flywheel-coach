@@ -1,9 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-// GET /api/problems/[id] - Get single problem
-// All authenticated users can view open problems
-// Superadmins can view all problems
+// GET /api/case-studies/[id] - Get single case study
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -28,74 +26,48 @@ export async function GET(
 
     const isSuperAdmin = (userProfile as { role: string } | null)?.role === 'superadmin';
 
-    // Fetch the problem with related data
+    // Build query
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query = (supabase as any)
-      .from('problem_bank')
+      .from('case_studies')
       .select(`
         *,
-        institutions!problem_bank_institution_id_fkey (id, name, short_name),
-        submitter:users!problem_bank_submitted_by_fkey (id, name, email)
+        problem:problem_bank!case_studies_problem_id_fkey (
+          id, title, problem_statement, theme, sub_theme,
+          who_affected, when_occurs, where_occurs, frequency,
+          institution:institutions!problem_bank_institution_id_fkey (id, name, short_name)
+        ),
+        attempt:problem_attempts!case_studies_attempt_id_fkey (
+          id, team_name, outcome, started_at, completed_at, app_url
+        ),
+        author:users!case_studies_created_by_fkey (id, name, email)
       `)
       .eq('id', id);
 
-    // Non-superadmins can only view open problems
+    // Non-superadmins can only see published case studies
     if (!isSuperAdmin) {
-      query = query.eq('status', 'open');
+      query = query.eq('status', 'published');
     }
 
-    const { data: problem, error: queryError } = await query.single();
+    const { data: caseStudy, error: queryError } = await query.single();
 
-    if (queryError || !problem) {
-      return NextResponse.json(
-        { error: 'Problem not found' },
-        { status: 404 }
-      );
+    if (queryError || !caseStudy) {
+      return NextResponse.json({ error: 'Case study not found' }, { status: 404 });
     }
 
-    // Fetch evidence
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: evidence } = await (supabase as any)
-      .from('problem_evidence')
-      .select('*')
-      .eq('problem_id', id)
-      .order('created_at', { ascending: false });
+    // Increment view count for published case studies
+    if (caseStudy.status === 'published') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from('case_studies')
+        .update({ view_count: (caseStudy.view_count || 0) + 1 })
+        .eq('id', id);
+    }
 
-    // Fetch attempts
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: attempts } = await (supabase as any)
-      .from('problem_attempts')
-      .select('*')
-      .eq('problem_id', id)
-      .order('started_at', { ascending: false });
-
-    // Fetch tags
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: tags } = await (supabase as any)
-      .from('problem_tags')
-      .select('*')
-      .eq('problem_id', id);
-
-    // Build response
-    const response = {
-      ...problem,
-      institution: problem.institutions || null,
-      evidence: evidence || [],
-      attempts: attempts || [],
-      tags: tags || [],
-      attempt_count: attempts?.length || 0,
-      successful_attempts: (attempts || []).filter(
-        (a: { outcome: string }) => a.outcome === 'success' || a.outcome === 'deployed'
-      ).length,
-    };
-
-    // Clean up nested data
-    delete response.institutions;
-
-    return NextResponse.json(response);
+    return NextResponse.json(caseStudy);
 
   } catch (error) {
-    console.error('Error in GET /api/problems/[id]:', error);
+    console.error('Error in GET /api/case-studies/[id]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -103,7 +75,7 @@ export async function GET(
   }
 }
 
-// PATCH /api/problems/[id] - Update problem (superadmin only)
+// PATCH /api/case-studies/[id] - Update case study
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -132,22 +104,38 @@ export async function PATCH(
 
     const body = await request.json();
 
-    // Update the problem
+    // If publishing, set published_at
+    const updateData: Record<string, unknown> = {
+      ...body,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (body.status === 'published') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existing } = await (supabase as any)
+        .from('case_studies')
+        .select('published_at')
+        .eq('id', id)
+        .single();
+
+      if (!existing?.published_at) {
+        updateData.published_at = new Date().toISOString();
+      }
+    }
+
+    // Update the case study
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: updated, error: updateError } = await (supabase as any)
-      .from('problem_bank')
-      .update({
-        ...body,
-        updated_at: new Date().toISOString(),
-      })
+      .from('case_studies')
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
     if (updateError) {
-      console.error('Error updating problem:', updateError);
+      console.error('Error updating case study:', updateError);
       return NextResponse.json(
-        { error: 'Failed to update problem', details: updateError.message },
+        { error: 'Failed to update case study', details: updateError.message },
         { status: 500 }
       );
     }
@@ -155,7 +143,7 @@ export async function PATCH(
     return NextResponse.json(updated);
 
   } catch (error) {
-    console.error('Error in PATCH /api/problems/[id]:', error);
+    console.error('Error in PATCH /api/case-studies/[id]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -163,7 +151,7 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/problems/[id] - Delete problem (superadmin only)
+// DELETE /api/case-studies/[id] - Delete case study
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -190,17 +178,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden - superadmin only' }, { status: 403 });
     }
 
-    // Delete the problem (cascades to evidence, attempts, tags)
+    // Delete the case study
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: deleteError } = await (supabase as any)
-      .from('problem_bank')
+      .from('case_studies')
       .delete()
       .eq('id', id);
 
     if (deleteError) {
-      console.error('Error deleting problem:', deleteError);
+      console.error('Error deleting case study:', deleteError);
       return NextResponse.json(
-        { error: 'Failed to delete problem', details: deleteError.message },
+        { error: 'Failed to delete case study', details: deleteError.message },
         { status: 500 }
       );
     }
@@ -208,7 +196,7 @@ export async function DELETE(
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error('Error in DELETE /api/problems/[id]:', error);
+    console.error('Error in DELETE /api/case-studies/[id]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

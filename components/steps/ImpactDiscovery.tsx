@@ -33,23 +33,9 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
   const [newProblems, setNewProblems] = useState<string[]>(cycle.impact?.newProblems || ['']);
   const [isSavingToBank, setIsSavingToBank] = useState(false);
   const [savedToBankId, setSavedToBankId] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  // Check if user is superadmin (Problem Bank is superadmin-only)
-  useEffect(() => {
-    async function checkSuperAdmin() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        setIsSuperAdmin(data?.role === 'superadmin');
-      }
-    }
-    checkSuperAdmin();
-  }, [supabase]);
+  // Problem Bank is now available to ALL users (not just superadmin)
+  // This captures problems from all participants during Appathon
 
   const hasMinimumData = usersReached > 0 || timeSavedMinutes > 0;
 
@@ -434,29 +420,27 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
             <Save className="mr-2 w-4 h-4" />
             {t('stepUI.saveDraft')}
           </Button>
-          {/* Problem Bank button - superadmin only */}
-          {isSuperAdmin && (
-            savedToBankId ? (
-              <Button
-                variant="outline"
-                onClick={() => router.push(`/problem-bank/${savedToBankId}`)}
-                className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
-              >
-                <Database className="mr-2 w-4 h-4" />
-                {t('stepUI.viewInProblemBank')}
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                onClick={saveToProblemBank}
-                disabled={isSavingToBank || !hasMinimumData}
-                className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
-                title={t('stepUI.saveToProblemBankDesc')}
-              >
-                <Database className="mr-2 w-4 h-4" />
-                {isSavingToBank ? 'Saving...' : t('stepUI.saveToProblemBank')}
-              </Button>
-            )
+          {/* Problem Bank button - available to ALL users */}
+          {savedToBankId ? (
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/dashboard/problem-bank/${savedToBankId}`)}
+              className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+            >
+              <Database className="mr-2 w-4 h-4" />
+              {t('stepUI.viewInProblemBank')}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={saveToProblemBank}
+              disabled={isSavingToBank || !hasMinimumData}
+              className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+              title={t('stepUI.saveToProblemBankDesc')}
+            >
+              <Database className="mr-2 w-4 h-4" />
+              {isSavingToBank ? 'Saving...' : t('stepUI.saveToProblemBank')}
+            </Button>
           )}
           {newProblems.some((p) => p.trim()) && (
             <Button

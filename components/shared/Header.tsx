@@ -15,7 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Shield } from 'lucide-react'
+import { Shield, Database } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import { LanguageToggle } from '@/components/shared/LanguageToggle'
 
@@ -102,6 +102,12 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
               <NavLink href="/portfolio" active={pathname === '/portfolio'}>
                 {t('nav.portfolio')}
               </NavLink>
+              <NavLink href="/dashboard/problem-bank" active={pathname.startsWith('/dashboard/problem-bank')}>
+                <span className="flex items-center gap-1.5">
+                  <Database className="h-3.5 w-3.5" />
+                  Problem Bank
+                </span>
+              </NavLink>
               <NavLink href="/settings" active={pathname === '/settings'}>
                 {t('nav.settings')}
               </NavLink>
@@ -148,6 +154,12 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
                       <Link href="/portfolio">{t('nav.portfolio')}</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
+                      <Link href="/dashboard/problem-bank" className="flex items-center gap-2">
+                        <Database className="h-4 w-4 text-purple-400" />
+                        <span>Problem Bank</span>
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
                       <Link href="/settings">{t('nav.settings')}</Link>

@@ -15,6 +15,7 @@ import {
   Building2,
   FileQuestion,
   Lightbulb,
+  Rocket,
 } from 'lucide-react';
 
 const navItems = [
@@ -47,6 +48,11 @@ const navItems = [
     label: 'Problem Bank',
     href: '/admin/problem-bank',
     icon: Lightbulb,
+  },
+  {
+    label: 'NIF Pipeline',
+    href: '/admin/nif-pipeline',
+    icon: Rocket,
   },
   {
     label: 'Change Requests',

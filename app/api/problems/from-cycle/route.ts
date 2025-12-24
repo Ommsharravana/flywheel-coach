@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-// POST /api/problems/from-cycle - Extract problem from cycle and save to problem bank (superadmin only)
+// POST /api/problems/from-cycle - Extract problem from cycle and save to problem bank
+// All authenticated users can save their own cycles
+// Superadmins can save any cycle
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -12,7 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is superadmin and get institution_id
+    // Get user profile
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: userProfile } = await (supabase as any)
       .from('users')
@@ -20,9 +22,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if ((userProfile as { role: string } | null)?.role !== 'superadmin') {
-      return NextResponse.json({ error: 'Forbidden - superadmin only' }, { status: 403 });
-    }
+    const isSuperAdmin = (userProfile as { role: string } | null)?.role === 'superadmin';
 
     const body = await request.json();
     const { cycle_id, source_event } = body;
@@ -61,6 +61,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Cycle not found' },
         { status: 404 }
+      );
+    }
+
+    // Non-superadmins can only save their own cycles
+    if (!isSuperAdmin && cycle.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'You can only save your own cycles to the Problem Bank' },
+        { status: 403 }
       );
     }
 

@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-// GET /api/problems/stats - Get problem bank statistics (superadmin only)
+// GET /api/problems/stats - Get problem bank statistics
+// All authenticated users can view stats
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -12,19 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is superadmin
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: userProfile } = await (supabase as any)
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if ((userProfile as { role: string } | null)?.role !== 'superadmin') {
-      return NextResponse.json({ error: 'Forbidden - superadmin only' }, { status: 403 });
-    }
-
-    // Fetch all problems with institution info
+    // Fetch all OPEN problems with institution info (anyone can see open problems stats)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: problems, error: queryError } = await (supabase as any)
       .from('problem_bank')
@@ -36,7 +25,8 @@ export async function GET() {
         severity_rating,
         institution_id,
         institutions!problem_bank_institution_id_fkey (id, name, short_name)
-      `);
+      `)
+      .eq('status', 'open');
 
     if (queryError) {
       console.error('Error fetching problems for stats:', queryError);
