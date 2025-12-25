@@ -82,7 +82,7 @@ export function EventSelector() {
               key={event.id}
               event={event}
               isActive={activeEvent?.id === event.id}
-              onJoin={() => joinEvent(event.id)}
+              onJoin={() => joinEvent(event.id, event)}
               onLeave={leaveEvent}
               onViewDetails={() => setSelectedEvent(event)}
               isJoining={isJoining}
@@ -99,7 +99,7 @@ export function EventSelector() {
             <AppathonDetailsModal
               event={selectedEvent}
               isActive={activeEvent?.id === selectedEvent.id}
-              onJoin={() => joinEvent(selectedEvent.id)}
+              onJoin={() => joinEvent(selectedEvent.id, selectedEvent)}
               onLeave={leaveEvent}
               onClose={() => setSelectedEvent(null)}
               isJoining={isJoining}
@@ -108,7 +108,7 @@ export function EventSelector() {
             <EventDetailsModal
               event={selectedEvent}
               isActive={activeEvent?.id === selectedEvent.id}
-              onJoin={() => joinEvent(selectedEvent.id)}
+              onJoin={() => joinEvent(selectedEvent.id, selectedEvent)}
               onLeave={leaveEvent}
               onClose={() => setSelectedEvent(null)}
               isJoining={isJoining}

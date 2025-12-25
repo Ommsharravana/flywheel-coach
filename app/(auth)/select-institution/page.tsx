@@ -70,9 +70,19 @@ function SelectInstitutionContent() {
         toast.success(`Welcome to ${institution.short_name}!`);
         router.push('/dashboard');
       } else {
-        const error = await response.json();
-        console.error('Institution set error:', error);
-        toast.error(error.message || error.error || 'Failed to set institution');
+        const errorData = await response.json();
+        console.error('Institution set error:', errorData);
+
+        // Extract error message from various possible response formats
+        const errorMessage = errorData.error || errorData.message || 'Failed to set institution';
+
+        // Show toast with appropriate duration for the message
+        toast.error(errorMessage, {
+          duration: 5000,
+          description: response.status === 400
+            ? 'You can request a change through Settings.'
+            : undefined,
+        });
         setSelectedId(null);
       }
     } catch (err) {
