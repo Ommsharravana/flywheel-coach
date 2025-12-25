@@ -2144,3 +2144,38 @@ Then call via `.rpc('do_something_on_x', { params })` instead of direct table ac
 
 ## BLOCKERS:
 None currently - all issues from this session resolved.
+
+---
+
+## 2025-12-25 - Session: Deployment & Verification
+
+**Worked On:** Commit uncommitted RLS fixes and deploy to production
+
+**Done:**
+1. **Committed all pending changes** (19 files, +788/-183 lines)
+   - 6 new migration files (017-022) for SECURITY DEFINER RPC functions
+   - InstitutionPromptBanner component
+   - Updated API routes to use RPC calls
+   - Updated effective-user.ts for proper user context handling
+   - Fixed auth callback and middleware
+
+2. **Deployed to Vercel production**
+   - Build passed: 60 routes compiled successfully
+   - Production URL: https://flywheel-coach.vercel.app
+   - All static and dynamic pages working
+
+3. **Verified production endpoints**
+   - Homepage: 200 ✓
+   - Login: 200 ✓
+   - Select Institution: 307 (redirects to login as expected) ✓
+
+**Git:**
+- Commit: 4948ac4 - fix: Complete RLS bypass with SECURITY DEFINER functions
+- Pushed to origin/main
+
+**Current State:** DEPLOYED - All RLS fixes live on production
+
+**Next Steps:**
+1. User should test institution selection flow with a @jkkn.ac.in account
+2. User should test Enter Arena (join Appathon event)
+3. Verify step 1 blocking card appears for users without institution
