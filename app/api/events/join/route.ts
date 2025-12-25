@@ -47,19 +47,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This event has ended' }, { status: 400 });
     }
 
-    // Update user's active_event_id (using type assertion)
+    // Update user's active_event_id using RPC function (bypasses RLS)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updateError } = await (supabase as any)
-      .from('users')
-      .update({
-        active_event_id: eventId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
+    const { data: updated, error: updateError } = await (supabase as any)
+      .rpc('update_user_active_event', {
+        p_user_id: user.id,
+        p_event_id: eventId,
+      });
 
     if (updateError) {
       console.error('Error joining event:', updateError);
       return NextResponse.json({ error: 'Failed to join event' }, { status: 500 });
+    }
+
+    if (!updated) {
+      console.error('User not found for event join');
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     return NextResponse.json({

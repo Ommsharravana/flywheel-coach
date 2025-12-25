@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { FlywheelLogo } from '@/components/shared/FlywheelLogo'
+import { InstitutionPromptBanner } from '@/components/shared/InstitutionPromptBanner'
 import { EventSelector } from '@/components/events/EventSelector'
 import { Database } from '@/lib/supabase/types'
 import { createTranslator } from '@/lib/i18n'
@@ -21,15 +22,25 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  // Get user's language preference
-  const { data: userData } = await supabase
+  // Get user's role and institution using RPC (bypasses RLS)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: roleData } = await (supabase as any)
+    .rpc('get_user_role', { user_id: effectiveUser.id })
+
+  const profile = (roleData as { role: string; institution_id: string | null }[] | null)?.[0] || null
+
+  // Get language preference separately (this query should work with RLS)
+  const { data: langData } = await supabase
     .from('users')
     .select('language')
     .eq('id', effectiveUser.id)
-    .single() as { data: { language: string | null } | null }
+    .maybeSingle() as { data: { language: string | null } | null }
 
-  const locale = (userData?.language as Locale) || 'en'
+  const locale = ((langData?.language || 'en') as Locale)
   const t = createTranslator(locale)
+
+  // Show institution prompt if no institution and not superadmin
+  const needsInstitution = !profile?.institution_id && profile?.role !== 'superadmin'
 
   // Define flywheel steps with translated descriptions
   const flywheelSteps = [
@@ -56,6 +67,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Institution Prompt - Show if user needs to select institution */}
+      {needsInstitution && (
+        <InstitutionPromptBanner userName={effectiveUser.name} />
+      )}
+
       {/* Events Section - First thing users see */}
       <EventSelector />
 

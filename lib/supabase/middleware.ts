@@ -39,14 +39,12 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes
-  const protectedRoutes = ['/dashboard', '/cycle', '/portfolio', '/settings', '/admin']
+  // Protected routes - require authentication only
+  // Institution selection is handled at UI level, not middleware
+  const protectedRoutes = ['/dashboard', '/cycle', '/portfolio', '/settings', '/admin', '/select-institution']
   const isProtectedRoute = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
   )
-
-  // Institution selection is a special protected route (needs auth but no institution)
-  const isSelectInstitutionRoute = request.nextUrl.pathname === '/select-institution'
 
   // Redirect unauthenticated users from protected routes to login
   if (isProtectedRoute && !user) {
@@ -56,51 +54,19 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Institution selection also requires authentication
-  if (isSelectInstitutionRoute && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
+  // Admin routes require superadmin or institution_admin role
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  if (isAdminRoute && user) {
+    const { data: roleData } = await supabase
+      .rpc('get_user_role', { user_id: user.id })
 
-  // For protected routes, check if user has institution (or is superadmin)
-  if (user && (isProtectedRoute || isSelectInstitutionRoute)) {
-    // Fetch user profile to check role and institution
-    // Use maybeSingle() to avoid error when profile doesn't exist
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role, institution_id')
-      .eq('id', user.id)
-      .maybeSingle()
+    const profile = roleData?.[0] || null
+    const allowedRoles = ['superadmin', 'institution_admin']
 
-    // Superadmins don't need an institution - they manage the entire system
-    const isSuperadmin = profile?.role === 'superadmin'
-
-    // If no institution set, not a superadmin, and not on select-institution page, redirect there
-    if (!profile?.institution_id && !isSuperadmin && !isSelectInstitutionRoute) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/select-institution'
-      return NextResponse.redirect(url)
-    }
-
-    // If has institution OR is superadmin, and on select-institution page, redirect to dashboard
-    if ((profile?.institution_id || isSuperadmin) && isSelectInstitutionRoute) {
+    if (!profile || !allowedRoles.includes(profile.role)) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)
-    }
-
-    // Admin routes require superadmin or institution_admin role
-    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-
-    if (isAdminRoute) {
-      const allowedRoles = ['superadmin', 'institution_admin']
-      if (!profile || !allowedRoles.includes(profile.role)) {
-        // Not authorized, redirect to dashboard
-        const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
-      }
     }
   }
 

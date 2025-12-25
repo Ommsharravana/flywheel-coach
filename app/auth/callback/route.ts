@@ -36,27 +36,11 @@ export async function GET(request: Request) {
       }
     )
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error && data.user && data.session) {
-      // Check if user has institution set or is superadmin
-      // Use maybeSingle() to avoid error when profile doesn't exist
-      const { data: profile } = await supabase
-        .from('users')
-        .select('role, institution_id')
-        .eq('id', data.user.id)
-        .maybeSingle()
-
-      console.log('Auth callback - User:', data.user.id, 'Profile:', profile)
-
-      // Superadmins don't need an institution - they manage the entire system
-      const isSuperadmin = profile?.role === 'superadmin'
-
-      // If no institution and not a superadmin, redirect to institution selection
-      if (!profile?.institution_id && !isSuperadmin) {
-        return NextResponse.redirect(`${origin}/select-institution`)
-      }
-
+    if (!error) {
+      // Always redirect to dashboard after successful auth
+      // Institution selection is handled at UI level, not auth flow
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

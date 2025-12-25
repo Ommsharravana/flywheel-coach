@@ -15,10 +15,19 @@ import { DeploymentTracker } from '@/components/steps/DeploymentTracker';
 import { ImpactDiscovery } from '@/components/steps/ImpactDiscovery';
 import { AppathonSubmission } from '@/components/steps/AppathonSubmission';
 import { StepPageClient } from './StepPageClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Home } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, Building2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+interface UserProfileRow {
+  role: string;
+  institution_id: string | null;
+  active_event_id: string | null;
+  language: string | null;
+  name: string | null;
+  email: string | null;
+}
 
 interface StepPageProps {
   params: Promise<{ id: string; step: string }>;
@@ -35,6 +44,15 @@ export default async function StepPage({ params }: StepPageProps) {
   if (!effectiveUserId) {
     redirect('/login');
   }
+
+  // Fetch user profile to check institution (using RPC to bypass RLS)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profileData } = await (supabase as any)
+    .rpc('get_user_profile', { p_user_id: effectiveUserId });
+
+  const userProfile = (profileData as UserProfileRow[] | null)?.[0] ?? null;
+  const hasInstitution = userProfile?.institution_id !== null;
+  const isSuperadmin = userProfile?.role === 'superadmin';
 
   // Get methodology for this cycle (determines steps, features, etc.)
   const { methodology, eventSlug, eventName } = await getMethodologyForCycle(id);
@@ -245,8 +263,45 @@ export default async function StepPage({ params }: StepPageProps) {
   const prevStep = stepNumber > 1 ? stepNumber - 1 : null;
   const nextStep = stepNumber < maxStep ? stepNumber + 1 : null;
 
+  // Check if institution is required but missing (step 1 only)
+  const needsInstitution = stepNumber === 1 && !hasInstitution && !isSuperadmin;
+
   // Render appropriate step component
   const renderStepComponent = () => {
+    // Block step 1 if institution is missing
+    if (needsInstitution) {
+      return (
+        <Card className="glass-card border-amber-500/30">
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
+              <Building2 className="w-8 h-8 text-amber-400" />
+            </div>
+            <CardTitle className="text-xl text-stone-100">Select Your Institution First</CardTitle>
+            <CardDescription className="text-stone-400">
+              Before you begin your Flywheel journey, we need to know which JKKN institution you belong to.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+              <div className="flex gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-stone-300">
+                  <p className="font-medium text-amber-400 mb-1">Why is this required?</p>
+                  <p>Your institution helps us group problems and solutions, connect you with peers facing similar challenges, and track impact across JKKN.</p>
+                </div>
+              </div>
+            </div>
+            <Link href="/select-institution" className="block">
+              <Button className="w-full bg-amber-500 hover:bg-amber-600 text-stone-900 font-semibold">
+                <Building2 className="w-4 h-4 mr-2" />
+                Select Your Institution
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      );
+    }
+
     switch (stepNumber) {
       case 1:
         return <ProblemDiscovery cycle={cycle} />;

@@ -108,20 +108,32 @@ export async function getEffectiveUser(): Promise<EffectiveUser | null> {
   }
 
   // No impersonation, return actual user
+  // Try direct query first, fall back to auth user data if RLS blocks
   const { data: userData } = await supabase
     .from('users')
     .select('id, email, name')
     .eq('id', authUser.id)
-    .single();
+    .maybeSingle();
 
   const user = userData as unknown as UserRow | null;
 
-  return user ? {
-    id: user.id,
-    email: user.email,
-    name: user.name,
+  // If user profile exists, use it; otherwise create response from auth data
+  if (user) {
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isImpersonating: false,
+    };
+  }
+
+  // Fallback: return auth user data (profile might not exist yet or RLS blocked)
+  return {
+    id: authUser.id,
+    email: authUser.email || '',
+    name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || null,
     isImpersonating: false,
-  } : null;
+  };
 }
 
 /**

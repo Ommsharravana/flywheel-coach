@@ -38,45 +38,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already has an institution set
+    // Use RPC function to set institution (bypasses RLS to avoid infinite recursion)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: existingProfile } = await (supabase as any)
-      .from('users')
-      .select('id, institution_id')
-      .eq('id', user.id)
-      .maybeSingle(); // Use maybeSingle to avoid error when no row exists
+    const { data: success, error: rpcError } = await (supabase as any)
+      .rpc('set_user_institution', {
+        p_user_id: user.id,
+        p_institution_id: institution_id,
+        p_email: user.email,
+        p_name: user.user_metadata?.name || user.user_metadata?.full_name || null,
+      });
 
-    // If user already has an institution, don't allow change via this endpoint
-    if (existingProfile?.institution_id) {
+    if (rpcError) {
+      console.error('Error setting institution (RPC):', rpcError);
+
+      // Check if it's the "already has institution" error
+      if (rpcError.message?.includes('already has an institution')) {
+        return NextResponse.json(
+          { error: 'You already have an institution. Contact admin to change it.' },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
-        { error: 'You already have an institution. Contact admin to change it.' },
-        { status: 400 }
-      );
-    }
-
-    // Use UPSERT to handle both cases:
-    // - User profile doesn't exist → Creates it
-    // - User profile exists but no institution → Updates it
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: upsertError } = await (supabase as any)
-      .from('users')
-      .upsert(
-        {
-          id: user.id,
-          email: user.email,
-          name: user.user_metadata?.name || user.user_metadata?.full_name || null,
-          institution_id,
-        },
-        {
-          onConflict: 'id',
-          ignoreDuplicates: false // We want to update if exists
-        }
-      );
-
-    if (upsertError) {
-      console.error('Error setting institution (upsert):', upsertError);
-      return NextResponse.json(
-        { error: 'Failed to set institution', message: upsertError.message, code: upsertError.code },
+        { error: 'Failed to set institution', message: rpcError.message, code: rpcError.code },
         { status: 500 }
       );
     }
@@ -108,33 +92,24 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's institution using maybeSingle to handle non-existent profiles
+    // Get user's institution using RPC function (bypasses RLS to avoid infinite recursion)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: profileData, error: profileError } = await (supabase as any)
-      .from('users')
-      .select(`
-        institution_id,
-        institutions:institution_id (
-          id,
-          slug,
-          name,
-          short_name,
-          type
-        )
-      `)
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data: institutionData, error: rpcError } = await (supabase as any)
+      .rpc('get_user_institution', { p_user_id: user.id });
 
-    if (profileError) {
-      console.error('Error fetching user institution:', profileError);
+    if (rpcError) {
+      console.error('Error fetching user institution:', rpcError);
       return NextResponse.json(
         { error: 'Failed to fetch institution' },
         { status: 500 }
       );
     }
 
+    // RPC returns array, get first result
+    const result = institutionData?.[0];
+
     // Profile might not exist yet for new users
-    if (!profileData) {
+    if (!result || !result.institution_id) {
       return NextResponse.json({
         institution_id: null,
         institution: null,
@@ -142,8 +117,14 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      institution_id: profileData.institution_id,
-      institution: profileData.institutions || null,
+      institution_id: result.institution_id,
+      institution: {
+        id: result.institution_id,
+        slug: result.institution_slug,
+        name: result.institution_name,
+        short_name: result.institution_short_name,
+        type: result.institution_type,
+      },
     });
   } catch (error) {
     console.error('Error in GET /api/user/institution:', error);

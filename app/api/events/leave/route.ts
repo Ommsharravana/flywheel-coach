@@ -11,33 +11,22 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get current event for response message (using type assertion)
+    // Clear user's active_event_id using RPC function (bypasses RLS)
+    // Note: We skip the "not in event" check since it's idempotent and RLS might block the query
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: userData } = await (supabase as any)
-      .from('users')
-      .select('active_event_id')
-      .eq('id', user.id)
-      .single();
-
-    const userRow = userData as { active_event_id: string | null } | null;
-
-    if (!userRow?.active_event_id) {
-      return NextResponse.json({ error: 'Not currently in any event' }, { status: 400 });
-    }
-
-    // Clear user's active_event_id (using type assertion)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updateError } = await (supabase as any)
-      .from('users')
-      .update({
-        active_event_id: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
+    const { data: updated, error: updateError } = await (supabase as any)
+      .rpc('clear_user_active_event', {
+        p_user_id: user.id,
+      });
 
     if (updateError) {
       console.error('Error leaving event:', updateError);
       return NextResponse.json({ error: 'Failed to leave event' }, { status: 500 });
+    }
+
+    if (!updated) {
+      console.error('User not found for event leave');
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     return NextResponse.json({

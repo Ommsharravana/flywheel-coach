@@ -13,6 +13,20 @@ export default async function NewCyclePage() {
     redirect('/login');
   }
 
+  // Check if user has an institution (required for cycle creation, except superadmins)
+  // Use RPC function to bypass RLS
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: roleData } = await (supabase as any)
+    .rpc('get_user_role', { user_id: effectiveUserId });
+
+  const profile = (roleData as { role: string; institution_id: string | null }[] | null)?.[0] || null;
+  const needsInstitution = !profile?.institution_id && profile?.role !== 'superadmin';
+
+  if (needsInstitution) {
+    // Redirect to institution selection with a message
+    redirect('/select-institution?reason=cycle_creation');
+  }
+
   // Create a new cycle for the effective user
   const cycleId = uuidv4();
 

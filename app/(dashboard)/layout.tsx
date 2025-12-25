@@ -13,6 +13,9 @@ interface ProfileRow {
   role: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
   active_event_id: string | null;
   language: string | null;
+  institution_id: string | null;
+  name: string | null;
+  email: string | null;
 }
 
 export default async function DashboardLayout({
@@ -35,38 +38,35 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  // Fetch user role and language for admin link (always use auth user's role for admin access)
-  const { data: profileData } = await supabase
-    .from('users')
-    .select('role, active_event_id, language')
-    .eq('id', authUser.id)
-    .single()
+  // Fetch user profile using RPC function (bypasses RLS)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profileData } = await (supabase as any)
+    .rpc('get_user_profile', { p_user_id: authUser.id });
 
-  const profile = profileData as unknown as ProfileRow | null;
+  const profile = (profileData as ProfileRow[] | null)?.[0] ?? null;
   const userLocale: Locale = (profile?.language as Locale) || 'en';
 
-  // Fetch effective user's active event (may differ if impersonating)
-  const { data: effectiveProfileData } = await supabase
-    .from('users')
-    .select('active_event_id')
-    .eq('id', effectiveUser.id)
-    .single()
+  // Fetch effective user's profile using RPC (may differ if impersonating)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: effectiveProfileData } = await (supabase as any)
+    .rpc('get_user_profile', { p_user_id: effectiveUser.id });
 
-  const effectiveProfile = effectiveProfileData as { active_event_id: string | null } | null;
+  const effectiveProfile = (effectiveProfileData as ProfileRow[] | null)?.[0] ?? null;
   const activeEventId = effectiveProfile?.active_event_id ?? null;
 
   // Fetch the active event if user is in one
   let activeEvent: Event | null = null;
   if (activeEventId) {
-    const { data: eventData } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: eventData } = await (supabase as any)
       .from('events')
       .select('*')
       .eq('id', activeEventId)
       .eq('is_active', true)
-      .single()
+      .single();
 
     if (eventData) {
-      activeEvent = eventData as unknown as Event;
+      activeEvent = eventData as Event;
     }
   }
 

@@ -1,15 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Building2, GraduationCap, Loader2, Check, ChevronRight } from 'lucide-react';
+import { Building2, GraduationCap, Loader2, Check, ChevronRight, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Institution } from '@/lib/institutions/types';
 import { getInstitutionIcon, getInstitutionColor } from '@/lib/institutions/types';
 
 export default function SelectInstitutionPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+        >
+          <Building2 className="h-12 w-12 text-amber-400" />
+        </motion.div>
+        <p className="mt-4 text-stone-400">Loading...</p>
+      </div>
+    }>
+      <SelectInstitutionContent />
+    </Suspense>
+  );
+}
+
+function SelectInstitutionContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reason = searchParams.get('reason');
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -84,6 +104,23 @@ export default function SelectInstitutionPage() {
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4">
+      {/* Reason message - show when redirected from cycle creation */}
+      {reason === 'cycle_creation' && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3"
+        >
+          <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium text-amber-200">Institution required to start a cycle</p>
+            <p className="text-sm text-amber-300/70 mt-1">
+              Please select your institution below to start your Flywheel cycle and track your progress.
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
