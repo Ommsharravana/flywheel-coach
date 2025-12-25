@@ -35,21 +35,29 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
     }
 
-    // Fetch participant counts for each event
-    const eventsWithCounts: EventWithParticipantCount[] = await Promise.all(
-      ((events as Event[]) || []).map(async (event) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { count } = await (supabase as any)
-          .from('users')
-          .select('*', { count: 'exact', head: true })
-          .eq('active_event_id', event.id);
+    // Fetch participant counts using RPC function (bypasses RLS)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: countsData, error: countsError } = await (supabase as any)
+      .rpc('get_all_event_participant_counts');
 
-        return {
-          ...event,
-          participant_count: count || 0,
-        } as EventWithParticipantCount;
-      })
-    );
+    if (countsError) {
+      console.error('Error fetching participant counts:', countsError);
+      // Continue without counts if RPC fails
+    }
+
+    // Create a map of event_id -> participant_count
+    const countsMap = new Map<string, number>();
+    if (countsData) {
+      for (const item of countsData as { event_id: string; participant_count: number }[]) {
+        countsMap.set(item.event_id, item.participant_count);
+      }
+    }
+
+    // Merge events with counts
+    const eventsWithCounts: EventWithParticipantCount[] = ((events as Event[]) || []).map((event) => ({
+      ...event,
+      participant_count: countsMap.get(event.id) || 0,
+    }));
 
     return NextResponse.json(eventsWithCounts);
   } catch (error) {

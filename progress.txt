@@ -2260,3 +2260,30 @@ None - all code deployed and production verified working.
 | Build passes | ✅ 60 routes |
 | Vercel deployment | ✅ Complete |
 | Git push | ✅ origin/main up to date |
+
+---
+
+## 2025-12-25 - Session: RLS Testing (In Progress)
+
+**Objective:** Test the 3 RLS fix scenarios on production
+
+**Verified (via curl):**
+- Homepage: 200 ✓
+- Login: 200 ✓
+- Dashboard (unauth): 307 → /login ✓
+- Select Institution (unauth): 307 → /login ✓
+- Dev server: Running on port 3000 ✓
+
+**Pending Tests (need browser automation):**
+1. Institution Selection flow - click card, verify no RLS error
+2. Enter Arena flow - join Appathon 2.0 event
+3. Step 1 blocking - user without institution sees blocking card
+
+**Status:** Restarting Claude Code to enable Chrome browser automation
+
+**Resume Command:**
+```
+Read progress.txt and continue testing RLS fixes using Claude-in-Chrome browser automation
+```
+
+---
