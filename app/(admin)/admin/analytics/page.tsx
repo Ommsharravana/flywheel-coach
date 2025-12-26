@@ -5,6 +5,7 @@ import { UserGrowthChart } from '@/components/admin/charts/UserGrowthChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, subDays, subWeeks } from 'date-fns';
 import { getAdminEvents } from '@/lib/methodologies/helpers';
+import { getEffectiveUser } from '@/lib/supabase/effective-user';
 import { redirect } from 'next/navigation';
 
 interface CycleRow {
@@ -25,14 +26,14 @@ interface UserRow {
 export default async function AdminAnalyticsPage() {
   const supabase = await createClient();
 
-  // Get authenticated user
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
+  // Get effective user (supports impersonation)
+  const effectiveUser = await getEffectiveUser();
+  if (!effectiveUser) {
     redirect('/login');
   }
 
-  // Check admin access and get event scope
-  const adminEvents = await getAdminEvents(user.id);
+  // Check admin access and get event scope for effective user
+  const adminEvents = await getAdminEvents(effectiveUser.id);
   const isSuperadmin = adminEvents.some(e => e.role === 'superadmin');
 
   if (adminEvents.length === 0) {

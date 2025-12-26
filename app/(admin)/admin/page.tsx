@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Repeat, Activity } from 'lucide-react';
 import Link from 'next/link';
 import { getAdminEvents } from '@/lib/methodologies/helpers';
+import { getEffectiveUser } from '@/lib/supabase/effective-user';
 import { redirect } from 'next/navigation';
 
 interface UserRow {
@@ -33,14 +34,14 @@ interface RecentCycleRow {
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  // Get authenticated user
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
+  // Get effective user (supports impersonation)
+  const effectiveUser = await getEffectiveUser();
+  if (!effectiveUser) {
     redirect('/login');
   }
 
-  // Check admin access and get event scope
-  const adminEvents = await getAdminEvents(user.id);
+  // Check admin access and get event scope for effective user
+  const adminEvents = await getAdminEvents(effectiveUser.id);
   const isSuperadmin = adminEvents.some(e => e.role === 'superadmin');
 
   if (adminEvents.length === 0) {
