@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { getAdminEvents } from '@/lib/methodologies/helpers';
 
 // GET /api/problems/eligible-cycles - Get all cycles with problem statements
 export async function GET(request: NextRequest) {
@@ -14,17 +15,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is superadmin
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: userProfile } = await (supabase as any)
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Check admin access and get event scope
+    const adminEvents = await getAdminEvents(user.id);
+    const isSuperadmin = adminEvents.some(e => e.role === 'superadmin');
 
-    if ((userProfile as { role: string } | null)?.role !== 'superadmin') {
-      return NextResponse.json({ error: 'Forbidden - superadmin only' }, { status: 403 });
+    if (adminEvents.length === 0) {
+      return NextResponse.json({ error: 'Forbidden - admin access required' }, { status: 403 });
     }
+
+    // Get event IDs for filtering (null if superadmin sees all)
+    const eventIds = isSuperadmin ? null : adminEvents.map(e => e.id);
 
     // Fetch ALL cycles with their problems (including all question columns)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at,
         user_id,
+        event_id,
         users!cycles_user_id_fkey (
           id,
           name,
@@ -58,6 +59,11 @@ export async function GET(request: NextRequest) {
       `)
       .order('updated_at', { ascending: false });
 
+    // Apply event filtering for non-superadmin
+    if (eventIds) {
+      query = query.in('event_id', eventIds);
+    }
+
     // If not showing all, only show step 7+
     if (!showAll) {
       query = query.gte('current_step', 7);
@@ -73,11 +79,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get list of cycles already saved to problem bank
+    // Get list of cycles already saved to problem bank (filtered by event for non-superadmin)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: savedCycles } = await (supabase as any)
+    let savedQuery = (supabase as any)
       .from('problem_bank')
       .select('original_cycle_id');
+
+    if (eventIds) {
+      savedQuery = savedQuery.in('event_id', eventIds);
+    }
+
+    const { data: savedCycles } = await savedQuery;
 
     const savedCycleIds = new Set(
       (savedCycles || []).map((s: { original_cycle_id: string }) => s.original_cycle_id)

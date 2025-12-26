@@ -3,6 +3,8 @@ import { StatsCard } from '@/components/admin/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Repeat, Activity } from 'lucide-react';
 import Link from 'next/link';
+import { getAdminEvents } from '@/lib/methodologies/helpers';
+import { redirect } from 'next/navigation';
 
 interface UserRow {
   id: string;
@@ -31,9 +33,55 @@ interface RecentCycleRow {
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  // Fetch user stats
-  const { data: usersData } = await supabase.from('users').select('id, role, created_at');
-  const users = (usersData || []) as unknown as UserRow[];
+  // Get authenticated user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect('/login');
+  }
+
+  // Check admin access and get event scope
+  const adminEvents = await getAdminEvents(user.id);
+  const isSuperadmin = adminEvents.some(e => e.role === 'superadmin');
+
+  if (adminEvents.length === 0) {
+    redirect('/dashboard');
+  }
+
+  // Get event IDs for filtering (null if superadmin sees all)
+  const eventIds = isSuperadmin ? null : adminEvents.map(e => e.id);
+
+  // Fetch cycles (filtered by event for non-superadmin)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let cyclesQuery = (supabase as any)
+    .from('cycles')
+    .select('id, status, current_step, user_id');
+
+  if (eventIds) {
+    cyclesQuery = cyclesQuery.in('event_id', eventIds);
+  }
+
+  const { data: cyclesData } = await cyclesQuery;
+  const cycles = (cyclesData || []) as unknown as CycleRow[];
+
+  // Get unique user IDs from cycles for event admins
+  const cycleUserIds = [...new Set(cycles.map((c) => c.user_id))];
+
+  // Fetch users (for superadmin: all users, for event admin: users with cycles in their events)
+  let users: UserRow[] = [];
+
+  if (isSuperadmin) {
+    const { data: usersData } = await supabase.from('users').select('id, role, created_at');
+    users = (usersData || []) as unknown as UserRow[];
+  } else if (cycleUserIds.length > 0) {
+    // For event admins, only show users who have cycles in their events
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: usersData } = await (supabase as any)
+      .from('users')
+      .select('id, role, created_at')
+      .in('id', cycleUserIds);
+    users = (usersData || []) as unknown as UserRow[];
+  }
+
   const totalUsers = users.length;
   const learners = users.filter((u) => u.role === 'learner').length;
   const facilitators = users.filter((u) => u.role === 'facilitator').length;
@@ -45,10 +93,6 @@ export default async function AdminDashboardPage() {
   const newUsersThisWeek = users.filter(
     (u) => new Date(u.created_at) > oneWeekAgo
   ).length;
-
-  // Fetch cycle stats
-  const { data: cyclesData } = await supabase.from('cycles').select('id, status, current_step, user_id');
-  const cycles = (cyclesData || []) as unknown as CycleRow[];
   const totalCycles = cycles.length;
   const activeCycles = cycles.filter((c) => c.status === 'active').length;
   const completedCycles = cycles.filter((c) => c.status === 'completed').length;
@@ -67,7 +111,8 @@ export default async function AdminDashboardPage() {
   }));
 
   // Fetch recent activity (cycles created/updated recently)
-  const { data: recentCyclesData } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let recentQuery = (supabase as any)
     .from('cycles')
     .select(`
       id,
@@ -82,13 +127,27 @@ export default async function AdminDashboardPage() {
     .order('updated_at', { ascending: false })
     .limit(5);
 
+  if (eventIds) {
+    recentQuery = recentQuery.in('event_id', eventIds);
+  }
+
+  const { data: recentCyclesData } = await recentQuery;
   const recentCycles = (recentCyclesData || []) as unknown as RecentCycleRow[];
+
+  // Get event names for display (for event admins)
+  const eventNames = isSuperadmin ? null : adminEvents.map(e => e.name).join(', ');
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-bold text-stone-100">Super Admin Dashboard</h1>
-        <p className="text-stone-400">Overview of all Solution Studio activity across institutions</p>
+        <h1 className="text-2xl font-display font-bold text-stone-100">
+          {isSuperadmin ? 'Super Admin Dashboard' : 'Event Admin Dashboard'}
+        </h1>
+        <p className="text-stone-400">
+          {isSuperadmin
+            ? 'Overview of all Solution Studio activity across institutions'
+            : `Dashboard for: ${eventNames}`}
+        </p>
       </div>
 
       {/* Stats Grid */}

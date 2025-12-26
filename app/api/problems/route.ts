@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type { ProblemFilters, ProblemSort, ProblemCardData } from '@/lib/types/problem-bank';
+import { getAdminEvents } from '@/lib/methodologies/helpers';
 
-// GET /api/problems - List all problems (superadmin only)
+// GET /api/problems - List all problems (admin access with event scoping)
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -13,17 +14,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is superadmin
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: userProfile } = await (supabase as any)
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Check admin access and get event scope
+    const adminEvents = await getAdminEvents(user.id);
+    const isSuperadmin = adminEvents.some(e => e.role === 'superadmin');
 
-    if ((userProfile as { role: string } | null)?.role !== 'superadmin') {
-      return NextResponse.json({ error: 'Forbidden - superadmin only' }, { status: 403 });
+    if (adminEvents.length === 0) {
+      return NextResponse.json({ error: 'Forbidden - admin access required' }, { status: 403 });
     }
+
+    // Get event IDs for filtering (null if superadmin sees all)
+    const eventIds = isSuperadmin ? null : adminEvents.map(e => e.id);
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -64,6 +64,11 @@ export async function GET(request: NextRequest) {
         submitted_by,
         institutions!problem_bank_institution_id_fkey (name, short_name)
       `, { count: 'exact' });
+
+    // Apply event filtering for non-superadmin
+    if (eventIds) {
+      query = query.in('event_id', eventIds);
+    }
 
     // Apply filters
     if (filters.theme) {
@@ -147,7 +152,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/problems - Create a new problem manually (superadmin only)
+// POST /api/problems - Create a new problem manually (admin access)
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -158,17 +163,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is superadmin and get institution_id
+    // Check admin access
+    const adminEvents = await getAdminEvents(user.id);
+    if (adminEvents.length === 0) {
+      return NextResponse.json({ error: 'Forbidden - admin access required' }, { status: 403 });
+    }
+
+    // Get user profile for institution_id
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: userProfile } = await (supabase as any)
       .from('users')
-      .select('role, institution_id')
+      .select('institution_id')
       .eq('id', user.id)
       .single();
-
-    if ((userProfile as { role: string } | null)?.role !== 'superadmin') {
-      return NextResponse.json({ error: 'Forbidden - superadmin only' }, { status: 403 });
-    }
 
     const body = await request.json();
     const {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Cycle, Problem } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -83,6 +83,10 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   const { isAppathonMode } = useAppathonMode();
   const { t } = useTranslation();
 
+  // Refs for auto-save
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const problemIdRef = useRef<string | null>(cycle.problem?.id || null);
+
   // Initialize state from existing problem or empty
   const [answers, setAnswers] = useState<Record<string, string>>(
     cycle.problem?.answers || {
@@ -112,8 +116,48 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   const hasProblemStatement = problemStatement.trim().length > 0;
   const hasRefinement = refinedStatement.trim().length > 0;
 
+  // Silent auto-save function (no toast, no navigation)
+  const saveProblemSilently = useCallback(async (answersToSave: Record<string, string>) => {
+    try {
+      const problemData = {
+        cycle_id: cycle.id,
+        q_takes_too_long: answersToSave.question2 || null,
+        q_repetitive: answersToSave.question3 || null,
+        q_lookup_repeatedly: answersToSave.question1 || null,
+        q_complaints: answersToSave.question5 || null,
+        q_would_pay: answersToSave.question4 || null,
+        selected_question: problemStatement || null,
+        refined_statement: refinedStatement || null,
+        pain_level: painLevel,
+        frequency: frequency,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (problemIdRef.current) {
+        await supabase.from('problems').update(problemData).eq('id', problemIdRef.current);
+      } else {
+        const { data } = await supabase.from('problems').insert({
+          ...problemData,
+          created_at: new Date().toISOString(),
+        }).select('id').single();
+        if (data?.id) {
+          problemIdRef.current = data.id;
+        }
+      }
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    }
+  }, [cycle.id, problemStatement, refinedStatement, painLevel, frequency, supabase]);
+
   const handleAnswerChange = (questionId: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    const newAnswers = { ...answers, [questionId]: value };
+    setAnswers(newAnswers);
+
+    // Debounced auto-save (save 1 second after user stops typing)
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveProblemSilently(newAnswers);
+    }, 1000);
   };
 
   const generateProblemStatement = () => {
@@ -181,6 +225,10 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
       toast.success('Problem saved successfully!');
 
       if (hasRefinement) {
+        // Refresh server data before navigating to ensure cycle.currentStep is updated
+        router.refresh();
+        // Small delay to ensure server data is refreshed before navigation
+        await new Promise(resolve => setTimeout(resolve, 150));
         router.push(`/cycle/${cycle.id}/step/2`);
       } else {
         router.refresh();

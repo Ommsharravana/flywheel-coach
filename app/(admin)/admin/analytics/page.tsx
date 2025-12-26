@@ -4,6 +4,8 @@ import { WorkflowPieChart } from '@/components/admin/charts/WorkflowPieChart';
 import { UserGrowthChart } from '@/components/admin/charts/UserGrowthChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, subDays, subWeeks } from 'date-fns';
+import { getAdminEvents } from '@/lib/methodologies/helpers';
+import { redirect } from 'next/navigation';
 
 interface CycleRow {
   id: string;
@@ -11,6 +13,7 @@ interface CycleRow {
   current_step: number;
   workflow_type: string | null;
   created_at: string;
+  user_id: string;
 }
 
 interface UserRow {
@@ -22,15 +25,54 @@ interface UserRow {
 export default async function AdminAnalyticsPage() {
   const supabase = await createClient();
 
-  // Fetch all cycles
-  const { data: cyclesData } = await supabase
+  // Get authenticated user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect('/login');
+  }
+
+  // Check admin access and get event scope
+  const adminEvents = await getAdminEvents(user.id);
+  const isSuperadmin = adminEvents.some(e => e.role === 'superadmin');
+
+  if (adminEvents.length === 0) {
+    redirect('/dashboard');
+  }
+
+  // Get event IDs for filtering (null if superadmin sees all)
+  const eventIds = isSuperadmin ? null : adminEvents.map(e => e.id);
+
+  // Fetch cycles (filtered by event for non-superadmin)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let cyclesQuery = (supabase as any)
     .from('cycles')
-    .select('id, status, current_step, workflow_type, created_at');
+    .select('id, status, current_step, workflow_type, created_at, user_id');
+
+  if (eventIds) {
+    cyclesQuery = cyclesQuery.in('event_id', eventIds);
+  }
+
+  const { data: cyclesData } = await cyclesQuery;
   const cycles = (cyclesData || []) as unknown as CycleRow[];
 
-  // Fetch all users
-  const { data: usersData } = await supabase.from('users').select('id, created_at, role');
-  const users = (usersData || []) as unknown as UserRow[];
+  // Get unique user IDs from cycles for event admins
+  const cycleUserIds = [...new Set(cycles.map((c) => c.user_id))];
+
+  // Fetch users (for superadmin: all users, for event admin: users with cycles in their events)
+  let users: UserRow[] = [];
+
+  if (isSuperadmin) {
+    const { data: usersData } = await supabase.from('users').select('id, created_at, role');
+    users = (usersData || []) as unknown as UserRow[];
+  } else if (cycleUserIds.length > 0) {
+    // For event admins, only show users who have cycles in their events
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: usersData } = await (supabase as any)
+      .from('users')
+      .select('id, created_at, role')
+      .in('id', cycleUserIds);
+    users = (usersData || []) as unknown as UserRow[];
+  }
 
   // Step Funnel Data
   const activeCycles = cycles.filter((c) => c.status === 'active');
@@ -76,7 +118,7 @@ export default async function AdminAnalyticsPage() {
   const completionRate = totalCycles > 0 ? Math.round((completedCycles / totalCycles) * 100) : 0;
 
   // Users with at least one cycle
-  const usersWithCycles = new Set(cycles.map((c) => (c as { user_id?: string }).user_id)).size;
+  const usersWithCycles = new Set(cycles.map((c) => c.user_id)).size;
   const engagementRate = totalUsers > 0 ? Math.round((usersWithCycles / totalUsers) * 100) : 0;
 
   // Active this week
@@ -85,11 +127,18 @@ export default async function AdminAnalyticsPage() {
     (c) => new Date(c.created_at) > oneWeekAgo
   ).length;
 
+  // Get event names for display (for event admins)
+  const eventNames = isSuperadmin ? null : adminEvents.map(e => e.name).join(', ');
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-display font-bold text-stone-100">Analytics</h1>
-        <p className="text-stone-400">Detailed metrics and visualizations</p>
+        <p className="text-stone-400">
+          {isSuperadmin
+            ? 'Detailed metrics and visualizations across all events'
+            : `Analytics for: ${eventNames}`}
+        </p>
       </div>
 
       {/* Summary Stats */}

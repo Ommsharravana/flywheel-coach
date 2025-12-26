@@ -111,11 +111,18 @@ export default async function StepPage({ params }: StepPageProps) {
       const problemData = asAny(rawProblemData);
       cycle.problem = {
         id: problemData.id,
-        statement: problemData.statement,
+        statement: problemData.selected_question,
         refinedStatement: problemData.refined_statement,
         painLevel: problemData.pain_level,
         frequency: problemData.frequency,
-        answers: problemData.answers || {},
+        // Map individual DB columns to answers object
+        answers: {
+          question1: problemData.q_lookup_repeatedly || '',  // What frustrates
+          question2: problemData.q_takes_too_long || '',     // Takes too long
+          question3: problemData.q_repetitive || '',         // Avoid doing
+          question4: problemData.q_would_pay || '',          // Would pay
+          question5: problemData.q_complaints || '',         // Affects others
+        },
       };
     }
   }
