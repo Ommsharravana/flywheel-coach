@@ -1,8 +1,22 @@
 import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 import { CycleTable } from '@/components/admin/CycleTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search, Repeat, CheckCircle, XCircle, Play } from 'lucide-react';
+
+interface CycleFromRPC {
+  id: string;
+  name: string | null;
+  status: string;
+  current_step: number;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  event_id: string | null;
+  user_name: string | null;
+  user_email: string;
+}
 
 interface CycleRow {
   id: string;
@@ -18,22 +32,27 @@ interface CycleRow {
 export default async function AdminCyclesPage() {
   const supabase = await createClient();
 
-  // Fetch all cycles with user info
-  const { data: cyclesData } = await supabase
-    .from('cycles')
-    .select(`
-      id,
-      name,
-      status,
-      current_step,
-      created_at,
-      updated_at,
-      user_id,
-      users (id, name, email)
-    `)
-    .order('updated_at', { ascending: false });
+  // Get auth user for passing to RPC
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) redirect('/login');
 
-  const cycles = (cyclesData || []) as unknown as CycleRow[];
+  // Use RPC function to fetch cycles (bypasses RLS issues with auth.uid() in server components)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: cyclesData } = await (supabase as any).rpc('get_all_cycles_admin', {
+    caller_user_id: authUser.id
+  });
+
+  // Transform RPC response to match expected interface
+  const cycles: CycleRow[] = ((cyclesData || []) as CycleFromRPC[]).map((c) => ({
+    id: c.id,
+    name: c.name,
+    status: c.status as 'active' | 'completed' | 'abandoned',
+    current_step: c.current_step,
+    created_at: c.created_at,
+    updated_at: c.updated_at,
+    user_id: c.user_id,
+    users: c.user_email ? { id: c.user_id, name: c.user_name, email: c.user_email } : null,
+  }));
 
   // Transform to match expected type
   const cyclesWithUsers = cycles.map((cycle) => ({

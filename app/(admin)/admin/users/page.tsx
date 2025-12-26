@@ -54,8 +54,11 @@ export default async function AdminUsersPage() {
   const institutionMap = new Map(institutions.map(i => [i.id, i]));
 
   // Use RPC function to fetch users (bypasses RLS, handles superadmin/institution_admin logic)
+  // Pass explicit user ID to work around auth.uid() issues in server components
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: usersData } = await (supabase as any).rpc('get_all_users_admin');
+  const { data: usersData } = await (supabase as any).rpc('get_all_users_admin', {
+    caller_user_id: authUser.id
+  });
 
   // Map users with institution names
   const users = (usersData || []).map((u: Record<string, unknown>) => ({
