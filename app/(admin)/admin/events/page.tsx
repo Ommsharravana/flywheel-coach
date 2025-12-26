@@ -350,6 +350,13 @@ export default function AdminEventsPage() {
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">
+                      <a
+                        href={`/admin/events/${event.slug}/settings`}
+                        className="p-2 rounded-lg text-stone-400 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                        title="Event settings"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </a>
                       <button
                         onClick={() => copyEventLink(event.slug)}
                         className="p-2 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors"
