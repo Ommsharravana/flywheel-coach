@@ -14,19 +14,14 @@ interface TargetUserWithEmail {
   email: string | null;
 }
 
-// Check if current user is superadmin
+// Check if current user is superadmin (uses RPC to bypass RLS)
 async function isSuperAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
 
-  const { data: profileData } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  const profile = profileData as unknown as ProfileRole | null;
-  return profile?.role === 'superadmin';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: isSuperadmin } = await (supabase as any).rpc('check_is_superadmin');
+  return isSuperadmin === true;
 }
 
 // GET /api/admin/users/[id] - Get single user
@@ -41,14 +36,13 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
-    .single();
+  // Use RPC to get user (bypasses RLS)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userData, error } = await (supabase as any).rpc('get_user_by_id_admin', { target_user_id: id });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 404 });
+  const user = (userData as unknown[])?.[0] || null;
+  if (error || !user) {
+    return NextResponse.json({ error: error?.message || 'User not found' }, { status: 404 });
   }
 
   return NextResponse.json({ user });
@@ -69,57 +63,43 @@ export async function PUT(
   const body = await request.json();
   const { name, role } = body;
 
-  // Check if target user is superadmin
-  const { data: targetUserData } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', id)
-    .single();
-
-  const targetUser = targetUserData as unknown as TargetUserRole | null;
-
-  if (targetUser?.role === 'superadmin') {
-    return NextResponse.json(
-      { error: 'Cannot modify superadmin users' },
-      { status: 400 }
-    );
-  }
-
-  // Prevent creating new superadmins through this route
-  if (role === 'superadmin') {
-    return NextResponse.json(
-      { error: 'Cannot set superadmin role' },
-      { status: 400 }
-    );
-  }
-
-  const updateData: Record<string, string> = {};
-  if (name !== undefined) updateData.name = name;
-  if (role !== undefined) updateData.role = role;
-
+  // Use RPC to update user (bypasses RLS, includes all validation)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: user, error } = await (supabase as any)
-    .from('users')
-    .update(updateData)
-    .eq('id', id)
-    .select()
-    .single();
+  const { data: userData, error } = await (supabase as any).rpc('update_user_admin', {
+    target_user_id: id,
+    new_name: name || null,
+    new_role: role || null,
+  });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Handle specific error messages from the RPC
+    const errorMsg = error.message || 'Failed to update user';
+    if (errorMsg.includes('superadmin')) {
+      return NextResponse.json({ error: errorMsg }, { status: 400 });
+    }
+    if (errorMsg.includes('Unauthorized')) {
+      return NextResponse.json({ error: errorMsg }, { status: 403 });
+    }
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 
-  // Log the action
-  const { data: { user: adminUser } } = await supabase.auth.getUser();
-  if (adminUser) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('admin_activity_logs').insert({
-      admin_id: adminUser.id,
-      action: 'update_user',
-      entity_type: 'user',
-      entity_id: id,
-      details: { changes: updateData },
-    });
+  const user = (userData as unknown[])?.[0] || null;
+
+  // Log the action (best effort, don't fail if this doesn't work)
+  try {
+    const { data: { user: adminUser } } = await supabase.auth.getUser();
+    if (adminUser) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from('admin_activity_logs').insert({
+        admin_id: adminUser.id,
+        action: 'update_user',
+        entity_type: 'user',
+        entity_id: id,
+        details: { changes: { name, role } },
+      });
+    }
+  } catch {
+    // Ignore logging errors
   }
 
   return NextResponse.json({ user });
