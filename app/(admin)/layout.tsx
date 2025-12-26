@@ -26,20 +26,34 @@ export default async function AdminLayout({
     redirect('/login');
   }
 
-  // Fetch user profile
+  // Use RPC function (SECURITY DEFINER) to check role - same as middleware
+  // This bypasses RLS to ensure consistent behavior
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: user.id });
+  const userRole = (roleData as { role: string; institution_id: string }[] | null)?.[0];
+
+  // Check admin role first using RPC (bypasses RLS)
+  const allowedRoles = ['superadmin', 'institution_admin', 'event_admin'];
+  if (!userRole || !allowedRoles.includes(userRole.role)) {
+    redirect('/dashboard');
+  }
+
+  // Now fetch full profile for display purposes
+  // If this fails due to RLS, we still have the role from RPC
   const { data: profileData } = await supabase
     .from('users')
     .select('name, email, avatar_url, role, institution_id')
     .eq('id', user.id)
     .single();
 
-  const profile = profileData as unknown as ProfileRow | null;
-
-  // Double-check admin role (middleware should catch this, but belt-and-suspenders)
-  const allowedRoles = ['superadmin', 'institution_admin', 'event_admin'];
-  if (!profile || !allowedRoles.includes(profile.role)) {
-    redirect('/dashboard');
-  }
+  // Use profile data if available, otherwise construct from RPC + auth user
+  const profile: ProfileRow = profileData ? (profileData as unknown as ProfileRow) : {
+    name: user.user_metadata?.name || null,
+    email: user.email || null,
+    avatar_url: user.user_metadata?.avatar_url || null,
+    role: userRole.role as ProfileRow['role'],
+    institution_id: userRole.institution_id,
+  };
 
   return (
     <div className="min-h-screen bg-stone-950 flex">
