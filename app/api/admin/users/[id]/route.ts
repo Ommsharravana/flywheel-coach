@@ -7,13 +7,15 @@ interface TargetUserWithEmail {
 }
 
 // Check if current user is superadmin (uses RPC to bypass RLS)
+// Uses get_user_role with explicit user_id (same as middleware) for reliability
 async function isSuperAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: isSuperadmin } = await (supabase as any).rpc('check_is_superadmin');
-  return isSuperadmin === true;
+  const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: user.id });
+  const role = (roleData as { role: string }[] | null)?.[0]?.role;
+  return role === 'superadmin';
 }
 
 // GET /api/admin/users/[id] - Get single user
