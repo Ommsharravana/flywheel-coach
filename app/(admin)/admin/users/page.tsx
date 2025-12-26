@@ -36,17 +36,13 @@ interface Institution {
 export default async function AdminUsersPage() {
   const supabase = await createClient();
 
-  // Get current admin's profile
+  // Get current admin's profile using RPC (bypasses RLS)
   const { data: { user: authUser } } = await supabase.auth.getUser();
   if (!authUser) redirect('/login');
 
-  const { data: adminProfile } = await supabase
-    .from('users')
-    .select('role, institution_id')
-    .eq('id', authUser.id)
-    .single();
-
-  const admin = adminProfile as AdminProfile | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: authUser.id });
+  const admin = (roleData as { role: string; institution_id: string | null }[] | null)?.[0] as AdminProfile | null;
   const isInstitutionAdmin = admin?.role === 'institution_admin';
 
   // Fetch institutions for lookup
@@ -57,17 +53,9 @@ export default async function AdminUsersPage() {
   const institutions = (institutionsData || []) as Institution[];
   const institutionMap = new Map(institutions.map(i => [i.id, i]));
 
-  // Build users query - filter by institution for institution_admin
-  let usersQuery = supabase
-    .from('users')
-    .select('id, email, name, role, avatar_url, created_at, institution_id')
-    .order('created_at', { ascending: false });
-
-  if (isInstitutionAdmin && admin?.institution_id) {
-    usersQuery = usersQuery.eq('institution_id', admin.institution_id);
-  }
-
-  const { data: usersData } = await usersQuery;
+  // Use RPC function to fetch users (bypasses RLS, handles superadmin/institution_admin logic)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: usersData } = await (supabase as any).rpc('get_all_users_admin');
 
   // Map users with institution names
   const users = (usersData || []).map((u: Record<string, unknown>) => ({
