@@ -142,14 +142,12 @@ export async function checkEventAdminAccess(
 ): Promise<{ isAdmin: boolean; role: string | null }> {
   const supabase = await createClient();
 
-  // Check if superadmin first
-  const { data: userData } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single() as { data: { role: string } | null };
+  // Check if superadmin first using RPC (bypasses RLS, same as middleware)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: userId });
+  const userRole = (roleData as { role: string }[] | null)?.[0]?.role;
 
-  if (userData?.role === 'superadmin') {
+  if (userRole === 'superadmin') {
     return { isAdmin: true, role: 'superadmin' };
   }
 
@@ -162,7 +160,8 @@ export async function checkEventAdminAccess(
     .single() as { data: { role: string } | null };
 
   if (adminData) {
-    return { isAdmin: adminData.role === 'admin', role: adminData.role };
+    // All event admin roles (admin, reviewer, viewer) can access settings
+    return { isAdmin: true, role: adminData.role };
   }
 
   return { isAdmin: false, role: null };
