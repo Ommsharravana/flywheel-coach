@@ -104,14 +104,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Only superadmins can add admin role' }, { status: 403 });
     }
 
-    // Find user by email
+    // Find user by email using RPC (bypasses RLS)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: targetUser, error: userError } = await (supabase as any)
-      .from('users')
-      .select('id, name, email')
-      .eq('email', email.toLowerCase())
-      .single();
+    const { data: userData, error: userError } = await (supabase as any).rpc('get_user_by_email_admin', {
+      target_email: email.toLowerCase(),
+    });
 
+    const targetUser = (userData as { id: string; name: string; email: string }[] | null)?.[0];
     if (userError || !targetUser) {
       return NextResponse.json({ error: 'User not found with this email' }, { status: 404 });
     }
