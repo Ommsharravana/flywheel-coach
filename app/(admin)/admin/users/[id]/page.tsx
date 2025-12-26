@@ -58,18 +58,16 @@ export default async function UserDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  // Fetch user
-  const { data: userData, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
-    .single();
+  // Fetch user using RPC (bypasses RLS for admin access)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userData, error } = await (supabase as any).rpc('get_user_by_id_admin', { target_user_id: id });
 
-  if (error || !userData) {
+  const userRow = (userData as UserRow[] | null)?.[0];
+  if (error || !userRow) {
     notFound();
   }
 
-  const user = userData as unknown as UserRow;
+  const user = userRow;
 
   // Fetch user's cycles
   const { data: cyclesData } = await supabase
