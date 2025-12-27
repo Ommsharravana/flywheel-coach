@@ -45,7 +45,7 @@ export default async function CycleDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  interface CycleWithUser {
+  interface CycleData {
     id: string;
     name: string | null;
     status: string;
@@ -57,6 +57,10 @@ export default async function CycleDetailPage({
     impact_metrics: Record<string, unknown> | string | null;
     created_at: string;
     updated_at: string;
+    user_id: string;
+  }
+
+  interface CycleWithUser extends CycleData {
     users: { id: string; name: string | null; email: string } | null;
   }
 
@@ -81,13 +85,16 @@ export default async function CycleDetailPage({
     order: number;
   }
 
-  // Fetch cycle with user
+  interface UserRow {
+    id: string;
+    name: string | null;
+    email: string;
+  }
+
+  // Fetch cycle without user join (avoids RLS issues)
   const { data: cycleData, error } = await supabase
     .from('cycles')
-    .select(`
-      *,
-      users (id, name, email)
-    `)
+    .select('*')
     .eq('id', id)
     .single();
 
@@ -95,7 +102,20 @@ export default async function CycleDetailPage({
     notFound();
   }
 
-  const cycle = cycleData as unknown as CycleWithUser;
+  const rawCycle = cycleData as unknown as CycleData;
+
+  // Fetch user using RPC (bypasses RLS for admin access)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userData } = await (supabase as any).rpc('get_user_by_id_admin', {
+    target_user_id: rawCycle.user_id
+  });
+  const userRow = (userData as UserRow[] | null)?.[0] || null;
+
+  // Combine cycle with user data
+  const cycle: CycleWithUser = {
+    ...rawCycle,
+    users: userRow
+  };
 
   // Pre-compute stringified values for unknown types
   const workflowDetailsStr = cycle.workflow_details

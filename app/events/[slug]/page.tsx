@@ -50,21 +50,20 @@ export default async function EventPage({ params }: EventPageProps) {
   // Get methodology for this event
   const methodology = getMethodologyForEvent(event.config);
 
-  // Get event statistics
-  const { count: participantCount } = await supabase
-    .from('users')
-    .select('*', { count: 'exact', head: true })
-    .eq('active_event_id', event.id);
+  // Get event statistics using RPC (bypasses RLS for public pages)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: statsData } = await (supabase as any)
+    .rpc('get_event_stats', { target_event_slug: slug });
 
-  const { count: cycleCount } = await supabase
-    .from('cycles')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', event.id);
+  const stats = (statsData as {
+    total_participants: number;
+    total_cycles: number;
+    total_problems: number;
+  }[])?.[0];
 
-  const { count: problemCount } = await supabase
-    .from('problem_bank')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', event.id);
+  const participantCount = stats?.total_participants || 0;
+  const cycleCount = stats?.total_cycles || 0;
+  const problemCount = stats?.total_problems || 0;
 
   // Calculate event status
   const now = new Date();
