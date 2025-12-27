@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { UserPlus, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { ExportButton } from '@/components/admin/ExportButton';
+import { getEffectiveUser } from '@/lib/supabase/effective-user';
 
 interface UserRow {
   id: string;
@@ -36,14 +37,15 @@ interface Institution {
 export default async function AdminUsersPage() {
   const supabase = await createClient();
 
-  // Get current admin's profile using RPC (bypasses RLS)
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  if (!authUser) redirect('/login');
+  // Get effective user (supports impersonation)
+  const effectiveUser = await getEffectiveUser();
+  if (!effectiveUser) redirect('/login');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: authUser.id });
+  const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: effectiveUser.id });
   const admin = (roleData as { role: string; institution_id: string | null }[] | null)?.[0] as AdminProfile | null;
   const isInstitutionAdmin = admin?.role === 'institution_admin';
+  const isEventAdmin = admin?.role === 'event_admin';
 
   // Fetch institutions for lookup
   const { data: institutionsData } = await supabase
@@ -53,11 +55,11 @@ export default async function AdminUsersPage() {
   const institutions = (institutionsData || []) as Institution[];
   const institutionMap = new Map(institutions.map(i => [i.id, i]));
 
-  // Use RPC function to fetch users (bypasses RLS, handles superadmin/institution_admin logic)
-  // Pass explicit user ID to work around auth.uid() issues in server components
+  // Use RPC function to fetch users (bypasses RLS, handles role-based filtering)
+  // Pass effective user ID to support impersonation
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: usersData } = await (supabase as any).rpc('get_all_users_admin', {
-    caller_user_id: authUser.id
+    caller_user_id: effectiveUser.id
   });
 
   // Map users with institution names
@@ -112,6 +114,8 @@ export default async function AdminUsersPage() {
                 <Building2 className="h-4 w-4 text-amber-400" />
                 {adminInstitution.short_name} - {totalUsers} users
               </span>
+            ) : isEventAdmin ? (
+              `Users in your events - ${totalUsers} users`
             ) : (
               `View and manage all ${totalUsers} users`
             )}
