@@ -214,6 +214,8 @@ export interface Cycle {
 
 // Helper function to get step status based on currentStep
 export function getStepStatus(cycle: Cycle, stepId: number): StepStatus {
+  // If cycle is completed, all steps (1-8) are completed
+  if (cycle.status === 'completed' && stepId <= 8) return 'completed';
   if (stepId < cycle.currentStep) return 'completed';
   if (stepId === cycle.currentStep) return 'in-progress';
   return 'not-started';

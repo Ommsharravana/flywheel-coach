@@ -5,9 +5,13 @@ import { FlywheelNavigator, FlywheelProgress } from '@/components/flywheel/Flywh
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle, Clock, Home, RotateCcw, Target, Trophy } from 'lucide-react';
+import { ArrowRight, CheckCircle, Clock, Home, RotateCcw, Target, Trophy, Send } from 'lucide-react';
 import { Cycle } from '@/lib/types/cycle';
 import { CycleActions } from './CycleActions';
+
+interface UserProfileRow {
+  active_event_id: string | null;
+}
 
 interface CyclePageProps {
   params: Promise<{ id: string }>;
@@ -23,6 +27,14 @@ export default async function CyclePage({ params }: CyclePageProps) {
   if (!effectiveUserId) {
     redirect('/login');
   }
+
+  // Fetch user profile to check for active event (Appathon)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profileData } = await (supabase as any)
+    .rpc('get_user_profile', { p_user_id: effectiveUserId });
+
+  const userProfile = (profileData as UserProfileRow[] | null)?.[0] ?? null;
+  const hasActiveEvent = userProfile?.active_event_id !== null;
 
   // Fetch the cycle using effective user ID
   const { data: rawCycleData, error } = await supabase
@@ -166,6 +178,15 @@ export default async function CyclePage({ params }: CyclePageProps) {
                     Your solution is live and making an impact. Ready to solve the next problem?
                   </p>
                   <div className="space-y-3">
+                    {hasActiveEvent && (
+                      <Link href={`/cycle/${id}/step/9`}>
+                        <Button className="w-full bg-amber-500 hover:bg-amber-600 text-stone-900 font-semibold">
+                          <Trophy className="mr-2 h-4 w-4" />
+                          Submit to Appathon
+                          <Send className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Link>
+                    )}
                     <Link href={`/cycle/${id}/step/8`}>
                       <Button variant="outline" className="w-full">
                         View Impact Results

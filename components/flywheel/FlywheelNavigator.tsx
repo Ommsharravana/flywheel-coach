@@ -227,7 +227,8 @@ export function FlywheelNavigator({ cycle, currentStep, onStepClick, compact = f
 
 // Export a simpler progress bar version
 export function FlywheelProgress({ cycle }: { cycle: Cycle }) {
-  const completed = Math.max(0, cycle.currentStep - 1);
+  // If cycle is completed, show 8/8. Otherwise show currentStep - 1 (completed steps)
+  const completed = cycle.status === 'completed' ? 8 : Math.max(0, cycle.currentStep - 1);
   const percentage = (completed / 8) * 100;
 
   return (
