@@ -12,10 +12,6 @@ interface UserExportRow {
   updated_at: string;
 }
 
-interface UserRoleRow {
-  role: string;
-}
-
 // GET: Export users to CSV
 export async function GET(request: NextRequest) {
   try {
@@ -27,15 +23,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Verify superadmin role
-    const { data: adminDataRaw } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Verify superadmin role using RPC (bypasses RLS)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userRole } = await (supabase as any).rpc('get_current_user_role');
 
-    const adminData = adminDataRaw as unknown as UserRoleRow | null;
-    if (!adminData || adminData.role !== 'superadmin') {
+    if (userRole !== 'superadmin') {
       return NextResponse.json({ error: 'Forbidden: Superadmin only' }, { status: 403 });
     }
 
@@ -43,24 +35,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');
 
-    // Build query
-    let query = supabase
-      .from('users')
-      .select('id, email, name, role, department, year, created_at, updated_at')
-      .order('created_at', { ascending: false });
-
-    if (role) {
-      query = query.eq('role', role);
-    }
-
-    const { data: users, error } = await query;
+    // Use RPC to get all users (bypasses RLS)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: users, error } = await (supabase as any).rpc('get_all_users_admin', {
+      caller_user_id: user.id
+    });
 
     if (error) {
       console.error('Export error:', error);
       return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
     }
 
-    const usersData = (users || []) as unknown as UserExportRow[];
+    // Filter by role if specified (RPC returns all users)
+    let usersData = (users || []) as unknown as UserExportRow[];
+    if (role) {
+      usersData = usersData.filter((u: UserExportRow) => u.role === role);
+    }
 
     // Generate CSV
     const headers = [

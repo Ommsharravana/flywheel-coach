@@ -1,39 +1,37 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-interface ProfileRole {
-  role: string;
-}
-
-// Check if current user is superadmin
+// Check if current user is superadmin using RPC (bypasses RLS)
 async function isSuperAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
 
-  const { data: profileData } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  const profile = profileData as unknown as ProfileRole | null;
-  return profile?.role === 'superadmin';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: userRole } = await (supabase as any).rpc('get_current_user_role');
+  return userRole === 'superadmin';
 }
 
 // GET /api/admin/users - List all users
 export async function GET() {
   const supabase = await createClient();
 
-  if (!(await isSuperAdmin(supabase))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  const { data: users, error } = await supabase
-    .from('users')
-    .select('*')
-    .order('created_at', { ascending: false });
+  // Use RPC to get all users (handles auth check internally, bypasses RLS)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: users, error } = await (supabase as any).rpc('get_all_users_admin', {
+    caller_user_id: user.id
+  });
 
   if (error) {
+    // Handle unauthorized error from RPC
+    if (error.message?.includes('Unauthorized') || error.message?.includes('superadmin')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
