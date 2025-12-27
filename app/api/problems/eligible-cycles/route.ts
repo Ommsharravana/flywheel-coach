@@ -79,20 +79,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get list of cycles already saved to problem bank (filtered by event for non-superadmin)
+    // Get list of cycles already saved to problem bank using RPC to bypass RLS
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let savedQuery = (supabase as any)
-      .from('problem_bank')
-      .select('original_cycle_id');
-
-    if (eventIds) {
-      savedQuery = savedQuery.in('event_id', eventIds);
-    }
-
-    const { data: savedCycles } = await savedQuery;
+    const { data: savedCycleData } = await (supabase as any).rpc('get_saved_cycle_ids', {
+      caller_user_id: user.id
+    });
 
     const savedCycleIds = new Set(
-      (savedCycles || []).map((s: { original_cycle_id: string }) => s.original_cycle_id)
+      (savedCycleData || []).map((s: { original_cycle_id: string }) => s.original_cycle_id)
     );
 
     // Helper to get the best available problem text from a problem record
