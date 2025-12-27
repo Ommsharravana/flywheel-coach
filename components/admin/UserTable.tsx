@@ -24,6 +24,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MoreHorizontal, Eye, Pencil, UserCog, Trash2, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 interface UserWithCycles {
   id: string;
@@ -70,12 +71,33 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
     );
   }, [users, searchQuery]);
 
-  const handleImpersonate = async (userId: string) => {
-    setLoadingId(userId);
-    if (onImpersonate) {
-      await onImpersonate(userId);
+  const handleImpersonate = async (user: UserWithCycles) => {
+    setLoadingId(user.id);
+    try {
+      const res = await fetch('/api/admin/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserId: user.id,
+          reason: 'Admin support via user list',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to start impersonation');
+      }
+
+      toast.success(`Now impersonating ${user.name || user.email}`);
+      router.push('/dashboard');
+      router.refresh();
+    } catch (error) {
+      console.error('Impersonation error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to start impersonation');
+    } finally {
+      setLoadingId(null);
     }
-    setLoadingId(null);
   };
 
   const getInitials = (name: string | null, email: string) => {
@@ -197,11 +219,11 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
                       {user.role !== 'superadmin' && (
                         <>
                           <DropdownMenuItem
-                            onClick={() => handleImpersonate(user.id)}
+                            onClick={() => handleImpersonate(user)}
                             disabled={loadingId === user.id}
                           >
                             <UserCog className="mr-2 h-4 w-4" />
-                            {loadingId === user.id ? 'Loading...' : 'Impersonate'}
+                            {loadingId === user.id ? 'Starting...' : 'Impersonate'}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
