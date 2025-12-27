@@ -81,19 +81,17 @@ export default async function AdminDashboardPage() {
       role: u.role,
       created_at: u.created_at
     }));
-  } else if (cycleUserIds.length > 0) {
-    // For event admins, get all users via RPC then filter by cycle users
+  } else {
+    // For event admins, get all users via RPC (includes users by active_event_id)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: usersData } = await (supabase as any).rpc('get_all_users_admin', {
       caller_user_id: effectiveUser.id
     });
-    const allUsers = ((usersData || []) as { id: string; role: string; created_at: string }[]).map(u => ({
+    users = ((usersData || []) as { id: string; role: string; created_at: string }[]).map(u => ({
       id: u.id,
       role: u.role,
       created_at: u.created_at
     }));
-    // Filter to only users who have cycles in the admin's events
-    users = allUsers.filter(u => cycleUserIds.includes(u.id));
   }
 
   const totalUsers = users.length;
