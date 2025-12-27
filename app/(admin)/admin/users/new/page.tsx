@@ -155,7 +155,7 @@ export default function NewUserPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="learner">Learner</SelectItem>
-                    <SelectItem value="facilitator">Facilitator</SelectItem>
+                    <SelectItem value="facilitator">Senior Learner</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="event_admin">Event Admin</SelectItem>
                     <SelectItem value="institution_admin">Institution Admin</SelectItem>

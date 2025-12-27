@@ -144,7 +144,7 @@ export default async function UserDetailPage({
                 variant="outline"
                 className={`mt-2 ${roleColors[user.role] || roleColors.learner}`}
               >
-                {user.role}
+                {user.role === 'facilitator' ? 'senior learner' : user.role === 'institution_admin' ? 'inst. admin' : user.role === 'event_admin' ? 'event admin' : user.role}
               </Badge>
             </div>
 

@@ -238,7 +238,7 @@ export default async function AdminAnalyticsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-purple-500" />
-                  <span className="text-sm text-stone-300">Facilitators</span>
+                  <span className="text-sm text-stone-300">Senior Learners</span>
                 </div>
                 <span className="text-sm font-medium text-stone-100">
                   {users.filter((u) => u.role === 'facilitator').length}

@@ -173,7 +173,7 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
                     variant="outline"
                     className={roleColors[user.role] || roleColors.learner}
                   >
-                    {user.role === 'institution_admin' ? 'inst. admin' : user.role === 'event_admin' ? 'event admin' : user.role}
+                    {user.role === 'institution_admin' ? 'inst. admin' : user.role === 'event_admin' ? 'event admin' : user.role === 'facilitator' ? 'senior learner' : user.role}
                   </Badge>
                 </TableCell>
                 {showInstitution && (

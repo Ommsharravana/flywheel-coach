@@ -149,7 +149,7 @@ export default async function AdminUsersPage() {
         <Card className="glass-card">
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-green-400">{roleStats.facilitator}</div>
-            <p className="text-sm text-stone-500">Facilitators</p>
+            <p className="text-sm text-stone-500">Senior Learners</p>
           </CardContent>
         </Card>
         <Card className="glass-card">

@@ -169,7 +169,7 @@ export default async function AdminDashboardPage() {
         <StatsCard
           title="Total Users"
           value={totalUsers}
-          description={`${learners} learners, ${facilitators} facilitators`}
+          description={`${learners} learners, ${facilitators} senior learners`}
           iconName="users"
           trend={{
             value: newUsersThisWeek,
