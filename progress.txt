@@ -2369,3 +2369,43 @@ WHERE active_event_id IS NULL;
 | Move on from access issue | User requested to end session and document for next time |
 
 ---
+
+## 2025-12-27 - Session: Event Admin Access Fix
+
+**Worked On:** Fix event admin cannot access /admin dashboard
+
+### Problem:
+- Event admin users were being redirected to /dashboard when trying to access /admin
+- This was blocking all event_admin users from seeing their admin dashboard
+
+### Root Cause:
+- File: `/lib/supabase/middleware.ts` line 64
+- Middleware `allowedRoles` only included `['superadmin', 'institution_admin']`
+- Missing `event_admin` role in the allowed list
+- Admin layout correctly had all three roles, but middleware blocked first
+
+### Fix:
+```typescript
+// Before
+const allowedRoles = ['superadmin', 'institution_admin']
+
+// After
+const allowedRoles = ['superadmin', 'institution_admin', 'event_admin']
+```
+
+### Verification:
+- Build succeeded
+- Deployed to Vercel (commit 606c8cc)
+- Event Admin Dashboard now accessible at /admin
+- Shows correctly scoped data:
+  - 863 Total Users
+  - 466 Total Cycles
+  - Dashboard for: Appathon 2.0
+
+### Files Modified:
+- `/lib/supabase/middleware.ts` - Added event_admin to allowedRoles
+
+### Blocker Resolved:
+- ✅ Event admin cannot access /admin - **FIXED**
+
+---
