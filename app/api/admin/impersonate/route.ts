@@ -23,15 +23,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Verify superadmin role
-    const { data: adminDataRaw } = await supabase
-      .from('users')
-      .select('id, role, email, name')
-      .eq('id', user.id)
-      .single();
+    // Verify superadmin role using RPC (bypasses RLS)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: user.id });
+    const adminRole = (roleData as { role: string }[] | null)?.[0]?.role;
 
-    const adminData = adminDataRaw as unknown as UserRow | null;
-    if (!adminData || adminData.role !== 'superadmin') {
+    if (adminRole !== 'superadmin') {
       return NextResponse.json({ error: 'Forbidden: Superadmin only' }, { status: 403 });
     }
 
@@ -42,14 +39,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Target user ID required' }, { status: 400 });
     }
 
-    // Get target user
-    const { data: targetUserRaw } = await supabase
-      .from('users')
-      .select('id, email, name, role')
-      .eq('id', targetUserId)
-      .single();
+    // Get admin user details using RPC
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: adminInfoData } = await (supabase as any).rpc('get_user_for_impersonation', {
+      caller_user_id: user.id,
+      target_user_id: user.id
+    });
+    const adminData = (adminInfoData as UserRow[] | null)?.[0] || { id: user.id, email: user.email || '', name: null, role: 'superadmin' };
 
-    const targetUser = targetUserRaw as unknown as UserRow | null;
+    // Get target user using RPC (bypasses RLS)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: targetUserData } = await (supabase as any).rpc('get_user_for_impersonation', {
+      caller_user_id: user.id,
+      target_user_id: targetUserId
+    });
+
+    const targetUser = (targetUserData as UserRow[] | null)?.[0];
     if (!targetUser) {
       return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
     }
