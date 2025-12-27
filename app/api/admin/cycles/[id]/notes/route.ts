@@ -15,10 +15,6 @@ interface CycleNote {
   };
 }
 
-interface UserRoleRow {
-  role: string;
-}
-
 // GET: Fetch all notes for a cycle
 export async function GET(
   request: NextRequest,
@@ -34,15 +30,11 @@ export async function GET(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Verify superadmin role
-    const { data: adminDataRaw } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Verify superadmin role using RPC (bypasses RLS)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userRole } = await (supabase as any).rpc('get_current_user_role');
 
-    const adminData = adminDataRaw as unknown as UserRoleRow | null;
-    if (!adminData || adminData.role !== 'superadmin') {
+    if (userRole !== 'superadmin') {
       return NextResponse.json({ error: 'Forbidden: Superadmin only' }, { status: 403 });
     }
 
@@ -84,15 +76,11 @@ export async function POST(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Verify superadmin role
-    const { data: adminDataRaw } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Verify superadmin role using RPC (bypasses RLS)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userRole } = await (supabase as any).rpc('get_current_user_role');
 
-    const adminData = adminDataRaw as unknown as UserRoleRow | null;
-    if (!adminData || adminData.role !== 'superadmin') {
+    if (userRole !== 'superadmin') {
       return NextResponse.json({ error: 'Forbidden: Superadmin only' }, { status: 403 });
     }
 
@@ -179,15 +167,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Verify superadmin role
-    const { data: adminDataRaw } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Verify superadmin role using RPC (bypasses RLS)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userRole } = await (supabase as any).rpc('get_current_user_role');
 
-    const adminData = adminDataRaw as unknown as UserRoleRow | null;
-    if (!adminData || adminData.role !== 'superadmin') {
+    if (userRole !== 'superadmin') {
       return NextResponse.json({ error: 'Forbidden: Superadmin only' }, { status: 403 });
     }
 
