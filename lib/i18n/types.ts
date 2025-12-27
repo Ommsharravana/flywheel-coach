@@ -36,6 +36,7 @@ export interface Dictionary {
     home: string;
     portfolio: string;
     settings: string;
+    admin: string;
     superAdmin: string;
     superAdminPanel: string;
   };

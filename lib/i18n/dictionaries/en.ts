@@ -32,6 +32,7 @@ export const en: Dictionary = {
     home: 'Home',
     portfolio: 'Portfolio',
     settings: 'Settings',
+    admin: 'Admin',
     superAdmin: 'Super Admin',
     superAdminPanel: 'Super Admin Panel',
   },

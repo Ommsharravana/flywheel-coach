@@ -32,6 +32,7 @@ export const ta: Dictionary = {
     home: 'முகப்பு',
     portfolio: 'போர்ட்ஃபோலியோ',
     settings: 'அமைப்புகள்',
+    admin: 'நிர்வாகி',
     superAdmin: 'சூப்பர் நிர்வாகி',
     superAdminPanel: 'சூப்பர் நிர்வாகி பேனல்',
   },
