@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,75 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
     })) || []
   );
   const [currentTab, setCurrentTab] = useState('context');
+
+  // Auto-save timer ref (debounce saves)
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Silent background save (no toast, no navigation)
+  const saveContextSilently = useCallback(async (
+    whoVal: string,
+    whenVal: string,
+    whereVal: string,
+    howPainfulVal: number,
+    currentSolutionVal: string
+  ) => {
+    try {
+      const contextData = {
+        cycle_id: cycle.id,
+        primary_users: whoVal,
+        frequency: whenVal,
+        pain_level: howPainfulVal,
+        current_workaround: currentSolutionVal,
+        completed: false,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Check if context exists
+      const { data: existing, error: fetchError } = await supabase
+        .from('contexts')
+        .select('id')
+        .eq('cycle_id', cycle.id)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Auto-save fetch error:', fetchError);
+        return;
+      }
+
+      if (existing) {
+        await supabase
+          .from('contexts')
+          .update(contextData)
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('contexts')
+          .insert({
+            ...contextData,
+            created_at: new Date().toISOString(),
+          });
+      }
+      console.log('Context auto-saved');
+    } catch (error) {
+      console.error('Auto-save error:', error);
+    }
+  }, [cycle.id, supabase]);
+
+  // Debounced auto-save trigger
+  const triggerAutoSave = useCallback((
+    whoVal: string,
+    whenVal: string,
+    whereVal: string,
+    howPainfulVal: number,
+    currentSolutionVal: string
+  ) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = setTimeout(() => {
+      saveContextSilently(whoVal, whenVal, whereVal, howPainfulVal, currentSolutionVal);
+    }, 1000); // Save 1 second after typing stops
+  }, [saveContextSilently]);
 
   const addInterview = () => {
     setInterviews([
@@ -234,7 +303,11 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                 <Label className="text-stone-300 mb-2 block">{t('stepUI.whoExperiences')}</Label>
                 <Textarea
                   value={who}
-                  onChange={(e) => setWho(e.target.value)}
+                  onChange={(e) => {
+                    const newWho = e.target.value;
+                    setWho(newWho);
+                    triggerAutoSave(newWho, when, where, howPainful, currentSolution);
+                  }}
                   placeholder={t('stepUI.whoExperiencesPlaceholder')}
                   className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
                 />
@@ -244,7 +317,11 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                 <Label className="text-stone-300 mb-2 block">{t('stepUI.whenHappens')}</Label>
                 <Textarea
                   value={when}
-                  onChange={(e) => setWhen(e.target.value)}
+                  onChange={(e) => {
+                    const newWhen = e.target.value;
+                    setWhen(newWhen);
+                    triggerAutoSave(who, newWhen, where, howPainful, currentSolution);
+                  }}
                   placeholder={t('stepUI.whenHappensPlaceholder')}
                   className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
                 />
@@ -254,7 +331,11 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                 <Label className="text-stone-300 mb-2 block">{t('stepUI.whereOccurs')}</Label>
                 <Input
                   value={where}
-                  onChange={(e) => setWhere(e.target.value)}
+                  onChange={(e) => {
+                    const newWhere = e.target.value;
+                    setWhere(newWhere);
+                    triggerAutoSave(who, when, newWhere, howPainful, currentSolution);
+                  }}
                   placeholder={t('stepUI.whereOccursPlaceholder')}
                   className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
                 />
@@ -266,7 +347,10 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                 </Label>
                 <Slider
                   value={[howPainful]}
-                  onValueChange={([value]) => setHowPainful(value)}
+                  onValueChange={([value]) => {
+                    setHowPainful(value);
+                    triggerAutoSave(who, when, where, value, currentSolution);
+                  }}
                   min={1}
                   max={10}
                   step={1}
@@ -278,7 +362,11 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
                 <Label className="text-stone-300 mb-2 block">{t('stepUI.howCurrentlySolve')}</Label>
                 <Textarea
                   value={currentSolution}
-                  onChange={(e) => setCurrentSolution(e.target.value)}
+                  onChange={(e) => {
+                    const newSolution = e.target.value;
+                    setCurrentSolution(newSolution);
+                    triggerAutoSave(who, when, where, howPainful, newSolution);
+                  }}
                   placeholder={t('stepUI.howCurrentlySolvePlaceholder')}
                   className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
                 />
