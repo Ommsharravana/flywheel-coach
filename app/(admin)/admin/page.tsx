@@ -67,20 +67,33 @@ export default async function AdminDashboardPage() {
   // Get unique user IDs from cycles for event admins
   const cycleUserIds = [...new Set(cycles.map((c) => c.user_id))];
 
-  // Fetch users (for superadmin: all users, for event admin: users with cycles in their events)
+  // Fetch users using RPC to bypass RLS
+  // Use get_all_users_admin for superadmin, filter by cycle users for event admins
   let users: UserRow[] = [];
 
   if (isSuperadmin) {
-    const { data: usersData } = await supabase.from('users').select('id, role, created_at');
-    users = (usersData || []) as unknown as UserRow[];
-  } else if (cycleUserIds.length > 0) {
-    // For event admins, only show users who have cycles in their events
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: usersData } = await (supabase as any)
-      .from('users')
-      .select('id, role, created_at')
-      .in('id', cycleUserIds);
-    users = (usersData || []) as unknown as UserRow[];
+    const { data: usersData } = await (supabase as any).rpc('get_all_users_admin', {
+      caller_user_id: effectiveUser.id
+    });
+    users = ((usersData || []) as { id: string; role: string; created_at: string }[]).map(u => ({
+      id: u.id,
+      role: u.role,
+      created_at: u.created_at
+    }));
+  } else if (cycleUserIds.length > 0) {
+    // For event admins, get all users via RPC then filter by cycle users
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: usersData } = await (supabase as any).rpc('get_all_users_admin', {
+      caller_user_id: effectiveUser.id
+    });
+    const allUsers = ((usersData || []) as { id: string; role: string; created_at: string }[]).map(u => ({
+      id: u.id,
+      role: u.role,
+      created_at: u.created_at
+    }));
+    // Filter to only users who have cycles in the admin's events
+    users = allUsers.filter(u => cycleUserIds.includes(u.id));
   }
 
   const totalUsers = users.length;
