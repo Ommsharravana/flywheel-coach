@@ -14,16 +14,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check admin access and get event scope
+    // Check admin access
     const adminEvents = await getAdminEvents(user.id);
-    const isSuperadmin = adminEvents.some(e => e.role === 'superadmin');
-
     if (adminEvents.length === 0) {
       return NextResponse.json({ error: 'Forbidden - admin access required' }, { status: 403 });
     }
-
-    // Get event IDs for filtering (null if superadmin sees all)
-    const eventIds = isSuperadmin ? null : adminEvents.map(e => e.id);
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -46,54 +41,20 @@ export async function GET(request: NextRequest) {
       direction: (searchParams.get('sort_dir') as ProblemSort['direction']) || 'desc',
     };
 
-    // Build query
+    // Use RPC function to fetch problems (bypasses RLS issues with auth.uid() in server components)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = (supabase as any)
-      .from('problem_bank')
-      .select(`
-        id,
-        title,
-        problem_statement,
-        theme,
-        status,
-        validation_status,
-        severity_rating,
-        desperate_user_score,
-        created_at,
-        institution_id,
-        submitted_by,
-        institutions!problem_bank_institution_id_fkey (name, short_name)
-      `, { count: 'exact' });
-
-    // Apply event filtering for non-superadmin
-    if (eventIds) {
-      query = query.in('event_id', eventIds);
-    }
-
-    // Apply filters
-    if (filters.theme) {
-      query = query.eq('theme', filters.theme);
-    }
-    if (filters.status) {
-      query = query.eq('status', filters.status);
-    }
-    if (filters.validation_status) {
-      query = query.eq('validation_status', filters.validation_status);
-    }
-    if (filters.institution_id) {
-      query = query.eq('institution_id', filters.institution_id);
-    }
-    if (filters.search) {
-      query = query.or(`title.ilike.%${filters.search}%,problem_statement.ilike.%${filters.search}%`);
-    }
-
-    // Apply sorting
-    query = query.order(sort.field, { ascending: sort.direction === 'asc' });
-
-    // Apply pagination
-    query = query.range(offset, offset + perPage - 1);
-
-    const { data: problems, error: queryError, count } = await query;
+    const { data: problems, error: queryError } = await (supabase as any).rpc('get_all_problems_admin', {
+      caller_user_id: user.id,
+      theme_filter: filters.theme || null,
+      status_filter: filters.status || null,
+      validation_status_filter: filters.validation_status || null,
+      institution_filter: filters.institution_id || null,
+      search_term: filters.search || null,
+      sort_field: sort.field,
+      sort_direction: sort.direction,
+      page_offset: offset,
+      page_limit: perPage
+    });
 
     if (queryError) {
       console.error('Error fetching problems:', queryError);
@@ -103,18 +64,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get attempt counts for each problem
+    // Get total count from first row (if any)
+    const totalCount = problems && problems.length > 0 ? Number(problems[0].total_count) : 0;
+
+    // Get attempt counts for each problem using RPC
     const problemIds = problems?.map((p: { id: string }) => p.id) || [];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: attemptCounts } = problemIds.length > 0 ? await (supabase as any)
-      .from('problem_attempts')
-      .select('problem_id')
-      .in('problem_id', problemIds) : { data: [] };
+    const { data: attemptCounts } = problemIds.length > 0 ? await (supabase as any).rpc('get_problem_attempt_counts', {
+      problem_ids: problemIds
+    }) : { data: [] };
 
-    // Count attempts per problem
-    const attemptsMap = (attemptCounts || []).reduce((acc: Record<string, number>, curr: { problem_id: string }) => {
-      acc[curr.problem_id] = (acc[curr.problem_id] || 0) + 1;
+    // Build attempts map
+    const attemptsMap = (attemptCounts || []).reduce((acc: Record<string, number>, curr: { problem_id: string; attempt_count: number }) => {
+      acc[curr.problem_id] = curr.attempt_count;
       return acc;
     }, {});
 
@@ -131,16 +94,16 @@ export async function GET(request: NextRequest) {
       desperate_user_score: p.desperate_user_score,
       created_at: p.created_at,
       attempt_count: attemptsMap[p.id] || 0,
-      institution_name: p.institutions?.name || undefined,
-      institution_short: p.institutions?.short_name || undefined,
+      institution_name: p.institution_name || undefined,
+      institution_short: p.institution_short_name || undefined,
     }));
 
     return NextResponse.json({
       data: cardData,
-      total: count || 0,
+      total: totalCount,
       page,
       per_page: perPage,
-      total_pages: Math.ceil((count || 0) / perPage),
+      total_pages: Math.ceil(totalCount / perPage),
     });
 
   } catch (error) {
