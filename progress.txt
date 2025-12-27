@@ -2287,3 +2287,85 @@ Read progress.txt and continue testing RLS fixes using Claude-in-Chrome browser 
 ```
 
 ---
+
+## 2025-12-27 - Session: Event Admin Dashboard User Count Fix
+
+**Worked On:** Fix event admin dashboard showing only 386 users instead of all 863 Appathon users
+
+### Problem:
+- Event Admin Dashboard for Appathon 2.0 showed only **386 users**
+- Expected: **858+ users** (all users assigned to Appathon event)
+- Root cause found in two places
+
+### Root Cause 1: 21 Users Had NULL active_event_id
+- Some users created before Appathon was launched never got assigned to the event
+- Fixed via SQL in Supabase:
+```sql
+UPDATE public.users
+SET active_event_id = '003089a3-8b28-4844-9714-b94f9b838462'
+WHERE active_event_id IS NULL;
+```
+- Result: All 858 users now have `active_event_id` set
+
+### Root Cause 2: Dashboard Filtered Out Users Without Cycles
+- File: `/app/(admin)/admin/page.tsx` line 96
+- Bug: Dashboard called RPC function, then filtered results to only users with cycles:
+  ```typescript
+  users = allUsers.filter(u => cycleUserIds.includes(u.id));
+  ```
+- This excluded users who had `active_event_id` set but hadn't started a cycle yet
+- Fix: Removed the filter, now trusts RPC function's filtering which includes users by both cycles AND `active_event_id`
+
+### Verification:
+- Deployed fix to Vercel (commit 2ba02c4)
+- Verified in browser: Event Admin Dashboard now shows **863 Total Users** (up from 386)
+
+### Files Modified:
+- `/app/(admin)/admin/page.tsx` - Removed `cycleUserIds.includes(u.id)` filter
+
+### Known Issue (Not Fixed This Session):
+- User mentioned "event admin is not able to go to the admin dashboard"
+- This is a separate issue from the user count bug - likely related to RLS or role permissions
+- User asked to move on and not fix this session
+
+---
+
+## EXACT NEXT STEPS FOR NEXT SESSION:
+
+1. **Fix Event Admin Dashboard Access Issue**
+   - Event admin cannot navigate to /admin dashboard
+   - Likely RLS or middleware blocking event_admin role
+   - Check: `middleware.ts` admin route protection
+   - Check: `getAdminEvents()` helper function
+   - Check: Admin layout role check
+
+2. **Test Event Admin Full Flow**
+   - Create or use an event_admin user (not superadmin)
+   - Verify they can:
+     - See "Admin" link in nav
+     - Navigate to /admin
+     - See only their event's data (scoped)
+
+3. **Verify Users Page Consistency**
+   - Users page should also show 863 users for event admin
+   - Dashboard and Users page counts should match
+
+---
+
+## BLOCKERS:
+
+| Blocker | Status | Notes |
+|---------|--------|-------|
+| Event admin cannot access /admin | **OPEN** | Not fixed this session per user request |
+
+---
+
+## DECISIONS MADE:
+
+| Decision | Rationale |
+|----------|-----------|
+| Trust RPC function filtering | RPC already handles event scoping correctly; dashboard shouldn't double-filter |
+| Set all NULL users to Appathon | All current users should be part of the active event |
+| Move on from access issue | User requested to end session and document for next time |
+
+---

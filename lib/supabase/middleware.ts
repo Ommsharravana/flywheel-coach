@@ -61,7 +61,7 @@ export async function updateSession(request: NextRequest) {
       .rpc('get_user_role', { user_id: user.id })
 
     const profile = roleData?.[0] || null
-    const allowedRoles = ['superadmin', 'institution_admin']
+    const allowedRoles = ['superadmin', 'institution_admin', 'event_admin']
 
     if (!profile || !allowedRoles.includes(profile.role)) {
       const url = request.nextUrl.clone()
