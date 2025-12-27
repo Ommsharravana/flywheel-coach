@@ -180,14 +180,12 @@ export async function getAdminEvents(userId: string): Promise<
 > {
   const supabase = await createClient();
 
-  // Check if superadmin
-  const { data: userData } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .single() as { data: { role: string } | null };
+  // Check if superadmin using RPC (bypasses RLS, handles auth.uid() issues in server components)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: userId });
+  const userRole = (roleData as { role: string }[] | null)?.[0]?.role;
 
-  if (userData?.role === 'superadmin') {
+  if (userRole === 'superadmin') {
     // Return all active events
     const { data: events } = await supabase
       .from('events')

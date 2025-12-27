@@ -1,6 +1,41 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
+interface PipelineCandidate {
+  id: string;
+  problem_id: string;
+  stage: string;
+  identified_at: string;
+  identified_by: string | null;
+  screened_at: string | null;
+  shortlisted_at: string | null;
+  incubation_started_at: string | null;
+  graduated_at: string | null;
+  jobs_created: number | null;
+  revenue_generated: number | null;
+  decision_notes: string | null;
+  problem_title: string;
+  problem_statement: string;
+  problem_theme: string | null;
+  problem_status: string;
+  problem_validation_status: string;
+  problem_severity_rating: number | null;
+  problem_institution_id: string | null;
+  problem_created_at: string;
+  institution_name: string | null;
+  institution_short_name: string | null;
+  composite_score: number | null;
+}
+
+interface PipelineStats {
+  total_candidates: number;
+  by_stage: Record<string, number>;
+  total_startups: number;
+  total_jobs_created: number;
+  total_revenue: number;
+  avg_time_to_graduation_days: number | null;
+}
+
 // GET /api/pipeline - Get all NIF candidates with details
 export async function GET(request: NextRequest) {
   try {
@@ -16,33 +51,12 @@ export async function GET(request: NextRequest) {
     const stage = searchParams.get('stage');
     const includeStats = searchParams.get('include_stats') === 'true';
 
-    // Fetch candidates with problem details
+    // Use RPC function to fetch pipeline (bypasses RLS issues with auth.uid() in server components)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = (supabase as any)
-      .from('nif_candidates')
-      .select(`
-        *,
-        problem_bank!inner (
-          id,
-          title,
-          problem_statement,
-          theme,
-          status,
-          validation_status,
-          severity_rating,
-          institution_id,
-          created_at,
-          institutions!problem_bank_institution_id_fkey (name, short_name)
-        ),
-        problem_scores (composite_score)
-      `)
-      .order('identified_at', { ascending: false });
-
-    if (stage && stage !== 'all') {
-      query = query.eq('stage', stage);
-    }
-
-    const { data: candidates, error: fetchError } = await query;
+    const { data: candidates, error: fetchError } = await (supabase as any).rpc('get_nif_pipeline_admin', {
+      caller_user_id: user.id,
+      stage_filter: stage || null
+    });
 
     if (fetchError) {
       console.error('Error fetching pipeline:', fetchError);
@@ -52,75 +66,52 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Transform data
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transformedCandidates = candidates?.map((c: any) => ({
-      ...c,
+    // Transform RPC data to expected format
+    const transformedCandidates = ((candidates || []) as PipelineCandidate[]).map((c) => ({
+      id: c.id,
+      problem_id: c.problem_id,
+      stage: c.stage,
+      identified_at: c.identified_at,
+      identified_by: c.identified_by,
+      screened_at: c.screened_at,
+      shortlisted_at: c.shortlisted_at,
+      incubation_started_at: c.incubation_started_at,
+      graduated_at: c.graduated_at,
+      jobs_created: c.jobs_created,
+      revenue_generated: c.revenue_generated,
+      decision_notes: c.decision_notes,
       problem: {
-        id: c.problem_bank.id,
-        title: c.problem_bank.title,
-        problem_statement: c.problem_bank.problem_statement,
-        theme: c.problem_bank.theme,
-        status: c.problem_bank.status,
-        validation_status: c.problem_bank.validation_status,
-        severity_rating: c.problem_bank.severity_rating,
-        created_at: c.problem_bank.created_at,
+        id: c.problem_id,
+        title: c.problem_title,
+        problem_statement: c.problem_statement,
+        theme: c.problem_theme,
+        status: c.problem_status,
+        validation_status: c.problem_validation_status,
+        severity_rating: c.problem_severity_rating,
+        created_at: c.problem_created_at,
       },
-      institution_name: c.problem_bank.institutions?.name,
-      institution_short: c.problem_bank.institutions?.short_name,
-      composite_score: c.problem_scores?.[0]?.composite_score || null,
-      problem_bank: undefined,
-      problem_scores: undefined,
-    })) || [];
+      institution_name: c.institution_name,
+      institution_short: c.institution_short_name,
+      composite_score: c.composite_score,
+    }));
 
-    let stats = null;
+    let stats: PipelineStats | null = null;
     if (includeStats) {
-      // Get pipeline stats
+      // Use RPC function to fetch stats
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: allCandidates } = await (supabase as any)
-        .from('nif_candidates')
-        .select('stage, jobs_created, revenue_generated, graduated_at, identified_at');
+      const { data: statsData } = await (supabase as any).rpc('get_nif_pipeline_stats_admin', {
+        caller_user_id: user.id
+      });
 
-      if (allCandidates) {
-        const byStage: Record<string, number> = {
-          identified: 0,
-          screened: 0,
-          shortlisted: 0,
-          incubating: 0,
-          graduated: 0,
-          rejected: 0,
-          on_hold: 0,
-        };
-
-        let totalJobs = 0;
-        let totalRevenue = 0;
-        let graduatedCount = 0;
-        let totalGraduationDays = 0;
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        allCandidates.forEach((c: any) => {
-          byStage[c.stage] = (byStage[c.stage] || 0) + 1;
-          totalJobs += c.jobs_created || 0;
-          totalRevenue += parseFloat(c.revenue_generated) || 0;
-
-          if (c.stage === 'graduated' && c.graduated_at && c.identified_at) {
-            graduatedCount++;
-            const days = Math.floor(
-              (new Date(c.graduated_at).getTime() - new Date(c.identified_at).getTime()) /
-                (1000 * 60 * 60 * 24)
-            );
-            totalGraduationDays += days;
-          }
-        });
-
+      if (statsData && statsData.length > 0) {
+        const s = statsData[0];
         stats = {
-          total_candidates: allCandidates.length,
-          by_stage: byStage,
-          total_startups: byStage.incubating + byStage.graduated,
-          total_jobs_created: totalJobs,
-          total_revenue: totalRevenue,
-          avg_time_to_graduation_days:
-            graduatedCount > 0 ? Math.round(totalGraduationDays / graduatedCount) : null,
+          total_candidates: s.total_candidates || 0,
+          by_stage: s.by_stage || {},
+          total_startups: s.total_startups || 0,
+          total_jobs_created: s.total_jobs_created || 0,
+          total_revenue: parseFloat(s.total_revenue) || 0,
+          avg_time_to_graduation_days: s.avg_time_to_graduation_days,
         };
       }
     }

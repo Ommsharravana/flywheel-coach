@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,6 +13,19 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import Link from 'next/link';
+
+interface ActivityLogFromRPC {
+  id: string;
+  admin_id: string;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  details: Record<string, unknown> | null;
+  ip_address: string | null;
+  created_at: string;
+  admin_name: string | null;
+  admin_email: string;
+}
 
 interface ActivityLog {
   id: string;
@@ -67,19 +81,29 @@ const actionLabels: Record<string, string> = {
 export default async function AdminActivityPage() {
   const supabase = await createClient();
 
-  // Fetch activity logs with admin info (using type assertion for new table)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any)
-    .from('admin_activity_logs')
-    .select(`
-      *,
-      admin:users!admin_activity_logs_admin_id_fkey (id, name, email)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(100);
+  // Get auth user for passing to RPC
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) redirect('/login');
 
-  // Cast to proper type
-  const logs = (data || []) as unknown as ActivityLog[];
+  // Use RPC function to fetch activity logs (bypasses RLS issues with auth.uid() in server components)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: logsData } = await (supabase as any).rpc('get_admin_activity_logs', {
+    caller_user_id: authUser.id,
+    limit_count: 100
+  });
+
+  // Transform RPC response to match expected interface
+  const logs: ActivityLog[] = ((logsData || []) as ActivityLogFromRPC[]).map((l) => ({
+    id: l.id,
+    admin_id: l.admin_id,
+    action: l.action,
+    entity_type: l.entity_type,
+    entity_id: l.entity_id,
+    details: l.details,
+    ip_address: l.ip_address,
+    created_at: l.created_at,
+    admin: l.admin_email ? { id: l.admin_id, name: l.admin_name, email: l.admin_email } : null,
+  }));
 
   // Get unique action types for stats
   const actionCounts: Record<string, number> = {};
