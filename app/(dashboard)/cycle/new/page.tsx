@@ -14,12 +14,13 @@ export default async function NewCyclePage() {
   }
 
   // Check if user has an institution (required for cycle creation, except superadmins)
+  // Also get active_event_id for linking cycles to events
   // Use RPC function to bypass RLS
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: roleData } = await (supabase as any)
-    .rpc('get_user_role', { user_id: effectiveUserId });
+  const { data: profileData } = await (supabase as any)
+    .rpc('get_user_profile', { p_user_id: effectiveUserId });
 
-  const profile = (roleData as { role: string; institution_id: string | null }[] | null)?.[0] || null;
+  const profile = (profileData as { role: string; institution_id: string | null; active_event_id: string | null }[] | null)?.[0] || null;
   const needsInstitution = !profile?.institution_id && profile?.role !== 'superadmin';
 
   if (needsInstitution) {
@@ -37,6 +38,7 @@ export default async function NewCyclePage() {
     name: 'New Cycle',
     status: 'active',
     current_step: 1,
+    event_id: profile?.active_event_id || null,
   });
 
   if (error) {

@@ -72,19 +72,12 @@ export async function getMethodologyForCycle(cycleId: string): Promise<{
 }> {
   const supabase = await createClient();
 
-  // Get cycle with event info
+  // Get cycle info
   const { data: cycleData } = await supabase
     .from('cycles')
-    .select(`
-      id,
-      event_id,
-      user_id,
-      users!cycles_user_id_fkey (
-        active_event_id
-      )
-    `)
+    .select('id, event_id, user_id')
     .eq('id', cycleId)
-    .single() as { data: { id: string; event_id: string | null; user_id: string; users: { active_event_id: string | null } | null } | null };
+    .single() as { data: { id: string; event_id: string | null; user_id: string } | null };
 
   if (!cycleData) {
     return {
@@ -96,7 +89,17 @@ export async function getMethodologyForCycle(cycleId: string): Promise<{
   }
 
   // Prefer cycle's event_id, fallback to user's active_event_id
-  const eventId = cycleData.event_id || cycleData.users?.active_event_id;
+  let eventId = cycleData.event_id;
+
+  // If cycle doesn't have event_id, fetch user's active_event_id using RPC (bypasses RLS)
+  if (!eventId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profileData } = await (supabase as any)
+      .rpc('get_user_profile', { p_user_id: cycleData.user_id });
+
+    const userProfile = (profileData as { active_event_id: string | null }[] | null)?.[0];
+    eventId = userProfile?.active_event_id || null;
+  }
 
   if (!eventId) {
     return {
