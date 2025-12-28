@@ -227,7 +227,23 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
         } else {
           // Auto-fill from cycle data
           setAppName(cycle.name || '');
-          setProblemStatement(cycle.problem?.statement || cycle.problem?.refinedStatement || '');
+
+          // Auto-fill problem statement with fallback to answers
+          let problemText = cycle.problem?.statement || cycle.problem?.refinedStatement || '';
+          if (!problemText && cycle.problem?.answers) {
+            const answers = cycle.problem.answers;
+            // Construct problem statement from answers if no explicit statement saved
+            const parts: string[] = [];
+            if (answers.question1) parts.push(answers.question1);
+            if (answers.question2) parts.push(answers.question2);
+            if (answers.question3) parts.push(answers.question3);
+            if (answers.question4) parts.push(answers.question4);
+            if (answers.question5) parts.push(answers.question5);
+            // Use the most substantial answer as the problem statement
+            problemText = parts.sort((a, b) => b.length - a.length)[0] || '';
+          }
+          setProblemStatement(problemText);
+
           setLiveUrl(cycle.build?.projectUrl || '');
           setLovableUrl(cycle.build?.lovableUrl || '');
         }
