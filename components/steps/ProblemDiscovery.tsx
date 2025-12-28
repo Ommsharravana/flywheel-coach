@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Cycle, Problem } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -85,7 +85,9 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
 
   // Refs for auto-save
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const statementSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const problemIdRef = useRef<string | null>(cycle.problem?.id || null);
+  const isInitialMount = useRef(true);
 
   // Initialize state from existing problem or empty
   const [answers, setAnswers] = useState<Record<string, string>>(
@@ -159,6 +161,29 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
       saveProblemSilently(newAnswers);
     }, 1000);
   };
+
+  // Auto-save when problemStatement or refinedStatement changes
+  // This ensures Appathon template selections are saved to database
+  useEffect(() => {
+    // Skip initial mount to avoid unnecessary save on load
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Only auto-save if there's actual content
+    if (!problemStatement && !refinedStatement) return;
+
+    // Debounced auto-save for statement changes
+    if (statementSaveTimerRef.current) clearTimeout(statementSaveTimerRef.current);
+    statementSaveTimerRef.current = setTimeout(() => {
+      saveProblemSilently(answers);
+    }, 1000);
+
+    return () => {
+      if (statementSaveTimerRef.current) clearTimeout(statementSaveTimerRef.current);
+    };
+  }, [problemStatement, refinedStatement, answers, saveProblemSilently]);
 
   const generateProblemStatement = () => {
     // Simple concatenation of answers into a problem statement
