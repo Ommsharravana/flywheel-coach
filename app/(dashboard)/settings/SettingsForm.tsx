@@ -18,6 +18,7 @@ interface SettingsFormProps {
     department: string | null;
     year_of_study: number | null;
     language: string | null;
+    role: string | null;
   } | null;
   userId: string;
 }
@@ -31,6 +32,7 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
   const [department, setDepartment] = useState(profile?.department || '');
   const [yearOfStudy, setYearOfStudy] = useState(profile?.year_of_study?.toString() || '');
   const [language, setLanguage] = useState(profile?.language || 'en');
+  const [role, setRole] = useState(profile?.role || 'learner');
 
   const handleSave = () => {
     startTransition(async () => {
@@ -42,6 +44,7 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
             department: department.trim() || null,
             year_of_study: yearOfStudy ? parseInt(yearOfStudy) : null,
             language,
+            role,
             updated_at: new Date().toISOString(),
           })
           .eq('id', userId);
@@ -51,8 +54,13 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
         toast.success('Profile updated successfully!');
         router.refresh();
       } catch (error) {
-        console.error('Error updating profile:', error);
-        toast.error('Failed to update profile');
+        const errorMessage = error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message: unknown }).message)
+            : JSON.stringify(error);
+        console.error('Error updating profile:', errorMessage, error);
+        toast.error(`Failed to update profile: ${errorMessage}`);
       }
     });
   };
@@ -113,6 +121,41 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
                 <SelectItem value="ta">தமிழ் (Tamil)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        {/* Role Selection - For Appathon Team Formation */}
+        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+              <span className="text-amber-400 text-lg">🎓</span>
+            </div>
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="role" className="text-stone-200 font-medium">
+                Your Role
+              </Label>
+              <p className="text-sm text-stone-400">
+                Senior Learners mentor teams through the Problem-to-Impact Flywheel.
+                Choose this if you have experience and want to guide others.
+              </p>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger className="bg-stone-800/50 border-stone-700 w-full sm:w-64">
+                  <SelectValue placeholder="Select your role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="learner">
+                    <span className="flex items-center gap-2">
+                      <span>👤</span> Learner
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="senior_learner">
+                    <span className="flex items-center gap-2">
+                      <span>🎓</span> Senior Learner (Mentor)
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
