@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -25,14 +26,41 @@ export async function GET(request: NextRequest) {
   const eventId = searchParams.get('event_id') || null;
   const limit = parseInt(searchParams.get('limit') || '20', 10);
 
-  // Use RPC function to bypass RLS
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: users, error } = await (supabase as any).rpc('search_users_for_team', {
-    search_query: query,
-    role_filter: role,
-    event_id_filter: eventId,
-    result_limit: limit,
-  });
+  // Create service role client to bypass RLS for user search
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // Build query for user search
+  let dbQuery = serviceClient
+    .from('users')
+    .select(`
+      id,
+      name,
+      email,
+      role,
+      institutions:institution_id (name)
+    `)
+    .limit(limit)
+    .order('name', { ascending: true });
+
+  // Apply search filter (name or email)
+  if (query.trim()) {
+    dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%`);
+  }
+
+  // Apply role filter
+  if (role) {
+    dbQuery = dbQuery.eq('role', role);
+  }
+
+  // Apply event filter
+  if (eventId) {
+    dbQuery = dbQuery.eq('active_event_id', eventId);
+  }
+
+  const { data: users, error } = await dbQuery;
 
   if (error) {
     console.error('User search error:', error);
@@ -40,18 +68,13 @@ export async function GET(request: NextRequest) {
   }
 
   // Transform the response to match expected format
-  const transformedUsers = (users || []).map((u: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    institution: string | null;
-  }) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const transformedUsers = (users || []).map((u: any) => ({
     id: u.id,
     name: u.name || 'Unknown',
     email: u.email,
     role: u.role,
-    institution: u.institution,
+    institution: u.institutions?.name || null,
   }));
 
   return NextResponse.json({ users: transformedUsers });
