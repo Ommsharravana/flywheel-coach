@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
 
   // Use RPC function which bypasses RLS (SECURITY DEFINER)
   // This avoids infinite recursion from RLS policies that query users table
-  const { data: users, error } = await supabase.rpc('search_users_for_team', {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: users, error } = await (supabase.rpc as any)('search_users_for_team', {
     search_query: query,
     role_filter: role,
     event_id_filter: eventId,
