@@ -25,36 +25,14 @@ export async function GET(request: NextRequest) {
   const eventId = searchParams.get('event_id') || null;
   const limit = parseInt(searchParams.get('limit') || '20', 10);
 
-  // Build query for user search
-  // RLS policy allows authenticated users to search other users
-  let dbQuery = supabase
-    .from('users')
-    .select(`
-      id,
-      name,
-      email,
-      role,
-      institutions:institution_id (name)
-    `)
-    .limit(limit)
-    .order('name', { ascending: true });
-
-  // Apply search filter (name or email)
-  if (query.trim()) {
-    dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%`);
-  }
-
-  // Apply role filter
-  if (role) {
-    dbQuery = dbQuery.eq('role', role);
-  }
-
-  // Apply event filter
-  if (eventId) {
-    dbQuery = dbQuery.eq('active_event_id', eventId);
-  }
-
-  const { data: users, error } = await dbQuery;
+  // Use RPC function which bypasses RLS (SECURITY DEFINER)
+  // This avoids infinite recursion from RLS policies that query users table
+  const { data: users, error } = await supabase.rpc('search_users_for_team', {
+    search_query: query,
+    role_filter: role,
+    event_id_filter: eventId,
+    result_limit: limit,
+  });
 
   if (error) {
     console.error('User search error:', error);
@@ -62,13 +40,12 @@ export async function GET(request: NextRequest) {
   }
 
   // Transform the response to match expected format
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const transformedUsers = (users || []).map((u: any) => ({
+  const transformedUsers = (users || []).map((u: { id: string; name: string; email: string; role: string; institution: string | null }) => ({
     id: u.id,
     name: u.name || 'Unknown',
     email: u.email,
     role: u.role,
-    institution: u.institutions?.name || null,
+    institution: u.institution,
   }));
 
   return NextResponse.json({ users: transformedUsers });
