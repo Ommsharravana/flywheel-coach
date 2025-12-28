@@ -21,24 +21,25 @@ import {
   ChevronRight,
   FileText,
   Loader2,
-  Plus,
   Save,
   Trash2,
   Trophy,
   Upload,
   Users,
   Video,
+  UserCheck,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { UserSearchCombobox, UserMultiSelect, UserResult } from '@/components/user-search-combobox';
 
 interface AppathonSubmissionProps {
   cycle: Cycle;
 }
 
-interface TeamMember {
+// Legacy interface for backward compatibility with existing submissions
+interface LegacyTeamMember {
   name: string;
   email: string;
   institution: string;
@@ -85,12 +86,10 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
   const [submissionStatus, setSubmissionStatus] = useState<string>('draft');
   const [submissionNumber, setSubmissionNumber] = useState<string | null>(null);
 
-  // Participation type
-  const [participationType, setParticipationType] = useState<'individual' | 'team'>('individual');
+  // Team info (always team-based, no individual option)
   const [teamName, setTeamName] = useState('');
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    { name: '', email: '', institution: '', department: '', year: '' },
-  ]);
+  const [seniorLearner, setSeniorLearner] = useState<UserResult | null>(null);
+  const [teamMembers, setTeamMembers] = useState<UserResult[]>([]);
 
   // Applicant details
   const [applicantName, setApplicantName] = useState('');
@@ -185,13 +184,26 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
           setExistingSubmissionId(submissionData.id);
           setSubmissionStatus(submissionData.status);
           setSubmissionNumber(submissionData.submission_number);
-          setParticipationType(submissionData.participation_type || 'individual');
           setTeamName(submissionData.team_name || '');
-          setTeamMembers(
-            submissionData.team_members?.length > 0
-              ? submissionData.team_members
-              : [{ name: '', email: '', institution: '', department: '', year: '' }]
-          );
+
+          // Handle senior learner (new format: UserResult object)
+          if (submissionData.senior_learner) {
+            setSeniorLearner(submissionData.senior_learner as UserResult);
+          }
+
+          // Handle team members (new format: array of UserResult objects)
+          // Also support legacy format for backward compatibility
+          if (submissionData.team_members?.length > 0) {
+            const firstMember = submissionData.team_members[0];
+            // Check if it's new format (has 'id' property) or legacy format
+            if (firstMember && typeof firstMember === 'object' && 'id' in firstMember) {
+              setTeamMembers(submissionData.team_members as UserResult[]);
+            } else {
+              // Legacy format - just log for now, can't convert without user lookup
+              console.log('Legacy team members format detected');
+              setTeamMembers([]);
+            }
+          }
           setApplicantName(submissionData.applicant_name || '');
           setApplicantEmail(submissionData.applicant_email || '');
           setApplicantPhone(submissionData.applicant_phone || '');
@@ -230,25 +242,14 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
     loadData();
   }, [cycle, supabase]);
 
-  // Team member management
-  const addTeamMember = () => {
-    setTeamMembers([
-      ...teamMembers,
-      { name: '', email: '', institution: '', department: '', year: '' },
-    ]);
-  };
+  // Get total team size (senior learner + other team members)
+  const totalTeamSize = (seniorLearner ? 1 : 0) + teamMembers.length;
 
-  const updateTeamMember = (index: number, field: keyof TeamMember, value: string) => {
-    const updated = [...teamMembers];
-    updated[index][field] = value;
-    setTeamMembers(updated);
-  };
-
-  const removeTeamMember = (index: number) => {
-    if (teamMembers.length > 1) {
-      setTeamMembers(teamMembers.filter((_, i) => i !== index));
-    }
-  };
+  // Get all team member IDs for exclusion from search
+  const allTeamMemberIds = [
+    ...(seniorLearner ? [seniorLearner.id] : []),
+    ...teamMembers.map(m => m.id),
+  ];
 
   // Screenshot management
   const addScreenshot = () => {
@@ -269,10 +270,20 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
 
   // Validation
   const isValid = () => {
+    // Basic required fields
     if (!applicantName || !applicantEmail || !appName || !problemStatement || !category) {
       return false;
     }
-    if (participationType === 'team' && !teamName) {
+    // Team name is required
+    if (!teamName) {
+      return false;
+    }
+    // Must have at least 1 senior learner
+    if (!seniorLearner) {
+      return false;
+    }
+    // Total team size must be at least 2 (senior learner + at least 1 other member)
+    if (totalTeamSize < 2) {
       return false;
     }
     return true;
@@ -306,10 +317,10 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
         cycle_id: cycle.id,
         event_id: userData.active_event_id,
         user_id: user.id,
-        participation_type: participationType,
-        team_name: participationType === 'team' ? teamName : null,
-        team_members:
-          participationType === 'team' ? teamMembers.filter((m) => m.name.trim()) : [],
+        participation_type: 'team', // Always team now
+        team_name: teamName,
+        senior_learner: seniorLearner, // Store the full UserResult object
+        team_members: teamMembers, // Store array of UserResult objects
         applicant_name: applicantName,
         applicant_email: applicantEmail,
         applicant_phone: applicantPhone || null,
@@ -449,10 +460,10 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
                 </p>
               </div>
               <div>
-                <Label className="text-stone-500 text-sm">Participation</Label>
-                <p className="text-stone-200 capitalize">
-                  {participationType}
-                  {participationType === 'team' && teamName && ` - ${teamName}`}
+                <Label className="text-stone-500 text-sm">Team</Label>
+                <p className="text-stone-200">
+                  {teamName || 'Unnamed Team'}
+                  <span className="text-stone-400 ml-2">({totalTeamSize} members)</span>
                 </p>
               </div>
               <div>
@@ -505,106 +516,81 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
         </Card>
       )}
 
-      {/* Participation Type */}
+      {/* Team Details */}
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-lg text-stone-100 flex items-center gap-2">
             <Users className="w-5 h-5 text-amber-400" />
-            Participation Type
+            Team Details
           </CardTitle>
+          <CardDescription>
+            Build your team with at least 2 members (including 1 Senior Learner)
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-4">
-            <Button
-              variant={participationType === 'individual' ? 'default' : 'outline'}
-              onClick={() => setParticipationType('individual')}
-              className={participationType === 'individual' ? 'bg-amber-500 text-stone-900' : ''}
-            >
-              Individual
-            </Button>
-            <Button
-              variant={participationType === 'team' ? 'default' : 'outline'}
-              onClick={() => setParticipationType('team')}
-              className={participationType === 'team' ? 'bg-amber-500 text-stone-900' : ''}
-            >
-              Team
-            </Button>
+        <CardContent className="space-y-6">
+          {/* Team Name */}
+          <div>
+            <Label className="text-stone-300">Team Name *</Label>
+            <Input
+              value={teamName}
+              onChange={(e) => setTeamName(e.target.value)}
+              placeholder="Your team name"
+              className="bg-stone-800/50 border-stone-700 mt-1"
+            />
           </div>
 
-          <AnimatePresence>
-            {participationType === 'team' && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="space-y-4"
-              >
-                <div>
-                  <Label className="text-stone-300">Team Name *</Label>
-                  <Input
-                    value={teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
-                    placeholder="Your team name"
-                    className="bg-stone-800/50 border-stone-700 mt-1"
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-stone-300">Team Members</Label>
-                  {teamMembers.map((member, index) => (
-                    <div
-                      key={index}
-                      className="p-4 bg-stone-800/30 rounded-lg border border-stone-700 space-y-3"
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="text-stone-400 text-sm">Member {index + 1}</span>
-                        {teamMembers.length > 1 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeTeamMember(index)}
-                            className="text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="grid md:grid-cols-2 gap-3">
-                        <Input
-                          value={member.name}
-                          onChange={(e) => updateTeamMember(index, 'name', e.target.value)}
-                          placeholder="Name"
-                          className="bg-stone-800/50 border-stone-700"
-                        />
-                        <Input
-                          value={member.email}
-                          onChange={(e) => updateTeamMember(index, 'email', e.target.value)}
-                          placeholder="Email"
-                          className="bg-stone-800/50 border-stone-700"
-                        />
-                        <Input
-                          value={member.institution}
-                          onChange={(e) => updateTeamMember(index, 'institution', e.target.value)}
-                          placeholder="Institution"
-                          className="bg-stone-800/50 border-stone-700"
-                        />
-                        <Input
-                          value={member.department}
-                          onChange={(e) => updateTeamMember(index, 'department', e.target.value)}
-                          placeholder="Department"
-                          className="bg-stone-800/50 border-stone-700"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <Button variant="outline" onClick={addTeamMember} className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Team Member
-                  </Button>
-                </div>
-              </motion.div>
+          {/* Senior Learner (Mandatory) */}
+          <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30 space-y-3">
+            <div className="flex items-center gap-2">
+              <UserCheck className="w-5 h-5 text-amber-400" />
+              <Label className="text-amber-300 font-medium">Senior Learner (Mandatory)</Label>
+            </div>
+            <p className="text-stone-400 text-sm">
+              Every team must have at least one Senior Learner as a mentor/guide.
+            </p>
+            <UserSearchCombobox
+              placeholder="Search for a Senior Learner..."
+              roleFilter="senior_learner"
+              eventId={activeEvent?.id}
+              value={seniorLearner}
+              onSelect={setSeniorLearner}
+              excludeIds={teamMembers.map(m => m.id)}
+              required
+            />
+            {!seniorLearner && (
+              <p className="text-red-400 text-sm flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                A Senior Learner is required
+              </p>
             )}
-          </AnimatePresence>
+          </div>
+
+          {/* Other Team Members */}
+          <div className="space-y-3">
+            <Label className="text-stone-300">
+              Other Team Members
+              <span className="text-stone-500 font-normal ml-2">
+                (Current team size: {totalTeamSize}/10)
+              </span>
+            </Label>
+            <p className="text-stone-400 text-sm">
+              Add learners to your team. Total team size must be at least 2 (including the Senior Learner).
+            </p>
+            <UserMultiSelect
+              placeholder="Search for team members..."
+              eventId={activeEvent?.id}
+              value={teamMembers}
+              onChange={setTeamMembers}
+              minUsers={1}
+              maxUsers={9} // Max 9 other members + 1 senior learner = 10 total
+            />
+            {totalTeamSize < 2 && seniorLearner && (
+              <p className="text-amber-400 text-sm flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                Add at least 1 more team member
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -616,7 +602,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
             Applicant Details
           </CardTitle>
           <CardDescription>
-            {participationType === 'team' ? 'Primary contact for the team' : 'Your details'}
+            Primary contact for the team
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
