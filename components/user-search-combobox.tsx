@@ -13,7 +13,7 @@ interface UserResult {
   email: string;
   role: string;
   institution: string | null;
-  isSeniorLearner?: boolean;
+  userCategory: 'learner' | 'senior_learner';
 }
 
 interface UserSearchComboboxProps {
@@ -21,8 +21,8 @@ interface UserSearchComboboxProps {
   placeholder?: string;
   /** Filter by role for permission levels (e.g., 'facilitator') */
   roleFilter?: string;
-  /** Filter for senior learners only (classification, not role) */
-  seniorLearnerOnly?: boolean;
+  /** Filter by category ('learner' or 'senior_learner') */
+  categoryFilter?: 'learner' | 'senior_learner';
   /** Event ID to scope search to event participants */
   eventId?: string;
   /** Currently selected user */
@@ -42,7 +42,7 @@ interface UserSearchComboboxProps {
 export function UserSearchCombobox({
   placeholder = 'Search by name or email...',
   roleFilter,
-  seniorLearnerOnly,
+  categoryFilter,
   eventId,
   value,
   onSelect,
@@ -74,7 +74,7 @@ export function UserSearchCombobox({
       const params = new URLSearchParams();
       params.set('q', searchQuery);
       if (roleFilter) params.set('role', roleFilter);
-      if (seniorLearnerOnly !== undefined) params.set('senior_learner', String(seniorLearnerOnly));
+      if (categoryFilter) params.set('category', categoryFilter);
       if (eventId) params.set('event_id', eventId);
       params.set('limit', '20');
 
@@ -99,7 +99,7 @@ export function UserSearchCombobox({
     } finally {
       setIsLoading(false);
     }
-  }, [roleFilter, seniorLearnerOnly, eventId, excludeIds]);
+  }, [roleFilter, categoryFilter, eventId, excludeIds]);
 
   // Debounced search
   useEffect(() => {
@@ -173,9 +173,9 @@ export function UserSearchCombobox({
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-              value.isSeniorLearner ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+              value.userCategory === 'senior_learner' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
             )}>
-              {value.isSeniorLearner ? (
+              {value.userCategory === 'senior_learner' ? (
                 <UserCheck className="w-4 h-4" />
               ) : (
                 <User className="w-4 h-4" />
@@ -186,7 +186,7 @@ export function UserSearchCombobox({
               <div className="text-xs text-muted-foreground truncate">{value.email}</div>
             </div>
             <Badge variant="secondary" className="shrink-0 text-xs">
-              {value.isSeniorLearner ? 'Senior Learner' : formatRole(value.role)}
+              {value.userCategory === 'senior_learner' ? 'Senior Learner' : 'Learner'}
             </Badge>
           </div>
           {!disabled && (
@@ -244,9 +244,9 @@ export function UserSearchCombobox({
                       >
                         <div className={cn(
                           "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                          user.isSeniorLearner ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                          user.userCategory === 'senior_learner' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
                         )}>
-                          {user.isSeniorLearner ? (
+                          {user.userCategory === 'senior_learner' ? (
                             <UserCheck className="w-4 h-4" />
                           ) : (
                             <User className="w-4 h-4" />
@@ -257,7 +257,7 @@ export function UserSearchCombobox({
                           <div className="text-xs text-muted-foreground truncate">{user.email}</div>
                         </div>
                         <Badge variant="secondary" className="shrink-0 text-xs">
-                          {user.isSeniorLearner ? 'Senior Learner' : formatRole(user.role)}
+                          {user.userCategory === 'senior_learner' ? 'Senior Learner' : 'Learner'}
                         </Badge>
                       </button>
                     </li>
@@ -278,8 +278,8 @@ interface UserMultiSelectProps {
   placeholder?: string;
   /** Filter by role for permission levels (e.g., 'facilitator') */
   roleFilter?: string;
-  /** Filter for senior learners only (classification, not role) */
-  seniorLearnerOnly?: boolean;
+  /** Filter by category ('learner' or 'senior_learner') */
+  categoryFilter?: 'learner' | 'senior_learner';
   /** Event ID to scope search to event participants */
   eventId?: string;
   /** Currently selected users */
@@ -299,7 +299,7 @@ interface UserMultiSelectProps {
 export function UserMultiSelect({
   placeholder = 'Search by name or email...',
   roleFilter,
-  seniorLearnerOnly,
+  categoryFilter,
   eventId,
   value,
   onChange,
@@ -319,13 +319,6 @@ export function UserMultiSelect({
 
   const handleRemove = (userId: string) => {
     onChange(value.filter(u => u.id !== userId));
-  };
-
-  const formatRole = (role: string) => {
-    return role
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
   };
 
   return (
@@ -351,9 +344,9 @@ export function UserMultiSelect({
             >
               <div className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                user.isSeniorLearner ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                user.userCategory === 'senior_learner' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
               )}>
-                {user.isSeniorLearner ? (
+                {user.userCategory === 'senior_learner' ? (
                   <UserCheck className="w-4 h-4" />
                 ) : (
                   <User className="w-4 h-4" />
@@ -364,7 +357,7 @@ export function UserMultiSelect({
                 <div className="text-xs text-muted-foreground truncate">{user.email}</div>
               </div>
               <Badge variant="secondary" className="shrink-0 text-xs">
-                {user.isSeniorLearner ? 'Senior Learner' : formatRole(user.role)}
+                {user.userCategory === 'senior_learner' ? 'Senior Learner' : 'Learner'}
               </Badge>
               {!disabled && (
                 <Button
@@ -387,7 +380,7 @@ export function UserMultiSelect({
         <UserSearchCombobox
           placeholder={placeholder}
           roleFilter={roleFilter}
-          seniorLearnerOnly={seniorLearnerOnly}
+          categoryFilter={categoryFilter}
           eventId={eventId}
           value={null}
           onSelect={handleSelect}

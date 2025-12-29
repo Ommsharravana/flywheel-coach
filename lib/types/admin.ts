@@ -1,6 +1,11 @@
 // Admin-specific types for JKKN Solution Studio Super Admin Dashboard
 
-export type UserRole = 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+// Role = WHAT you can do (permissions)
+// 'builder' = default role (aspirational - you're a builder in Solution Studio)
+export type UserRole = 'builder' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+
+// Category = WHO you are (identity)
+export type UserCategory = 'learner' | 'senior_learner';
 
 export interface AdminUser {
   id: string;
@@ -11,6 +16,7 @@ export interface AdminUser {
   department: string | null;
   yearOfStudy: number | null;
   role: UserRole;
+  userCategory: UserCategory;
   onboardingCompleted: boolean;
   language: 'en' | 'ta';
   createdAt: string;
@@ -173,6 +179,7 @@ export interface CreateUserForm {
   email: string;
   name: string;
   role: UserRole;
+  userCategory?: UserCategory;
   institution?: string;
   department?: string;
 }
@@ -180,6 +187,7 @@ export interface CreateUserForm {
 export interface UpdateUserForm {
   name?: string;
   role?: UserRole;
+  userCategory?: UserCategory;
   institution?: string;
   department?: string;
   onboardingCompleted?: boolean;

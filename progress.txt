@@ -2828,3 +2828,28 @@ Commit: 4c37c6c - Pushed to main, Vercel deploying
 - /components/admin/AdminSidebar.tsx (MODIFIED - added Roles and Audit Log links)
 
 **Current State:** All 5 phases of admin data scoping implemented. Build passing.
+
+---
+
+## 2024-12-30 - Session: Migration 049 Applied
+
+**Worked On:** Fixing Appathon submission unique constraint issue
+
+**Problem:**
+- Original constraint `(cycle_id, event_id)` only allowed ONE submission globally per cycle+event
+- This caused "Failed to save draft" errors when second user tried to submit
+- RLS prevented users from seeing other submissions, so upsert logic failed
+
+**Solution (Migration 049):**
+```sql
+DROP INDEX IF EXISTS idx_submissions_cycle_event;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_submissions_user_cycle_event
+ON appathon_submissions(user_id, cycle_id, event_id);
+```
+
+**Applied via:** Supabase SQL Editor (Production)
+
+**Result:** Success. Now each user can have one submission per cycle per event.
+
+**Current State:** Migration applied. Appathon submissions should now work for multiple users.

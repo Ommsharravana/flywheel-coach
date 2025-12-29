@@ -41,7 +41,12 @@ export interface InstitutionChangeRequestWithDetails extends InstitutionChangeRe
 }
 
 // User role types - extended to include event_admin and institution_admin
-export type UserRole = 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+// Role = WHAT you can do (permissions)
+// 'builder' = default role (aspirational - you're a builder in Solution Studio)
+export type UserRole = 'builder' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+
+// Category = WHO you are (identity)
+export type UserCategory = 'learner' | 'senior_learner';
 
 // Institution icons based on type/slug
 export function getInstitutionIcon(institution: Institution): string {

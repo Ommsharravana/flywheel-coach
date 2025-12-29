@@ -24,7 +24,7 @@ interface UserProfile {
   department: string | null;
   year_of_study: number | null;
   role: string | null;
-  is_senior_learner: boolean | null;
+  user_category: string | null;
   language: string | null;
   onboarding_completed: boolean | null;
   appathon_mode: boolean | null;
@@ -117,12 +117,16 @@ export default async function SettingsPage() {
               </div>
               <div className="text-sm text-stone-400">{effectiveUser.email}</div>
               <div className="flex gap-2 mt-1">
-                <Badge variant="outline" className="text-amber-400 border-amber-500/50">
-                  {profile?.role || 'learner'}
+                <Badge variant="outline" className={
+                  profile?.user_category === 'senior_learner'
+                    ? "text-emerald-400 border-emerald-500/50"
+                    : "text-blue-400 border-blue-500/50"
+                }>
+                  {profile?.user_category === 'senior_learner' ? 'Senior Learner' : 'Learner'}
                 </Badge>
-                {profile?.is_senior_learner && (
-                  <Badge variant="outline" className="text-emerald-400 border-emerald-500/50">
-                    Senior Learner
+                {profile?.role && profile.role !== 'builder' && (
+                  <Badge variant="outline" className="text-amber-400 border-amber-500/50">
+                    {profile.role.replace('_', ' ')}
                   </Badge>
                 )}
               </div>

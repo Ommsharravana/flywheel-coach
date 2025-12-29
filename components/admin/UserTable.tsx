@@ -30,7 +30,8 @@ interface UserWithCycles {
   id: string;
   email: string;
   name: string | null;
-  role: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+  role: 'builder' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+  user_category: 'learner' | 'senior_learner';
   avatar_url: string | null;
   created_at: string;
   cycle_count: number;
@@ -44,8 +45,15 @@ interface UserTableProps {
   showInstitution?: boolean;
 }
 
-const roleColors: Record<string, string> = {
+// Category colors (WHO you are - identity)
+const categoryColors: Record<string, string> = {
   learner: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  senior_learner: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+};
+
+// Role colors (WHAT you can do - permissions)
+const roleColors: Record<string, string> = {
+  builder: 'bg-stone-500/20 text-stone-400 border-stone-500/30',
   facilitator: 'bg-green-500/20 text-green-400 border-green-500/30',
   admin: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   event_admin: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
@@ -67,6 +75,7 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
       user.name?.toLowerCase().includes(query) ||
       user.email.toLowerCase().includes(query) ||
       user.role.toLowerCase().includes(query) ||
+      user.user_category?.toLowerCase().includes(query) ||
       user.institution_name?.toLowerCase().includes(query)
     );
   }, [users, searchQuery]);
@@ -118,7 +127,7 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
         <Input
-          placeholder="Search by name, email, role, or institution..."
+          placeholder="Search by name, email, category, role, or institution..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 w-full md:w-80 bg-stone-800 border-stone-700"
@@ -130,6 +139,7 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
         <TableHeader>
           <TableRow className="bg-stone-900/50 hover:bg-stone-900/50">
             <TableHead className="text-stone-400">User</TableHead>
+            <TableHead className="text-stone-400">Category</TableHead>
             <TableHead className="text-stone-400">Role</TableHead>
             {showInstitution && (
               <TableHead className="text-stone-400">Institution</TableHead>
@@ -142,7 +152,7 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
         <TableBody>
           {filteredUsers.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={showInstitution ? 6 : 5} className="text-center py-8 text-stone-500">
+              <TableCell colSpan={showInstitution ? 7 : 6} className="text-center py-8 text-stone-500">
                 {searchQuery ? `No users found matching "${searchQuery}"` : 'No users found'}
               </TableCell>
             </TableRow>
@@ -171,10 +181,22 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
                 <TableCell>
                   <Badge
                     variant="outline"
-                    className={roleColors[user.role] || roleColors.learner}
+                    className={categoryColors[user.user_category] || categoryColors.learner}
                   >
-                    {user.role === 'institution_admin' ? 'inst. admin' : user.role === 'event_admin' ? 'event admin' : user.role === 'facilitator' ? 'senior learner' : user.role}
+                    {user.user_category === 'senior_learner' ? 'Senior Learner' : 'Learner'}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {user.role && user.role !== 'builder' ? (
+                    <Badge
+                      variant="outline"
+                      className={roleColors[user.role] || roleColors.builder}
+                    >
+                      {user.role === 'institution_admin' ? 'inst. admin' : user.role === 'event_admin' ? 'event admin' : user.role}
+                    </Badge>
+                  ) : (
+                    <span className="text-stone-500 text-sm">—</span>
+                  )}
                 </TableCell>
                 {showInstitution && (
                   <TableCell>

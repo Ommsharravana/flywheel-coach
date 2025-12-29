@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Pencil, Save, Loader2, UserCheck } from 'lucide-react';
 
@@ -20,7 +19,7 @@ interface SettingsFormProps {
     year_of_study: number | null;
     language: string | null;
     role: string | null;
-    is_senior_learner: boolean | null;
+    user_category: string | null;
   } | null;
   userId: string;
 }
@@ -34,7 +33,7 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
   const [department, setDepartment] = useState(profile?.department || '');
   const [yearOfStudy, setYearOfStudy] = useState(profile?.year_of_study?.toString() || '');
   const [language, setLanguage] = useState(profile?.language || 'en');
-  const [isSeniorLearner, setIsSeniorLearner] = useState(profile?.is_senior_learner || false);
+  const [userCategory, setUserCategory] = useState(profile?.user_category || 'learner');
 
   const handleSave = () => {
     startTransition(async () => {
@@ -46,7 +45,7 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
             department: department.trim() || null,
             year_of_study: yearOfStudy ? parseInt(yearOfStudy) : null,
             language,
-            is_senior_learner: isSeniorLearner,
+            user_category: userCategory,
             updated_at: new Date().toISOString(),
           })
           .eq('id', userId);
@@ -126,7 +125,7 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
           </div>
         </div>
 
-        {/* Senior Learner Classification - For Appathon Team Formation */}
+        {/* User Category - Identity (Learner vs Senior Learner) */}
         <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-3">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
@@ -135,27 +134,21 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
             <div className="flex-1 space-y-3">
               <div>
                 <Label className="text-stone-200 font-medium">
-                  Senior Learner Status
+                  Category
                 </Label>
                 <p className="text-sm text-stone-400 mt-1">
-                  Senior Learners are faculty or staff who mentor student teams through
-                  the Problem-to-Impact Flywheel.
+                  This is your identity in the system - are you a student (Learner) or faculty/staff (Senior Learner)?
                 </p>
               </div>
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  id="senior-learner"
-                  checked={isSeniorLearner}
-                  onCheckedChange={(checked) => setIsSeniorLearner(checked === true)}
-                  className="border-amber-500/50 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
-                />
-                <Label
-                  htmlFor="senior-learner"
-                  className="text-stone-300 cursor-pointer select-none"
-                >
-                  I am a Senior Learner (Faculty/Staff Mentor)
-                </Label>
-              </div>
+              <Select value={userCategory} onValueChange={setUserCategory}>
+                <SelectTrigger className="bg-stone-800/50 border-stone-700">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="learner">Learner (Student)</SelectItem>
+                  <SelectItem value="senior_learner">Senior Learner (Faculty/Staff)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

@@ -547,7 +547,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
             </p>
             <UserSearchCombobox
               placeholder="Search for a Senior Learner..."
-              seniorLearnerOnly={true}
+              categoryFilter="senior_learner"
               eventId={activeEvent?.id}
               value={seniorLearner}
               onSelect={setSeniorLearner}

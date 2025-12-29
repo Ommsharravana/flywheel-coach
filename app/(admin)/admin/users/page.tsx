@@ -12,7 +12,8 @@ interface UserRow {
   id: string;
   email: string;
   name: string | null;
-  role: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+  role: 'builder' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+  user_category: 'learner' | 'senior_learner';
   avatar_url: string | null;
   created_at: string;
   institution_id: string | null;
@@ -95,13 +96,15 @@ export default async function AdminUsersPage() {
     institution_name: user.institution_name,
   }));
 
-  // Stats
+  // Stats - separated by Category (identity) and Role (permissions)
   const totalUsers = users.length;
-  const roleStats = {
-    learner: users.filter((u) => u.role === 'learner').length,
-    facilitator: users.filter((u) => u.role === 'facilitator').length,
-    admin: users.filter((u) => u.role === 'admin' || u.role === 'superadmin').length,
+  const categoryStats = {
+    learner: users.filter((u) => u.user_category === 'learner').length,
+    senior_learner: users.filter((u) => u.user_category === 'senior_learner').length,
   };
+  const adminCount = users.filter((u) =>
+    u.role === 'admin' || u.role === 'superadmin' || u.role === 'event_admin' || u.role === 'institution_admin'
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -144,19 +147,19 @@ export default async function AdminUsersPage() {
         </Card>
         <Card className="glass-card">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-blue-400">{roleStats.learner}</div>
-            <p className="text-sm text-stone-500">Learners</p>
+            <div className="text-2xl font-bold text-blue-400">{categoryStats.learner}</div>
+            <p className="text-sm text-stone-500">Learners (Students)</p>
           </CardContent>
         </Card>
         <Card className="glass-card">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-400">{roleStats.facilitator}</div>
-            <p className="text-sm text-stone-500">Senior Learners</p>
+            <div className="text-2xl font-bold text-emerald-400">{categoryStats.senior_learner}</div>
+            <p className="text-sm text-stone-500">Senior Learners (Faculty)</p>
           </CardContent>
         </Card>
         <Card className="glass-card">
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-purple-400">{roleStats.admin}</div>
+            <div className="text-2xl font-bold text-purple-400">{adminCount}</div>
             <p className="text-sm text-stone-500">Admins</p>
           </CardContent>
         </Card>
