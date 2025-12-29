@@ -22,11 +22,8 @@ import {
   FileText,
   Loader2,
   Save,
-  Trash2,
   Trophy,
-  Upload,
   Users,
-  Video,
   UserCheck,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -107,20 +104,12 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
   const [lovableUrl, setLovableUrl] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
 
-  // Pitch materials
-  const [elevatorPitch, setElevatorPitch] = useState('');
-  const [demoVideoUrl, setDemoVideoUrl] = useState('');
-  const [screenshots, setScreenshots] = useState<string[]>(['']);
-
   // Competition
   const [category, setCategory] = useState('');
   const [facultyMentor, setFacultyMentor] = useState('');
 
   // Declaration
   const [declarationAccepted, setDeclarationAccepted] = useState(false);
-
-  // Word count for elevator pitch
-  const pitchWordCount = elevatorPitch.trim().split(/\s+/).filter(Boolean).length;
 
   // Load initial data
   useEffect(() => {
@@ -216,11 +205,6 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
           setLiveUrl(submissionData.live_url || '');
           setLovableUrl(submissionData.lovable_url || '');
           setGithubUrl(submissionData.github_url || '');
-          setElevatorPitch(submissionData.elevator_pitch || '');
-          setDemoVideoUrl(submissionData.demo_video_url || '');
-          setScreenshots(
-            submissionData.screenshots?.length > 0 ? submissionData.screenshots : ['']
-          );
           setCategory(submissionData.category || '');
           setFacultyMentor(submissionData.faculty_mentor || '');
           setDeclarationAccepted(submissionData.declaration_accepted || false);
@@ -266,23 +250,6 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
     ...(seniorLearner ? [seniorLearner.id] : []),
     ...teamMembers.map(m => m.id),
   ];
-
-  // Screenshot management
-  const addScreenshot = () => {
-    setScreenshots([...screenshots, '']);
-  };
-
-  const updateScreenshot = (index: number, value: string) => {
-    const updated = [...screenshots];
-    updated[index] = value;
-    setScreenshots(updated);
-  };
-
-  const removeScreenshot = (index: number) => {
-    if (screenshots.length > 1) {
-      setScreenshots(screenshots.filter((_, i) => i !== index));
-    }
-  };
 
   // Validation
   const isValid = () => {
@@ -349,9 +316,9 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
         live_url: liveUrl || null,
         lovable_url: lovableUrl || null,
         github_url: githubUrl || null,
-        elevator_pitch: elevatorPitch || null,
-        demo_video_url: demoVideoUrl || null,
-        screenshots: screenshots.filter((s) => s.trim()),
+        elevator_pitch: null,
+        demo_video_url: null,
+        screenshots: [],
         category,
         faculty_mentor: facultyMentor || null,
         declaration_accepted: declarationAccepted,
@@ -580,7 +547,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
             </p>
             <UserSearchCombobox
               placeholder="Search for a Senior Learner..."
-              roleFilter="senior_learner"
+              seniorLearnerOnly={true}
               eventId={activeEvent?.id}
               value={seniorLearner}
               onSelect={setSeniorLearner}
@@ -776,78 +743,6 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
                 className="bg-stone-800/50 border-stone-700 mt-1"
               />
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pitch Materials */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="text-lg text-stone-100 flex items-center gap-2">
-            <Video className="w-5 h-5 text-amber-400" />
-            Pitch Materials
-          </CardTitle>
-          <CardDescription>Help judges understand your solution</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <Label className="text-stone-300">Elevator Pitch (max 150 words)</Label>
-              <span
-                className={`text-sm ${pitchWordCount > 150 ? 'text-red-400' : 'text-stone-500'}`}
-              >
-                {pitchWordCount}/150 words
-              </span>
-            </div>
-            <Textarea
-              value={elevatorPitch}
-              onChange={(e) => setElevatorPitch(e.target.value)}
-              placeholder="In 150 words or less, pitch your app. What problem does it solve? Who is it for? Why is it better than alternatives?"
-              className="bg-stone-800/50 border-stone-700"
-              rows={4}
-            />
-            {pitchWordCount > 150 && (
-              <p className="text-red-400 text-sm mt-1 flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                Please keep your pitch under 150 words
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label className="text-stone-300">Demo Video URL</Label>
-            <Input
-              value={demoVideoUrl}
-              onChange={(e) => setDemoVideoUrl(e.target.value)}
-              placeholder="https://youtube.com/watch?v=... or Loom link"
-              className="bg-stone-800/50 border-stone-700 mt-1"
-            />
-            <p className="text-stone-500 text-sm mt-1">
-              A 2-3 minute video showing your app in action
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-stone-300">Screenshots</Label>
-            {screenshots.map((url, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  value={url}
-                  onChange={(e) => updateScreenshot(index, e.target.value)}
-                  placeholder="Screenshot URL"
-                  className="flex-1 bg-stone-800/50 border-stone-700"
-                />
-                {screenshots.length > 1 && (
-                  <Button variant="outline" size="icon" onClick={() => removeScreenshot(index)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button variant="outline" onClick={addScreenshot} className="w-full">
-              <Upload className="w-4 h-4 mr-2" />
-              Add Screenshot URL
-            </Button>
           </div>
         </CardContent>
       </Card>

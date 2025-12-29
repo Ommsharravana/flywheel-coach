@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Pencil, Save, Loader2 } from 'lucide-react';
+import { Pencil, Save, Loader2, UserCheck } from 'lucide-react';
 
 interface SettingsFormProps {
   profile: {
@@ -19,6 +20,7 @@ interface SettingsFormProps {
     year_of_study: number | null;
     language: string | null;
     role: string | null;
+    is_senior_learner: boolean | null;
   } | null;
   userId: string;
 }
@@ -32,7 +34,7 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
   const [department, setDepartment] = useState(profile?.department || '');
   const [yearOfStudy, setYearOfStudy] = useState(profile?.year_of_study?.toString() || '');
   const [language, setLanguage] = useState(profile?.language || 'en');
-  const [role, setRole] = useState(profile?.role || 'learner');
+  const [isSeniorLearner, setIsSeniorLearner] = useState(profile?.is_senior_learner || false);
 
   const handleSave = () => {
     startTransition(async () => {
@@ -44,7 +46,7 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
             department: department.trim() || null,
             year_of_study: yearOfStudy ? parseInt(yearOfStudy) : null,
             language,
-            role,
+            is_senior_learner: isSeniorLearner,
             updated_at: new Date().toISOString(),
           })
           .eq('id', userId);
@@ -124,37 +126,36 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
           </div>
         </div>
 
-        {/* Role Selection - For Appathon Team Formation */}
+        {/* Senior Learner Classification - For Appathon Team Formation */}
         <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-3">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
-              <span className="text-amber-400 text-lg">🎓</span>
+              <UserCheck className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="role" className="text-stone-200 font-medium">
-                Your Role
-              </Label>
-              <p className="text-sm text-stone-400">
-                Senior Learners mentor teams through the Problem-to-Impact Flywheel.
-                Choose this if you have experience and want to guide others.
-              </p>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="bg-stone-800/50 border-stone-700 w-full sm:w-64">
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="learner">
-                    <span className="flex items-center gap-2">
-                      <span>👤</span> Learner
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="senior_learner">
-                    <span className="flex items-center gap-2">
-                      <span>🎓</span> Senior Learner (Mentor)
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex-1 space-y-3">
+              <div>
+                <Label className="text-stone-200 font-medium">
+                  Senior Learner Status
+                </Label>
+                <p className="text-sm text-stone-400 mt-1">
+                  Senior Learners are faculty or staff who mentor student teams through
+                  the Problem-to-Impact Flywheel.
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id="senior-learner"
+                  checked={isSeniorLearner}
+                  onCheckedChange={(checked) => setIsSeniorLearner(checked === true)}
+                  className="border-amber-500/50 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                />
+                <Label
+                  htmlFor="senior-learner"
+                  className="text-stone-300 cursor-pointer select-none"
+                >
+                  I am a Senior Learner (Faculty/Staff Mentor)
+                </Label>
+              </div>
             </div>
           </div>
         </div>

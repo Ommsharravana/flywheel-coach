@@ -13,13 +13,16 @@ interface UserResult {
   email: string;
   role: string;
   institution: string | null;
+  isSeniorLearner?: boolean;
 }
 
 interface UserSearchComboboxProps {
   /** Placeholder text for the search input */
   placeholder?: string;
-  /** Filter by role (e.g., 'senior_learner') */
+  /** Filter by role for permission levels (e.g., 'facilitator') */
   roleFilter?: string;
+  /** Filter for senior learners only (classification, not role) */
+  seniorLearnerOnly?: boolean;
   /** Event ID to scope search to event participants */
   eventId?: string;
   /** Currently selected user */
@@ -39,6 +42,7 @@ interface UserSearchComboboxProps {
 export function UserSearchCombobox({
   placeholder = 'Search by name or email...',
   roleFilter,
+  seniorLearnerOnly,
   eventId,
   value,
   onSelect,
@@ -70,6 +74,7 @@ export function UserSearchCombobox({
       const params = new URLSearchParams();
       params.set('q', searchQuery);
       if (roleFilter) params.set('role', roleFilter);
+      if (seniorLearnerOnly !== undefined) params.set('senior_learner', String(seniorLearnerOnly));
       if (eventId) params.set('event_id', eventId);
       params.set('limit', '20');
 
@@ -94,7 +99,7 @@ export function UserSearchCombobox({
     } finally {
       setIsLoading(false);
     }
-  }, [roleFilter, eventId, excludeIds]);
+  }, [roleFilter, seniorLearnerOnly, eventId, excludeIds]);
 
   // Debounced search
   useEffect(() => {
@@ -168,9 +173,9 @@ export function UserSearchCombobox({
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-              value.role === 'senior_learner' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+              value.isSeniorLearner ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
             )}>
-              {value.role === 'senior_learner' ? (
+              {value.isSeniorLearner ? (
                 <UserCheck className="w-4 h-4" />
               ) : (
                 <User className="w-4 h-4" />
@@ -181,7 +186,7 @@ export function UserSearchCombobox({
               <div className="text-xs text-muted-foreground truncate">{value.email}</div>
             </div>
             <Badge variant="secondary" className="shrink-0 text-xs">
-              {formatRole(value.role)}
+              {value.isSeniorLearner ? 'Senior Learner' : formatRole(value.role)}
             </Badge>
           </div>
           {!disabled && (
@@ -239,9 +244,9 @@ export function UserSearchCombobox({
                       >
                         <div className={cn(
                           "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                          user.role === 'senior_learner' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                          user.isSeniorLearner ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
                         )}>
-                          {user.role === 'senior_learner' ? (
+                          {user.isSeniorLearner ? (
                             <UserCheck className="w-4 h-4" />
                           ) : (
                             <User className="w-4 h-4" />
@@ -252,7 +257,7 @@ export function UserSearchCombobox({
                           <div className="text-xs text-muted-foreground truncate">{user.email}</div>
                         </div>
                         <Badge variant="secondary" className="shrink-0 text-xs">
-                          {formatRole(user.role)}
+                          {user.isSeniorLearner ? 'Senior Learner' : formatRole(user.role)}
                         </Badge>
                       </button>
                     </li>
@@ -271,8 +276,10 @@ export function UserSearchCombobox({
 interface UserMultiSelectProps {
   /** Placeholder text for the search input */
   placeholder?: string;
-  /** Filter by role (e.g., 'senior_learner') */
+  /** Filter by role for permission levels (e.g., 'facilitator') */
   roleFilter?: string;
+  /** Filter for senior learners only (classification, not role) */
+  seniorLearnerOnly?: boolean;
   /** Event ID to scope search to event participants */
   eventId?: string;
   /** Currently selected users */
@@ -292,6 +299,7 @@ interface UserMultiSelectProps {
 export function UserMultiSelect({
   placeholder = 'Search by name or email...',
   roleFilter,
+  seniorLearnerOnly,
   eventId,
   value,
   onChange,
@@ -343,9 +351,9 @@ export function UserMultiSelect({
             >
               <div className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                user.role === 'senior_learner' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                user.isSeniorLearner ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
               )}>
-                {user.role === 'senior_learner' ? (
+                {user.isSeniorLearner ? (
                   <UserCheck className="w-4 h-4" />
                 ) : (
                   <User className="w-4 h-4" />
@@ -356,7 +364,7 @@ export function UserMultiSelect({
                 <div className="text-xs text-muted-foreground truncate">{user.email}</div>
               </div>
               <Badge variant="secondary" className="shrink-0 text-xs">
-                {formatRole(user.role)}
+                {user.isSeniorLearner ? 'Senior Learner' : formatRole(user.role)}
               </Badge>
               {!disabled && (
                 <Button
@@ -379,6 +387,7 @@ export function UserMultiSelect({
         <UserSearchCombobox
           placeholder={placeholder}
           roleFilter={roleFilter}
+          seniorLearnerOnly={seniorLearnerOnly}
           eventId={eventId}
           value={null}
           onSelect={handleSelect}

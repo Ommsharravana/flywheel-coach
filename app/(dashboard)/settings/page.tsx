@@ -24,6 +24,7 @@ interface UserProfile {
   department: string | null;
   year_of_study: number | null;
   role: string | null;
+  is_senior_learner: boolean | null;
   language: string | null;
   onboarding_completed: boolean | null;
   appathon_mode: boolean | null;
@@ -115,9 +116,16 @@ export default async function SettingsPage() {
                 {profile?.name || effectiveUser.name || t('common.learner')}
               </div>
               <div className="text-sm text-stone-400">{effectiveUser.email}</div>
-              <Badge variant="outline" className="mt-1 text-amber-400 border-amber-500/50">
-                {profile?.role || 'learner'}
-              </Badge>
+              <div className="flex gap-2 mt-1">
+                <Badge variant="outline" className="text-amber-400 border-amber-500/50">
+                  {profile?.role || 'learner'}
+                </Badge>
+                {profile?.is_senior_learner && (
+                  <Badge variant="outline" className="text-emerald-400 border-emerald-500/50">
+                    Senior Learner
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
 
