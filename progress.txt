@@ -2955,3 +2955,65 @@ Files updated:
 - All role management features functional
 
 **Current State:** Complete - Ready for testing in browser
+
+---
+
+## Session: 30 December 2024 - Event Admin Stats Fix
+
+### Problem Fixed
+The admin panel showed inconsistent counts:
+- Stats card showed "3 Event Admins" (from `event_admins` table = per-event assignments)
+- "View by Role" filter showed only 1 user with role='event_admin' (global event admin)
+- These are two different concepts that were conflated
+
+### Root Cause
+Two types of event admins exist:
+1. **Global Event Admin** (users.role='event_admin') - Can manage ALL events
+2. **Per-Event Admin** (event_admins table) - Can only manage specific assigned events
+
+### Solution Implemented
+
+#### 1. Fixed Stats Count
+- Now shows unique users with ANY event admin access (union of both types)
+- Added breakdown text: "X global, Y assignments"
+
+#### 2. Renamed Tabs for Clarity
+- "View by Role" -> "Global Roles" tab
+- "Event Admins" -> "Event Assignments (count)" tab
+- "Institution Admins" -> "Institution Assignments (count)" tab
+
+#### 3. Added Info Banner
+- Clear explanation of the two admin types in "Global Roles" tab
+- Distinguishes global (role-based) from per-event (assigned)
+
+#### 4. Updated Labels
+- "Event Admin" -> "Global Event Admin" in role filter
+- Per-event tab shows "Per-Event Admin Assignments"
+
+#### 5. Improved Add Modal
+- Reordered fields: Event/Institution selection first, then User search
+- Added step numbers for clarity
+- Added subtitle explaining the action
+
+### Files Modified
+- `/Users/omm/PROJECTS/flywheel-coach/app/(admin)/admin/roles/page.tsx`
+
+### Key Code Changes
+```typescript
+// Calculate unique event admins (global role OR per-event assignment)
+const uniqueEventAdminUsers = useMemo(() => {
+  const globalEventAdmins = allUsers.filter(u => u.role === 'event_admin').map(u => u.id);
+  const perEventAdmins = eventAdmins.map(ea => ea.user_id);
+  const allEventAdminIds = new Set([...globalEventAdmins, ...perEventAdmins]);
+  return allEventAdminIds.size;
+}, [allUsers, eventAdmins]);
+```
+
+**Build Status:** Successful - no errors
+
+**Test:** Open http://localhost:3000/admin/roles and verify:
+1. Stats card shows correct unique count with breakdown
+2. "Global Roles" tab has info banner explaining two types
+3. "Event Assignments" tab shows per-event assignments
+4. Filter dropdown shows "Global Event Admin" (not just "Event Admin")
+5. "+ Assign to Event" button opens modal with event dropdown AND user search

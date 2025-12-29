@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,9 @@ import {
   Trash2,
   UserCog,
   Hammer,
+  Globe,
+  CalendarCheck,
+  Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
@@ -100,9 +103,17 @@ const roleColors: Record<string, string> = {
 const roleLabels: Record<string, string> = {
   builder: 'Builder',
   admin: 'Admin',
-  event_admin: 'Event Admin',
-  institution_admin: 'Institution Admin',
+  event_admin: 'Global Event Admin',
+  institution_admin: 'Global Institution Admin',
   superadmin: 'Super Admin',
+};
+
+const roleDescriptions: Record<string, string> = {
+  builder: 'Regular user who can create solutions',
+  admin: 'Platform administrator',
+  event_admin: 'Can manage ALL events globally',
+  institution_admin: 'Can manage ALL institutions globally',
+  superadmin: 'Full platform access',
 };
 
 export default function AdminRolesPage() {
@@ -269,6 +280,22 @@ export default function AdminRolesPage() {
     return acc;
   }, {} as Record<string, UserWithRole[]>);
 
+  // Calculate unique event admins (global role OR per-event assignment)
+  const uniqueEventAdminUsers = useMemo(() => {
+    const globalEventAdmins = allUsers.filter(u => u.role === 'event_admin').map(u => u.id);
+    const perEventAdmins = eventAdmins.map(ea => ea.user_id);
+    const allEventAdminIds = new Set([...globalEventAdmins, ...perEventAdmins]);
+    return allEventAdminIds.size;
+  }, [allUsers, eventAdmins]);
+
+  // Calculate unique institution admins (global role OR per-institution assignment)
+  const uniqueInstitutionAdminUsers = useMemo(() => {
+    const globalInstAdmins = allUsers.filter(u => u.role === 'institution_admin').map(u => u.id);
+    const perInstAdmins = institutionAdmins.map(ia => ia.user_id);
+    const allInstAdminIds = new Set([...globalInstAdmins, ...perInstAdmins]);
+    return allInstAdminIds.size;
+  }, [allUsers, institutionAdmins]);
+
   // Get filtered users for display
   const filteredUsers = roleFilter === 'all'
     ? allUsers
@@ -337,8 +364,11 @@ export default function AdminRolesPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-stone-100">{eventAdmins.length}</div>
+                <div className="text-2xl font-bold text-stone-100">{uniqueEventAdminUsers}</div>
                 <p className="text-sm text-stone-500">Event Admins</p>
+                <p className="text-xs text-stone-600 mt-1">
+                  {usersByRole['event_admin']?.length || 0} global, {eventAdmins.length} assignments
+                </p>
               </div>
               <Calendar className="h-8 w-8 text-cyan-500/50" />
             </div>
@@ -348,8 +378,11 @@ export default function AdminRolesPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold text-stone-100">{institutionAdmins.length}</div>
+                <div className="text-2xl font-bold text-stone-100">{uniqueInstitutionAdminUsers}</div>
                 <p className="text-sm text-stone-500">Institution Admins</p>
+                <p className="text-xs text-stone-600 mt-1">
+                  {usersByRole['institution_admin']?.length || 0} global, {institutionAdmins.length} assignments
+                </p>
               </div>
               <Building2 className="h-8 w-8 text-orange-500/50" />
             </div>
@@ -372,16 +405,16 @@ export default function AdminRolesPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-stone-900/50 border border-stone-800">
           <TabsTrigger value="by-role" className="data-[state=active]:bg-stone-800">
-            <Users className="h-4 w-4 mr-2" />
-            View by Role
+            <Globe className="h-4 w-4 mr-2" />
+            Global Roles
           </TabsTrigger>
           <TabsTrigger value="event" className="data-[state=active]:bg-stone-800">
-            <Calendar className="h-4 w-4 mr-2" />
-            Event Admins
+            <CalendarCheck className="h-4 w-4 mr-2" />
+            Event Assignments ({eventAdmins.length})
           </TabsTrigger>
           <TabsTrigger value="institution" className="data-[state=active]:bg-stone-800">
             <Building2 className="h-4 w-4 mr-2" />
-            Institution Admins
+            Institution Assignments ({institutionAdmins.length})
           </TabsTrigger>
         </TabsList>
 
@@ -390,9 +423,12 @@ export default function AdminRolesPage() {
           <Card className="bg-stone-900/50 border-stone-800">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg text-stone-100">Users by Permission Role</CardTitle>
+                <CardTitle className="text-lg text-stone-100 flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-blue-400" />
+                  Global Roles
+                </CardTitle>
                 <CardDescription>
-                  View all users grouped by their permission level
+                  View all users by their global permission role. Global admins have access to ALL resources of their type.
                 </CardDescription>
               </div>
               <div className="flex items-center gap-3">
@@ -421,18 +457,35 @@ export default function AdminRolesPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Info Banner */}
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-stone-800/50 border border-stone-700">
+                <Info className="h-5 w-5 text-cyan-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-stone-400">
+                  <p className="mb-1">
+                    <strong className="text-stone-200">Two types of Event/Institution Admins:</strong>
+                  </p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li><span className="text-cyan-400">Global</span> (role-based): Can manage ALL events/institutions</li>
+                    <li><span className="text-emerald-400">Per-event/Per-institution</span> (assigned): Can only manage specific events/institutions they&apos;re assigned to</li>
+                  </ul>
+                  <p className="mt-2 text-stone-500">
+                    This tab shows users by their <strong>global role</strong>. See the &quot;Event Admins&quot; and &quot;Institution Admins&quot; tabs for per-resource assignments.
+                  </p>
+                </div>
+              </div>
+
               {/* Filter and Actions */}
               <div className="flex items-center gap-4">
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-48 bg-stone-800 border-stone-700">
+                  <SelectTrigger className="w-56 bg-stone-800 border-stone-700">
                     <SelectValue placeholder="Filter by role" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="builder">Builder</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="event_admin">Event Admin</SelectItem>
-                    <SelectItem value="institution_admin">Institution Admin</SelectItem>
+                    <SelectItem value="event_admin">Global Event Admin</SelectItem>
+                    <SelectItem value="institution_admin">Global Institution Admin</SelectItem>
                     <SelectItem value="superadmin">Super Admin</SelectItem>
                   </SelectContent>
                 </Select>
@@ -520,9 +573,12 @@ export default function AdminRolesPage() {
           <Card className="bg-stone-900/50 border-stone-800">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg text-stone-100">Event Admins</CardTitle>
+                <CardTitle className="text-lg text-stone-100 flex items-center gap-2">
+                  <CalendarCheck className="h-5 w-5 text-emerald-400" />
+                  Per-Event Admin Assignments
+                </CardTitle>
                 <CardDescription>
-                  Users who can manage specific events
+                  Users assigned to manage <strong>specific events</strong>. Unlike Global Event Admins (who can manage all events), these users can only manage the events they&apos;re assigned to.
                 </CardDescription>
               </div>
               <Button
@@ -530,7 +586,7 @@ export default function AdminRolesPage() {
                 className="bg-amber-500 hover:bg-amber-600 text-stone-900"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Event Admin
+                Assign to Event
               </Button>
             </CardHeader>
             <CardContent>
@@ -590,9 +646,12 @@ export default function AdminRolesPage() {
           <Card className="bg-stone-900/50 border-stone-800">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg text-stone-100">Institution Admins</CardTitle>
+                <CardTitle className="text-lg text-stone-100 flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-orange-400" />
+                  Per-Institution Admin Assignments
+                </CardTitle>
                 <CardDescription>
-                  Users who can view data for their institution (read-only)
+                  Users assigned to view data for <strong>specific institutions</strong> (read-only). Unlike Global Institution Admins (who can view all institutions), these users can only view their assigned institution&apos;s data.
                 </CardDescription>
               </div>
               <Button
@@ -600,7 +659,7 @@ export default function AdminRolesPage() {
                 className="bg-amber-500 hover:bg-amber-600 text-stone-900"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Institution Admin
+                Assign to Institution
               </Button>
             </CardHeader>
             <CardContent>
@@ -798,9 +857,14 @@ function AddAdminModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="relative w-full max-w-lg rounded-2xl border border-stone-700 bg-stone-900 shadow-2xl">
         <div className="flex items-center justify-between p-6 border-b border-stone-800">
-          <h2 className="text-xl font-bold text-stone-100">
-            Add {type === 'event' ? 'Event' : 'Institution'} Admin
-          </h2>
+          <div>
+            <h2 className="text-xl font-bold text-stone-100">
+              Assign {type === 'event' ? 'Event' : 'Institution'} Admin
+            </h2>
+            <p className="text-sm text-stone-400 mt-1">
+              Give a user admin access to a specific {type}
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="p-2 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors"
@@ -810,10 +874,35 @@ function AddAdminModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* User Search */}
+          {/* Step 1: Event/Institution Select */}
           <div>
             <label className="block text-sm font-medium text-stone-300 mb-1">
-              Search User
+              <span className="text-cyan-400">Step 1:</span> Select {type === 'event' ? 'Event' : 'Institution'}
+            </label>
+            <select
+              value={selectedId}
+              onChange={(e) => setSelectedId(e.target.value)}
+              className="w-full bg-stone-800 border border-stone-700 text-stone-200 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="">Choose {type === 'event' ? 'an event' : 'an institution'}...</option>
+              {type === 'event'
+                ? events.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.name}
+                    </option>
+                  ))
+                : institutions.map((inst) => (
+                    <option key={inst.id} value={inst.id}>
+                      {inst.short_name || inst.name}
+                    </option>
+                  ))}
+            </select>
+          </div>
+
+          {/* Step 2: User Search */}
+          <div>
+            <label className="block text-sm font-medium text-stone-300 mb-1">
+              <span className="text-cyan-400">Step 2:</span> Search User
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
@@ -874,31 +963,6 @@ function AddAdminModal({
                 </button>
               </div>
             )}
-          </div>
-
-          {/* Event/Institution Select */}
-          <div>
-            <label className="block text-sm font-medium text-stone-300 mb-1">
-              Select {type === 'event' ? 'Event' : 'Institution'}
-            </label>
-            <select
-              value={selectedId}
-              onChange={(e) => setSelectedId(e.target.value)}
-              className="w-full bg-stone-800 border border-stone-700 text-stone-200 rounded-md px-3 py-2 text-sm"
-            >
-              <option value="">Choose {type === 'event' ? 'an event' : 'an institution'}...</option>
-              {type === 'event'
-                ? events.map((event) => (
-                    <option key={event.id} value={event.id}>
-                      {event.name}
-                    </option>
-                  ))
-                : institutions.map((inst) => (
-                    <option key={inst.id} value={inst.id}>
-                      {inst.short_name || inst.name}
-                    </option>
-                  ))}
-            </select>
           </div>
 
           <div className="flex gap-3 pt-4">
