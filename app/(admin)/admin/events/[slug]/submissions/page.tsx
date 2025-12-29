@@ -33,7 +33,7 @@ import Link from 'next/link';
 
 interface SubmissionsPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ search?: string; status?: string; category?: string; page?: string }>;
+  searchParams: Promise<{ search?: string; status?: string; category?: string; institution?: string; page?: string }>;
 }
 
 interface Submission {
@@ -71,7 +71,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default async function EventSubmissionsPage({ params, searchParams }: SubmissionsPageProps) {
   const { slug } = await params;
-  const { search = '', status = '', category = '', page = '1' } = await searchParams;
+  const { search = '', status = '', category = '', institution = '', page = '1' } = await searchParams;
   const currentPage = parseInt(page, 10);
   const perPage = 20;
 
@@ -98,6 +98,12 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
   if (!isAdmin) {
     redirect('/admin/events');
   }
+
+  // Fetch institutions for the filter dropdown
+  const { data: institutions } = await supabase
+    .from('institutions')
+    .select('id, name, short_name')
+    .order('name') as { data: Array<{ id: string; name: string; short_name: string | null }> | null };
 
   // Fetch submissions using RPC
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -130,6 +136,10 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
     submissions = submissions.filter(s => s.category === category);
   }
 
+  if (institution) {
+    submissions = submissions.filter(s => s.institution_short_name === institution);
+  }
+
   // Calculate stats from all submissions (before filtering)
   const stats = (allSubmissions || []).reduce(
     (acc, s) => {
@@ -154,7 +164,7 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
   // Build query string for filters
   const buildQueryString = (overrides: Record<string, string>) => {
     const params = new URLSearchParams();
-    const values = { search, status, category, page: '1', ...overrides };
+    const values = { search, status, category, institution, page: '1', ...overrides };
     Object.entries(values).forEach(([k, v]) => {
       if (v) params.set(k, v);
     });
@@ -274,11 +284,23 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
               <option value="productivity">Productivity</option>
               <option value="other">Other</option>
             </select>
+            <select
+              name="institution"
+              defaultValue={institution}
+              className="bg-stone-800 border border-stone-700 text-stone-200 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="">All Institutions</option>
+              {institutions?.map((inst) => (
+                <option key={inst.id} value={inst.short_name || inst.name}>
+                  {inst.short_name || inst.name}
+                </option>
+              ))}
+            </select>
             <Button type="submit" variant="outline" className="border-stone-700">
               <Filter className="h-4 w-4 mr-2" />
               Filter
             </Button>
-            {(search || status || category) && (
+            {(search || status || category || institution) && (
               <Link href={`/admin/events/${slug}/submissions`}>
                 <Button variant="ghost" className="text-stone-400">
                   Clear
@@ -392,7 +414,7 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-stone-500">
-                    {search || status || category
+                    {search || status || category || institution
                       ? 'No submissions match your filters'
                       : 'No submissions yet'}
                   </TableCell>

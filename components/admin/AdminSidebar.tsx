@@ -16,6 +16,8 @@ import {
   FileQuestion,
   Lightbulb,
   Rocket,
+  UserCog,
+  ClipboardList,
 } from 'lucide-react';
 
 const navItems = [
@@ -63,6 +65,16 @@ const navItems = [
     label: 'Analytics',
     href: '/admin/analytics',
     icon: BarChart3,
+  },
+  {
+    label: 'Roles',
+    href: '/admin/roles',
+    icon: UserCog,
+  },
+  {
+    label: 'Audit Log',
+    href: '/admin/audit',
+    icon: ClipboardList,
   },
   {
     label: 'Activity Log',
