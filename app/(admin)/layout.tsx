@@ -32,9 +32,22 @@ export default async function AdminLayout({
   const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: user.id });
   const userRole = (roleData as { role: string; institution_id: string }[] | null)?.[0];
 
+  // Check if user is in event_admins table (event-scoped admin access)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: eventAdminData } = await (supabase as any)
+    .from('event_admins')
+    .select('id')
+    .eq('user_id', user.id)
+    .limit(1);
+
+  const isEventAdminByTable = (eventAdminData && eventAdminData.length > 0) || false;
+
   // Check admin role first using RPC (bypasses RLS)
+  // Also allow users who are in event_admins table (event-scoped admins)
   const allowedRoles = ['superadmin', 'institution_admin', 'event_admin'];
-  if (!userRole || !allowedRoles.includes(userRole.role)) {
+  const hasAdminRole = userRole && allowedRoles.includes(userRole.role);
+
+  if (!hasAdminRole && !isEventAdminByTable) {
     redirect('/dashboard');
   }
 
@@ -47,12 +60,13 @@ export default async function AdminLayout({
     .single();
 
   // Use profile data if available, otherwise construct from RPC + auth user
+  // For event-scoped admins (via event_admins table), their role might be 'learner' in the users table
   const profile: ProfileRow = profileData ? (profileData as unknown as ProfileRow) : {
     name: user.user_metadata?.name || null,
     email: user.email || null,
     avatar_url: user.user_metadata?.avatar_url || null,
-    role: userRole.role as ProfileRow['role'],
-    institution_id: userRole.institution_id,
+    role: (userRole?.role as ProfileRow['role']) || (isEventAdminByTable ? 'event_admin' : 'learner'),
+    institution_id: userRole?.institution_id || null,
   };
 
   return (

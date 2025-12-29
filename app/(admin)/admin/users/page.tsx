@@ -45,7 +45,16 @@ export default async function AdminUsersPage() {
   const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: effectiveUser.id });
   const admin = (roleData as { role: string; institution_id: string | null }[] | null)?.[0] as AdminProfile | null;
   const isInstitutionAdmin = admin?.role === 'institution_admin';
-  const isEventAdmin = admin?.role === 'event_admin';
+
+  // Check event_admins table for event-scoped admin access
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: eventAdminData } = await (supabase as any)
+    .from('event_admins')
+    .select('id')
+    .eq('user_id', effectiveUser.id)
+    .limit(1);
+
+  const isEventAdmin = admin?.role === 'event_admin' || (eventAdminData && eventAdminData.length > 0);
 
   // Fetch institutions for lookup
   const { data: institutionsData } = await supabase
