@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -369,7 +370,21 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
       </Tabs>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
+        <Link href={`/admin/events/${slug}/submissions`}>
+          <Card className="bg-stone-900/50 border-stone-800 hover:border-stone-700 transition-colors cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-purple-400" />
+                <div>
+                  <div className="font-medium text-stone-100">Submissions</div>
+                  <div className="text-sm text-stone-500">Review and score submissions</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
         <Link href={`/admin/events/${slug}/participants`}>
           <Card className="bg-stone-900/50 border-stone-800 hover:border-stone-700 transition-colors cursor-pointer">
             <CardContent className="pt-6">
