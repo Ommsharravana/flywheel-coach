@@ -3071,3 +3071,28 @@ Cycle auto-naming from problem statement with edit capability
 - `/app/portfolio/page.tsx` - Uses CycleNameEditor in cycle cards
 
 **Build Status:** Successful
+
+---
+
+## Session: 2025-12-30 03:07
+
+### Committed
+- All 13 files committed (54c7acf)
+- Commit: feat: auto-name cycles from problem statement + event filter for Problem Bank
+- 820 lines added, 139 lines removed
+- 5 new files created
+
+### Features Complete
+1. ✅ Event filter for Problem Bank (auto-selects active event)
+2. ✅ Cycle auto-naming from problem statement
+3. ✅ Edit icon for manual cycle name override (visible on hover)
+
+### Status
+All recent work committed and verified.
+
+
+### Migration 049 Applied: 2025-12-30 03:13
+- **Fixed:** Appathon submissions unique constraint
+- **Change:** Dropped `idx_submissions_cycle_event`, created `idx_submissions_user_cycle_event(user_id, cycle_id, event_id)`
+- **Result:** Users can now save drafts without conflicts from other users' submissions
+
