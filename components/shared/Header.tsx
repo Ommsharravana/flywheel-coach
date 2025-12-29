@@ -33,9 +33,10 @@ interface HeaderProps {
   user?: HeaderUser | null
   role?: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin' | null
   isImpersonating?: boolean
+  isEventAdmin?: boolean  // User is in event_admins table (event-scoped admin)
 }
 
-export function Header({ user, role, isImpersonating }: HeaderProps) {
+export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -111,7 +112,7 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
               <NavLink href="/settings" active={pathname === '/settings'}>
                 {t('nav.settings')}
               </NavLink>
-              {(role === 'superadmin' || role === 'institution_admin' || role === 'event_admin') && (
+              {(role === 'superadmin' || role === 'institution_admin' || role === 'event_admin' || isEventAdmin) && (
                 <NavLink href="/admin" active={pathname.startsWith('/admin')}>
                   <span className="flex items-center gap-1.5">
                     <Shield className="h-3.5 w-3.5" />
@@ -164,13 +165,13 @@ export function Header({ user, role, isImpersonating }: HeaderProps) {
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
                       <Link href="/settings">{t('nav.settings')}</Link>
                     </DropdownMenuItem>
-                    {role === 'superadmin' && (
+                    {(role === 'superadmin' || role === 'institution_admin' || role === 'event_admin' || isEventAdmin) && (
                       <>
                         <DropdownMenuSeparator className="bg-stone-800" />
                         <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
                           <Link href="/admin" className="flex items-center gap-2">
                             <Shield className="h-4 w-4 text-amber-400" />
-                            <span>{t('nav.superAdminPanel')}</span>
+                            <span>{role === 'superadmin' ? t('nav.superAdminPanel') : t('nav.admin') || 'Admin'}</span>
                           </Link>
                         </DropdownMenuItem>
                       </>

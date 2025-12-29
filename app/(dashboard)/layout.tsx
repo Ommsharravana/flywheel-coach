@@ -70,6 +70,16 @@ export default async function DashboardLayout({
     }
   }
 
+  // Check if user is an event admin (for event-scoped admin access)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: eventAdminData } = await (supabase as any)
+    .from('event_admins')
+    .select('id')
+    .eq('user_id', effectiveUser.id)
+    .limit(1);
+
+  const isEventAdmin = (eventAdminData && eventAdminData.length > 0) || false;
+
   // Create a user object compatible with Header
   const displayUser = {
     id: effectiveUser.id,
@@ -101,7 +111,7 @@ export default async function DashboardLayout({
 
           <ImpersonationBanner />
           <EventBanner />
-          <Header user={displayUser} role={profile?.role} isImpersonating={impersonating} />
+          <Header user={displayUser} role={profile?.role} isImpersonating={impersonating} isEventAdmin={isEventAdmin} />
 
           <main className={`relative z-10 pb-8 px-4 sm:px-6 lg:px-8 ${topPadding}`}>
             <div className="mx-auto max-w-7xl">

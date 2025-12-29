@@ -2647,3 +2647,16 @@ User asked: "where do we see received submissions?" - No submissions dashboard e
 
 Commit: 4c37c6c - Pushed to main, Vercel deploying
 
+
+### Verification Complete
+- Vercel deployment: **READY** (state: READY, commit: 8acd824)
+- Tested Senior Learner search on Appathon Submission page:
+  - API correctly passes `senior_learner=true` parameter
+  - Network request: `/api/users/search?q=dire&senior_learner=true&event_id=...`
+  - Returns 200, filters by `is_senior_learner` column
+- Settings page shows:
+  - Senior Learner Status checkbox (not a role dropdown)
+  - Director has role "superadmin" (not senior_learner)
+  - Checkbox works independently of role
+
+**All tasks completed successfully.**
