@@ -36,7 +36,7 @@ export const TWO_PHASE_FORMAT = {
     name: 'DEMO DAY',
     date: 'Jan 3, 2026',
     isoDate: '2026-01-03',
-    format: '7-min presentations',
+    format: '5-min presentations',
     description: 'Teams present & compete for prizes',
   },
   lovableFreeEnd: '2025-12-31',
@@ -140,7 +140,7 @@ export const APPATHON_TIMELINE = {
     schedule: [
       { time: '9:00 AM', activity: 'Check-in & Tech Setup' },
       { time: '9:30 AM', activity: 'Inauguration' },
-      { time: '10:00 AM - 1:00 PM', activity: 'Team Presentations (7 min each)' },
+      { time: '10:00 AM - 1:00 PM', activity: 'Team Presentations (5 min each)' },
       { time: '1:00 PM - 2:00 PM', activity: 'Lunch Break' },
       { time: '2:00 PM - 4:00 PM', activity: 'Remaining Presentations' },
       { time: '4:00 PM - 5:00 PM', activity: "People's Choice Voting + Judging" },
@@ -207,10 +207,10 @@ export const BUILD_PHASE_RULES = {
 
 export const DEMO_DAY_RULES = {
   presentationFormat: [
-    { element: 'Live Demo', duration: '4 minutes', details: 'Show your app working' },
-    { element: 'Problem & Solution', duration: '2 minutes', details: 'Explain what you solved' },
+    { element: 'Live Demo', duration: '3 minutes', details: 'Show your app working' },
+    { element: 'Problem & Solution', duration: '1 minute', details: 'Explain what you solved' },
     { element: 'Q&A', duration: '1 minute', details: 'Judges ask questions' },
-    { element: 'Total', duration: '7 minutes', details: 'Hard stop' },
+    { element: 'Total', duration: '5 minutes', details: 'Hard stop' },
   ],
   whatToPrepare: [
     'Working app link (Lovable URL)',
@@ -453,7 +453,7 @@ export const APPATHON_FAQ = {
     },
     {
       question: 'How long is the presentation?',
-      answer: '7 minutes total: 4 min demo + 2 min problem/solution explanation + 1 min Q&A.',
+      answer: '5 minutes total: 3 min demo + 1 min problem/solution explanation + 1 min Q&A.',
     },
   ],
   prizes: [
