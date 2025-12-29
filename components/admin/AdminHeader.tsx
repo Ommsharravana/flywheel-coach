@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User as UserIcon, Settings } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { EventSwitcher } from './EventSwitcher';
 
 interface AdminHeaderProps {
   user: User | null;
@@ -22,9 +23,10 @@ interface AdminHeaderProps {
     email: string;
     avatarUrl?: string | null;
   };
+  userRole?: string;
 }
 
-export function AdminHeader({ user, profile }: AdminHeaderProps) {
+export function AdminHeader({ user, profile, userRole }: AdminHeaderProps) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -42,11 +44,32 @@ export function AdminHeader({ user, profile }: AdminHeaderProps) {
         .slice(0, 2)
     : user?.email?.slice(0, 2).toUpperCase() || 'SA';
 
+  // Determine panel title based on role
+  const panelTitle = userRole === 'superadmin'
+    ? 'Super Admin Panel'
+    : userRole === 'event_admin'
+    ? 'Event Admin Panel'
+    : 'Admin Panel';
+
   return (
     <header className="h-16 bg-stone-900/50 border-b border-stone-800 px-6 flex items-center justify-between">
-      <div>
-        <h2 className="text-lg font-medium text-stone-100">Super Admin Panel</h2>
-        <p className="text-sm text-stone-500">Manage users, cycles, and monitor activity</p>
+      <div className="flex items-center gap-6">
+        <div>
+          <h2 className="text-lg font-medium text-stone-100">{panelTitle}</h2>
+          <p className="text-sm text-stone-500">Manage users, cycles, and monitor activity</p>
+        </div>
+
+        {/* Event Switcher for event_admin role */}
+        {user && userRole === 'event_admin' && (
+          <EventSwitcher
+            userId={user.id}
+            userRole={userRole}
+            onEventChange={(eventId) => {
+              // Refresh the page to reload data with new event context
+              router.refresh();
+            }}
+          />
+        )}
       </div>
 
       <div className="flex items-center gap-4">

@@ -69,6 +69,7 @@ export default async function AdminLayout({
             email: profile.email || user.email || '',
             avatarUrl: profile.avatar_url,
           }}
+          userRole={profile.role}
         />
         <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>

@@ -2660,3 +2660,39 @@ Commit: 4c37c6c - Pushed to main, Vercel deploying
   - Checkbox works independently of role
 
 **All tasks completed successfully.**
+
+---
+
+## 2024-12-29 - Session: Simplified Event Admin Global Access
+
+**Worked On:** Simplified event_admin permission model to grant global access
+
+**Issue:** Krishnaveni (event_admin) could access admin panel but saw 0 users - RPC function was filtering incorrectly
+
+**Root Cause:** The `get_all_users_admin` RPC function had incorrect logic or wasn't updated with the simplified model
+
+**Done:**
+1. Diagnosed RPC returning only 2 users instead of 1016
+2. Verified Krishnaveni's role is correctly set to `event_admin` (role_matches = true)
+3. Re-applied migration 053 (`get_all_users_admin` function) to Supabase SQL Editor
+4. Verified RPC now returns 1016 users for event_admin caller
+5. Confirmed admin page shows 1000+ users with global access
+
+**Key Changes (from previous session):**
+- Migration 053: Simplified RPC functions to give `event_admin` same global access as `superadmin`
+- Frontend: Simplified `isEventAdmin` check to just role comparison
+- Removed all `event_admins` junction table lookups
+
+**Files Modified:**
+- `/supabase/migrations/053_simplify_event_admin_global_access.sql` - Re-applied to production
+- `/app/(admin)/layout.tsx` - Simplified admin access check
+- `/app/(admin)/admin/users/page.tsx` - Simplified isEventAdmin
+- `/app/(dashboard)/layout.tsx` - Simplified isEventAdmin
+
+**Test Results:**
+- SQL: `SELECT count(*) FROM get_all_users_admin('ebcafeed-...')` → 1016 users
+- Admin page: Shows 1000 Total Users, users from multiple institutions visible
+- Global access working correctly for event_admin role
+
+**Current State:** Complete - Krishnaveni has full global admin access
+

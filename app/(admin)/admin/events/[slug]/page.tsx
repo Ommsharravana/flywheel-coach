@@ -370,7 +370,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
       </Tabs>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Link href={`/admin/events/${slug}/submissions`}>
           <Card className="bg-stone-900/50 border-stone-800 hover:border-stone-700 transition-colors cursor-pointer">
             <CardContent className="pt-6">
@@ -378,7 +378,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
                 <FileText className="h-5 w-5 text-purple-400" />
                 <div>
                   <div className="font-medium text-stone-100">Submissions</div>
-                  <div className="text-sm text-stone-500">Review and score submissions</div>
+                  <div className="text-sm text-stone-500">Review and score</div>
                 </div>
               </div>
             </CardContent>
@@ -391,8 +391,22 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-blue-400" />
                 <div>
-                  <div className="font-medium text-stone-100">Manage Participants</div>
-                  <div className="text-sm text-stone-500">View and manage event participants</div>
+                  <div className="font-medium text-stone-100">Participants</div>
+                  <div className="text-sm text-stone-500">Manage users</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href={`/admin/events/${slug}/curate`}>
+          <Card className="bg-stone-900/50 border-stone-800 hover:border-amber-500/30 transition-colors cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <Target className="h-5 w-5 text-amber-400" />
+                <div>
+                  <div className="font-medium text-stone-100">Curate Problems</div>
+                  <div className="text-sm text-stone-500">Pick from bank</div>
                 </div>
               </div>
             </CardContent>
@@ -406,7 +420,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
                 <Database className="h-5 w-5 text-green-400" />
                 <div>
                   <div className="font-medium text-stone-100">Problem Bank</div>
-                  <div className="text-sm text-stone-500">View problems from this event</div>
+                  <div className="text-sm text-stone-500">View problems</div>
                 </div>
               </div>
             </CardContent>
@@ -417,10 +431,10 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
           <Card className="bg-stone-900/50 border-stone-800 hover:border-stone-700 transition-colors cursor-pointer">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <Settings className="h-5 w-5 text-amber-400" />
+                <Settings className="h-5 w-5 text-stone-400" />
                 <div>
-                  <div className="font-medium text-stone-100">Event Settings</div>
-                  <div className="text-sm text-stone-500">Configure event options</div>
+                  <div className="font-medium text-stone-100">Settings</div>
+                  <div className="text-sm text-stone-500">Configure event</div>
                 </div>
               </div>
             </CardContent>
