@@ -17,6 +17,7 @@ import {
   GitBranch,
   Filter,
   Sparkles,
+  Calendar,
 } from 'lucide-react';
 import {
   Select,
@@ -38,6 +39,14 @@ import {
   VALIDATION_STATUSES,
 } from '@/lib/types/problem-bank';
 
+// Type for admin events
+interface AdminEvent {
+  id: string;
+  slug: string;
+  name: string;
+  role: string;
+}
+
 export default function DashboardProblemBankPage() {
   const [problems, setProblems] = useState<ProblemCardData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +60,11 @@ export default function DashboardProblemBankPage() {
   // Filters
   const [search, setSearch] = useState('');
   const [theme, setTheme] = useState<ProblemTheme | 'all'>('all');
+  const [eventId, setEventId] = useState<string>('all');
+
+  // Events data
+  const [adminEvents, setAdminEvents] = useState<AdminEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
 
   // Stats
   const [stats, setStats] = useState({
@@ -58,6 +72,26 @@ export default function DashboardProblemBankPage() {
     validated: 0,
     openForAttempts: 0,
   });
+
+  // Fetch admin events on mount
+  const fetchAdminEvents = useCallback(async () => {
+    setEventsLoading(true);
+    try {
+      const response = await fetch('/api/admin/events');
+      if (response.ok) {
+        const data = await response.json();
+        setAdminEvents(data.events || []);
+        // Smart default: auto-select user's active event
+        if (data.activeEventId) {
+          setEventId(data.activeEventId);
+        }
+      }
+    } catch {
+      // Non-critical, events filter will just be empty
+    } finally {
+      setEventsLoading(false);
+    }
+  }, []);
 
   const fetchProblems = useCallback(async () => {
     setLoading(true);
@@ -72,6 +106,7 @@ export default function DashboardProblemBankPage() {
 
       if (search) params.set('search', search);
       if (theme !== 'all') params.set('theme', theme);
+      if (eventId !== 'all') params.set('event_id', eventId);
 
       const response = await fetch(`/api/problems?${params.toString()}`);
 
@@ -89,7 +124,7 @@ export default function DashboardProblemBankPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, theme]);
+  }, [page, search, theme, eventId]);
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
@@ -109,6 +144,11 @@ export default function DashboardProblemBankPage() {
       // Non-critical
     }
   }, []);
+
+  // Fetch admin events on mount
+  useEffect(() => {
+    fetchAdminEvents();
+  }, [fetchAdminEvents]);
 
   useEffect(() => {
     fetchProblems();
@@ -208,7 +248,8 @@ export default function DashboardProblemBankPage() {
       {/* Search and Filters */}
       <Card className="bg-stone-900/50 border-stone-800">
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col gap-4">
+            {/* Search bar - full width on mobile */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
               <Input
@@ -219,40 +260,69 @@ export default function DashboardProblemBankPage() {
               />
             </div>
 
-            <Select
-              value={theme}
-              onValueChange={(value) => {
-                setTheme(value as ProblemTheme | 'all');
-                handleFilterChange();
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-[200px] bg-stone-800 border-stone-700">
-                <Filter className="h-4 w-4 mr-2 text-stone-500" />
-                <SelectValue placeholder="Filter by theme" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Themes</SelectItem>
-                {Object.entries(PROBLEM_THEMES).map(([key, { label, emoji }]) => (
-                  <SelectItem key={key} value={key}>
-                    {emoji} {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {(search || theme !== 'all') && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearch('');
-                  setTheme('all');
-                  setPage(1);
+            {/* Filter dropdowns - responsive grid */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Event Filter */}
+              <Select
+                value={eventId}
+                onValueChange={(value) => {
+                  setEventId(value);
+                  handleFilterChange();
                 }}
-                className="border-stone-700 text-stone-300 hover:bg-stone-800"
+                disabled={eventsLoading || adminEvents.length === 0}
               >
-                Clear
-              </Button>
-            )}
+                <SelectTrigger className="w-full sm:w-[200px] bg-stone-800 border-stone-700">
+                  <Calendar className="h-4 w-4 mr-2 text-stone-500" />
+                  <SelectValue placeholder={eventsLoading ? 'Loading...' : 'Filter by event'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Events</SelectItem>
+                  {adminEvents.map((event) => (
+                    <SelectItem key={event.id} value={event.id}>
+                      {event.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Theme Filter */}
+              <Select
+                value={theme}
+                onValueChange={(value) => {
+                  setTheme(value as ProblemTheme | 'all');
+                  handleFilterChange();
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-[200px] bg-stone-800 border-stone-700">
+                  <Filter className="h-4 w-4 mr-2 text-stone-500" />
+                  <SelectValue placeholder="Filter by theme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Themes</SelectItem>
+                  {Object.entries(PROBLEM_THEMES).map(([key, { label, emoji }]) => (
+                    <SelectItem key={key} value={key}>
+                      {emoji} {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Clear button */}
+              {(search || theme !== 'all' || eventId !== 'all') && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearch('');
+                    setTheme('all');
+                    setEventId('all');
+                    setPage(1);
+                  }}
+                  className="border-stone-700 text-stone-300 hover:bg-stone-800"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -291,7 +361,7 @@ export default function DashboardProblemBankPage() {
             <Lightbulb className="h-12 w-12 text-stone-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-stone-100">No problems found</h3>
             <p className="text-stone-400 mt-2">
-              {search || theme !== 'all'
+              {search || theme !== 'all' || eventId !== 'all'
                 ? 'Try adjusting your search or filters'
                 : 'Problems will appear here once they are added to the bank'}
             </p>

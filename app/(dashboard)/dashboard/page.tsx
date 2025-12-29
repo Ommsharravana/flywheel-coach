@@ -9,6 +9,8 @@ import { EventSelector } from '@/components/events/EventSelector'
 import { Database } from '@/lib/supabase/types'
 import { createTranslator } from '@/lib/i18n'
 import type { Locale } from '@/lib/i18n/types'
+import { ActiveCycleCard } from './ActiveCycleCard'
+import { CompletedCyclesList } from './CompletedCyclesList'
 
 type Cycle = Database['public']['Tables']['cycles']['Row']
 
@@ -95,64 +97,20 @@ export default async function DashboardPage() {
 
       {/* Active Cycle or Start New */}
       {activeCycle ? (
-        <div className="glass-card rounded-2xl p-6 sm:p-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="font-display text-xl font-semibold text-stone-100">
-                {t('dashboard.currentCycle')}: {activeCycle.name || t('dashboard.untitledCycle')}
-              </h2>
-              <p className="text-sm text-stone-400">
-                {t('dashboard.started')} {new Date(activeCycle.started_at).toLocaleDateString(locale === 'ta' ? 'ta-IN' : 'en-US')}
-              </p>
-            </div>
-            <Button
-              asChild
-              className="bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-semibold hover:from-amber-400 hover:to-orange-500"
-            >
-              <Link href={`/cycle/${activeCycle.id}/step/${activeCycle.current_step}`}>
-                {t('common.continue')}
-              </Link>
-            </Button>
-          </div>
-
-          {/* Progress Steps */}
-          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-            {flywheelSteps.map((step) => {
-              const isCompleted = step.number < activeCycle.current_step
-              const isCurrent = step.number === activeCycle.current_step
-
-              return (
-                <div
-                  key={step.number}
-                  className={`relative flex flex-col items-center p-3 rounded-xl transition-all ${
-                    isCompleted
-                      ? 'bg-amber-500/20'
-                      : isCurrent
-                      ? 'bg-gradient-to-br from-amber-500/30 to-orange-600/30 ring-2 ring-amber-500/50'
-                      : 'bg-stone-800/50'
-                  }`}
-                >
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                      isCompleted
-                        ? 'bg-amber-500 text-stone-950'
-                        : isCurrent
-                        ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-stone-950'
-                        : 'bg-stone-700 text-stone-400'
-                    }`}
-                  >
-                    {isCompleted ? '✓' : step.number}
-                  </div>
-                  <span className={`mt-2 text-xs text-center ${
-                    isCompleted || isCurrent ? 'text-stone-200' : 'text-stone-500'
-                  }`}>
-                    {step.name}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        <ActiveCycleCard
+          cycleId={activeCycle.id}
+          cycleName={activeCycle.name || ''}
+          currentStep={activeCycle.current_step}
+          startedAt={activeCycle.started_at}
+          flywheelSteps={flywheelSteps}
+          locale={locale}
+          translations={{
+            currentCycle: t('dashboard.currentCycle'),
+            untitledCycle: t('dashboard.untitledCycle'),
+            started: t('dashboard.started'),
+            continue: t('common.continue'),
+          }}
+        />
       ) : (
         <div className="glass-card rounded-2xl p-6 sm:p-8 text-center">
           <div className="mx-auto max-w-md">
@@ -209,38 +167,18 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent Cycles */}
-      {completedCycles.length > 0 && (
-        <div className="glass-card rounded-2xl p-6 sm:p-8">
-          <h2 className="font-display text-xl font-semibold text-stone-100 mb-4">
-            {t('dashboard.completedCycles')}
-          </h2>
-          <div className="space-y-3">
-            {completedCycles.slice(0, 5).map((cycle) => (
-              <div
-                key={cycle.id}
-                className="flex items-center justify-between p-4 rounded-xl bg-stone-800/50 hover:bg-stone-800/70 transition-colors"
-              >
-                <div>
-                  <h3 className="font-medium text-stone-100">
-                    {cycle.name || t('dashboard.untitledCycle')}
-                  </h3>
-                  <p className="text-sm text-stone-400">
-                    {t('dashboard.completed')} {cycle.completed_at ? new Date(cycle.completed_at).toLocaleDateString(locale === 'ta' ? 'ta-IN' : 'en-US') : t('common.notAvailable')}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-amber-400 font-semibold">
-                    {cycle.impact_score || 0} {t('common.pts')}
-                  </span>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/cycle/${cycle.id}`}>{t('common.view')}</Link>
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <CompletedCyclesList
+        cycles={completedCycles}
+        locale={locale}
+        translations={{
+          completedCycles: t('dashboard.completedCycles'),
+          untitledCycle: t('dashboard.untitledCycle'),
+          completed: t('dashboard.completed'),
+          notAvailable: t('common.notAvailable'),
+          pts: t('common.pts'),
+          view: t('common.view'),
+        }}
+      />
     </div>
   )
 }

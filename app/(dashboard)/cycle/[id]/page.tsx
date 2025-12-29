@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle, Clock, Home, RotateCcw, Target, Trophy, Send } from 'lucide-react';
 import { Cycle } from '@/lib/types/cycle';
 import { CycleActions } from './CycleActions';
+import { CycleHeader } from './CycleHeader';
 
 interface UserProfileRow {
   active_event_id: string | null;
@@ -106,9 +107,7 @@ export default async function CyclePage({ params }: CyclePageProps) {
               <Home className="w-4 h-4" />
               Back to Home
             </Link>
-            <h1 className="text-3xl font-display font-bold text-stone-100">
-              {cycle.name}
-            </h1>
+            <CycleHeader cycleId={cycle.id} cycleName={cycle.name} />
             <p className="text-stone-400 mt-1">
               {cycle.status === 'completed'
                 ? `Completed ${cycle.completedAt ? new Date(cycle.completedAt).toLocaleDateString() : ''}`

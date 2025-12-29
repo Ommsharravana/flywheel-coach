@@ -26,6 +26,9 @@ export async function GET(request: NextRequest) {
     const perPage = parseInt(searchParams.get('per_page') || '20');
     const offset = (page - 1) * perPage;
 
+    // Event filter
+    const eventId = searchParams.get('event_id') || null;
+
     // Filters
     const filters: ProblemFilters = {
       theme: searchParams.get('theme') as ProblemFilters['theme'] || undefined,
@@ -41,6 +44,19 @@ export async function GET(request: NextRequest) {
       direction: (searchParams.get('sort_dir') as ProblemSort['direction']) || 'desc',
     };
 
+    // If event filter is specified, get problems linked to that event
+    let eventProblemIds: string[] | null = null;
+    if (eventId) {
+      // Get problem IDs from event_problems junction table
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: eventProblems } = await (supabase as any)
+        .from('event_problems')
+        .select('problem_id')
+        .eq('event_id', eventId);
+
+      eventProblemIds = (eventProblems || []).map((ep: { problem_id: string }) => ep.problem_id);
+    }
+
     // Use RPC function to fetch problems (bypasses RLS issues with auth.uid() in server components)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: problems, error: queryError } = await (supabase as any).rpc('get_all_problems_admin', {
@@ -52,8 +68,8 @@ export async function GET(request: NextRequest) {
       search_term: filters.search || null,
       sort_field: sort.field,
       sort_direction: sort.direction,
-      page_offset: offset,
-      page_limit: perPage
+      page_offset: 0, // We'll handle pagination after event filtering
+      page_limit: eventId ? 10000 : perPage // Fetch more if we need to filter by event
     });
 
     if (queryError) {
@@ -64,11 +80,45 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get total count from first row (if any)
-    const totalCount = problems && problems.length > 0 ? Number(problems[0].total_count) : 0;
+    // Filter by event if specified
+    let filteredProblems = problems || [];
+    if (eventId && eventProblemIds !== null) {
+      // Get event name for source_event matching
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: eventData } = await (supabase as any)
+        .from('events')
+        .select('name, slug')
+        .eq('id', eventId)
+        .single();
+
+      const eventName = (eventData as { name: string; slug: string } | null)?.name || '';
+      const eventSlug = (eventData as { name: string; slug: string } | null)?.slug || '';
+
+      // Filter problems that are:
+      // 1. In event_problems junction table
+      // 2. OR have event_id matching
+      // 3. OR have source_event matching event name/slug (case-insensitive)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      filteredProblems = filteredProblems.filter((p: any) => {
+        const inJunction = eventProblemIds!.includes(p.id);
+        const hasEventId = p.event_id === eventId;
+        const matchesSourceEvent = p.source_event && (
+          p.source_event.toLowerCase().includes(eventName.toLowerCase()) ||
+          p.source_event.toLowerCase().includes(eventSlug.toLowerCase())
+        );
+        return inJunction || hasEventId || matchesSourceEvent;
+      });
+    }
+
+    // Apply pagination after event filtering
+    const totalCount = eventId ? filteredProblems.length : (problems && problems.length > 0 ? Number(problems[0].total_count) : 0);
+    const paginatedProblems = eventId
+      ? filteredProblems.slice(offset, offset + perPage)
+      : filteredProblems;
 
     // Get attempt counts for each problem using RPC
-    const problemIds = problems?.map((p: { id: string }) => p.id) || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const problemIds = paginatedProblems.map((p: any) => p.id);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: attemptCounts } = problemIds.length > 0 ? await (supabase as any).rpc('get_problem_attempt_counts', {
@@ -83,7 +133,7 @@ export async function GET(request: NextRequest) {
 
     // Transform to ProblemCardData
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cardData: ProblemCardData[] = (problems || []).map((p: any) => ({
+    const cardData: ProblemCardData[] = paginatedProblems.map((p: any) => ({
       id: p.id,
       title: p.title,
       problem_statement: p.problem_statement,

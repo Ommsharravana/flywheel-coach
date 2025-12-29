@@ -18,6 +18,7 @@ import { useAppathonMode } from '@/lib/context/EventContext';
 import { ProblemIdeasPanel } from '@/components/appathon/ProblemIdeasPanel';
 import { type ProblemIdea, type AppathonThemeId } from '@/lib/appathon/content';
 import { useTranslation } from '@/lib/i18n/LanguageContext';
+import { generateCycleNameFromProblem, getUniqueCycleName } from '@/lib/utils';
 
 interface ProblemDiscoveryProps {
   cycle: Cycle;
@@ -118,6 +119,53 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   const hasProblemStatement = problemStatement.trim().length > 0;
   const hasRefinement = refinedStatement.trim().length > 0;
 
+  // Helper function to update cycle name based on problem statement
+  const updateCycleNameFromProblem = useCallback(async (
+    currentRefinedStatement: string | null,
+    currentProblemStatement: string | null
+  ) => {
+    try {
+      // Generate name from problem statement
+      const generatedName = generateCycleNameFromProblem(currentRefinedStatement, currentProblemStatement);
+
+      if (!generatedName) return; // No meaningful name could be generated
+
+      // Check if cycle already has a user-defined name (not "New Cycle")
+      const { data: currentCycle } = await supabase
+        .from('cycles')
+        .select('name')
+        .eq('id', cycle.id)
+        .single();
+
+      // Only auto-update if the current name is "New Cycle" or starts with the same base
+      const currentName = currentCycle?.name || 'New Cycle';
+      if (currentName !== 'New Cycle' && !currentName.startsWith(generatedName.substring(0, 20))) {
+        return; // User has customized the name, don't override
+      }
+
+      // Get existing cycle names for this user to handle duplicates
+      const { data: existingCycles } = await supabase
+        .from('cycles')
+        .select('name')
+        .eq('user_id', cycle.userId)
+        .neq('id', cycle.id); // Exclude current cycle
+
+      const existingNames = (existingCycles || []).map((c: { name: string | null }) => c.name || '').filter(Boolean);
+      const uniqueName = getUniqueCycleName(generatedName, existingNames);
+
+      // Update cycle name
+      await supabase
+        .from('cycles')
+        .update({
+          name: uniqueName,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', cycle.id);
+    } catch (error) {
+      console.error('Failed to update cycle name:', error);
+    }
+  }, [cycle.id, cycle.userId, supabase]);
+
   // Silent auto-save function (no toast, no navigation)
   const saveProblemSilently = useCallback(async (answersToSave: Record<string, string>) => {
     try {
@@ -146,10 +194,13 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
           problemIdRef.current = data.id;
         }
       }
+
+      // Auto-update cycle name from problem statement
+      await updateCycleNameFromProblem(refinedStatement, problemStatement);
     } catch (error) {
       console.error('Auto-save failed:', error);
     }
-  }, [cycle.id, problemStatement, refinedStatement, painLevel, frequency, supabase]);
+  }, [cycle.id, problemStatement, refinedStatement, painLevel, frequency, supabase, updateCycleNameFromProblem]);
 
   const handleAnswerChange = (questionId: string, value: string) => {
     const newAnswers = { ...answers, [questionId]: value };
@@ -234,6 +285,9 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
 
         if (error) throw error;
       }
+
+      // Auto-update cycle name from problem statement
+      await updateCycleNameFromProblem(refinedStatement, problemStatement);
 
       // Update cycle step if completing
       if (hasRefinement) {

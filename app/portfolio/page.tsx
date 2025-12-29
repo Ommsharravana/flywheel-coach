@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/shared/Header';
+import { CycleNameEditor } from '@/components/shared/CycleNameEditor';
 import {
   ArrowRight,
   ExternalLink,
@@ -323,9 +324,13 @@ export default function PortfolioPage() {
                           {getWorkflowEmoji(cycle.workflow?.workflow_type)}
                         </span>
                         <div>
-                          <CardTitle className="text-lg text-stone-100 line-clamp-1">
-                            {cycle.name}
-                          </CardTitle>
+                          <CycleNameEditor
+                            cycleId={cycle.id}
+                            initialName={cycle.name || 'Untitled Cycle'}
+                            onNameChange={() => loadPortfolio()}
+                            textClassName="text-lg font-semibold text-stone-100 line-clamp-1"
+                            iconSize="sm"
+                          />
                           <p className="text-xs text-stone-500">
                             {new Date(cycle.created_at).toLocaleDateString()}
                           </p>

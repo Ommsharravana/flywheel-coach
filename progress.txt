@@ -3017,3 +3017,57 @@ const uniqueEventAdminUsers = useMemo(() => {
 3. "Event Assignments" tab shows per-event assignments
 4. Filter dropdown shows "Global Event Admin" (not just "Event Admin")
 5. "+ Assign to Event" button opens modal with event dropdown AND user search
+
+---
+
+## Session: Dec 30, 2025 - Cycle Auto-Naming Feature
+
+### Feature Implemented
+Cycle auto-naming from problem statement with edit capability
+
+### What Was Done
+1. **Created helper functions in `/lib/utils.ts`:**
+   - `generateCycleNameFromProblem()` - Extracts meaningful name from problem statement (first 50 chars, cleaned up)
+   - `getUniqueCycleName()` - Handles duplicates by appending (1), (2), etc.
+
+2. **Created CycleNameEditor component** (`/components/shared/CycleNameEditor.tsx`):
+   - Inline editing with pencil icon (hover to reveal)
+   - Save/cancel buttons with keyboard support (Enter/Escape)
+   - Loading state during save
+   - Toast notifications for success/error
+
+3. **Updated ProblemDiscovery.tsx:**
+   - Added `updateCycleNameFromProblem()` helper that auto-generates cycle name
+   - Called from both `saveProblemSilently()` and `saveProblem()` functions
+   - Only auto-updates if current name is "New Cycle" (preserves user customizations)
+   - Checks for duplicate names across user's cycles
+
+4. **Updated display pages with editable cycle names:**
+   - **Cycle page** (`/app/(dashboard)/cycle/[id]/page.tsx`): Created `CycleHeader.tsx` wrapper component
+   - **Dashboard** (`/app/(dashboard)/dashboard/page.tsx`): Created `ActiveCycleCard.tsx` and `CompletedCyclesList.tsx` client components
+   - **Portfolio** (`/app/portfolio/page.tsx`): Added CycleNameEditor inline in cycle cards
+
+### How Auto-Naming Works
+1. When user saves problem at Step 1 (either via Save Draft or Complete Step)
+2. System generates a name from `refined_statement` (primary) or `selected_question` (fallback)
+3. Name is cleaned: remove common prefixes like "I want to", capitalize, truncate to ~50 chars at word boundary
+4. If duplicate names exist for this user, appends " (1)", " (2)", etc.
+5. If user has already customized the name (not "New Cycle"), the auto-generated name is skipped
+
+### Where Edit Icon Appears
+1. **Cycle Details page** - In the page header (h1 title)
+2. **Dashboard** - Active cycle section and completed cycles list
+3. **Portfolio page** - Each cycle card title
+
+### Files Modified
+- `/lib/utils.ts` - Added name generation utilities
+- `/components/shared/CycleNameEditor.tsx` - NEW - Reusable name editor component
+- `/components/steps/ProblemDiscovery.tsx` - Added auto-naming on save
+- `/app/(dashboard)/cycle/[id]/page.tsx` - Uses CycleHeader
+- `/app/(dashboard)/cycle/[id]/CycleHeader.tsx` - NEW - Client wrapper for editable name
+- `/app/(dashboard)/dashboard/page.tsx` - Uses new client components
+- `/app/(dashboard)/dashboard/ActiveCycleCard.tsx` - NEW - Active cycle with editable name
+- `/app/(dashboard)/dashboard/CompletedCyclesList.tsx` - NEW - Completed cycles with editable names
+- `/app/portfolio/page.tsx` - Uses CycleNameEditor in cycle cards
+
+**Build Status:** Successful
