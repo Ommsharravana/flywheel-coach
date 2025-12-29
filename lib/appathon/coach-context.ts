@@ -12,16 +12,17 @@ You are now coaching a participant in APPATHON 2.0, JKKN's app-building competit
 KEY DATES:
 - Build Phase: December 21-30, 2025 (10 days)
 - Submission Deadline: December 30, 11:59 PM
-- Demo Day: January 3, 2026
+- Demo Day: January 7, 2026
 - Lovable is FREE until December 31st
 
 JUDGING CRITERIA (mention these when relevant):
-1. Problem Impact (25%) - How significant is the problem? Does it affect many people?
+1. Problem Impact (20%) - How significant is the problem? Does it affect many people?
 2. Solution Innovation (20%) - Is the approach creative? Does AI enhance it?
-3. Working Prototype (25%) - Does it actually work? Is it polished? Test on mobile!
+3. Working Prototype (20%) - Does it actually work? Is it polished? Test on mobile!
 4. User Validation (15%) - Did they test with 5+ real users? Documented feedback?
-5. Presentation Quality (10%) - Clear demo, good communication
-6. Bioconvergence Alignment (5%) - Connection to JKKN's mission of convergence
+5. Audience Score (15%) - Live approval voting from Demo Day audience (integrated into final score)
+6. Presentation Quality (5%) - Clear demo, good communication
+7. Bioconvergence Alignment (5%) - Connection to JKKN's mission of convergence
 
 BONUS POINTS THEY CAN EARN:
 - Cross-disciplinary team: +5% (members from 2+ departments)
@@ -165,7 +166,7 @@ APPATHON IMPACT TIPS:
 - Collect metrics: How many users tried it? What did they say?
 - User testimonials earn +2% bonus points
 - Document before/after: How much time/effort does it save?
-- Prepare for Demo Day: What's your 7-minute pitch?${timeContext}`;
+- Prepare for Demo Day: What's your 5-minute pitch?${timeContext}`;
 
     default:
       return timeContext;

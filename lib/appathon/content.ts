@@ -46,7 +46,7 @@ export type AppathonThemeId = (typeof APPATHON_THEMES)[number]['id'];
 export const JUDGING_CRITERIA = [
   {
     name: 'Problem Impact',
-    weight: 25,
+    weight: 20,
     description: 'How significant is the problem being solved?',
     tips: 'Pick a problem that affects many people or causes significant pain',
   },
@@ -58,7 +58,7 @@ export const JUDGING_CRITERIA = [
   },
   {
     name: 'Working Prototype',
-    weight: 25,
+    weight: 20,
     description: 'Does the app actually work? Is it polished?',
     tips: 'A simple app that works beats a complex app that crashes',
   },
@@ -69,8 +69,14 @@ export const JUDGING_CRITERIA = [
     tips: 'Talk to 5+ potential users. Document their feedback.',
   },
   {
+    name: 'Audience Score',
+    weight: 15,
+    description: 'Live approval voting from Demo Day audience',
+    tips: 'Engage the audience during your demo. Make them want to vote for you!',
+  },
+  {
     name: 'Presentation Quality',
-    weight: 10,
+    weight: 5,
     description: 'Clear communication, good demo',
     tips: 'Practice your demo. Have a backup video ready.',
   },
@@ -898,7 +904,7 @@ export const APPATHON_DATES = {
   buildPhaseStart: '2025-12-21',
   buildPhaseEnd: '2025-12-30',
   submissionDeadline: '2025-12-30T23:59:00',
-  demoDay: '2026-01-03',
+  demoDay: '2026-01-07',
   lovableFreeEnd: '2025-12-31',
 } as const;
 
@@ -913,7 +919,6 @@ export const PRIZE_STRUCTURE = {
     { category: 'Best Education Solution', amount: 5000 },
     { category: 'Best First-Year Team', amount: 3000 },
     { category: 'Best Cross-Institutional Team', amount: 3000 },
-    { category: "People's Choice", amount: 3000 },
     { category: 'Best User Validation', amount: 3000 },
   ],
   myjkkn: [

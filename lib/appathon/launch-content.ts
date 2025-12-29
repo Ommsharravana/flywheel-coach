@@ -34,8 +34,8 @@ export const TWO_PHASE_FORMAT = {
   },
   demoDay: {
     name: 'DEMO DAY',
-    date: 'Jan 3, 2026',
-    isoDate: '2026-01-03',
+    date: 'Jan 7, 2026',
+    isoDate: '2026-01-07',
     format: '5-min presentations',
     description: 'Teams present & compete for prizes',
   },
@@ -43,7 +43,7 @@ export const TWO_PHASE_FORMAT = {
   whyTwoPhases: {
     opportunity: 'Lovable is FREE until December 31st, 2025.',
     challenge: 'After Dec 31, it becomes paid.',
-    solution: 'BUILD during the free period (Dec 21-30) — 10 full days! DEMO on January 3rd — showcase your creation, win prizes.',
+    solution: 'BUILD during the free period (Dec 21-30) — 10 full days! DEMO on January 7th — showcase your creation, win prizes.',
   },
   advantages: [
     'More time to build something meaningful',
@@ -100,7 +100,7 @@ export const MYJKKN_TRACK = {
     { step: 3, action: 'Go to GitHub repo and copy the context document', important: true },
     { step: 4, action: 'Paste context as FIRST prompt in Lovable before building' },
     { step: 5, action: 'Then tell Lovable your app idea' },
-    { step: 6, action: 'Demo on Jan 3 with live MyJKKN connection' },
+    { step: 6, action: 'Demo on Jan 7 with live MyJKKN connection' },
   ],
   contextUrl: 'https://github.com/JKKN-Institutions/MYJKKN-Context',
   contextNote: 'When Lovable knows MyJKKN\'s 19 modules, 53 database tables, and API structure upfront, it builds apps that actually work with real data — no guessing!',
@@ -135,7 +135,7 @@ export const APPATHON_TIMELINE = {
   },
   phase2: {
     name: 'DEMO DAY',
-    dates: 'Jan 3, 2026',
+    dates: 'Jan 7, 2026',
     icon: 'trophy',
     schedule: [
       { time: '9:00 AM', activity: 'Check-in & Tech Setup' },
@@ -143,7 +143,7 @@ export const APPATHON_TIMELINE = {
       { time: '10:00 AM - 1:00 PM', activity: 'Team Presentations (5 min each)' },
       { time: '1:00 PM - 2:00 PM', activity: 'Lunch Break' },
       { time: '2:00 PM - 4:00 PM', activity: 'Remaining Presentations' },
-      { time: '4:00 PM - 5:00 PM', activity: "People's Choice Voting + Judging" },
+      { time: '4:00 PM - 5:00 PM', activity: 'Audience Scoring + Final Judging' },
       { time: '5:00 PM - 6:00 PM', activity: 'Results & Prize Distribution', important: true },
     ],
   },
@@ -200,7 +200,7 @@ export const BUILD_PHASE_RULES = {
     { date: 'Dec 21', action: 'All teams share their NEW Lovable project link (empty/new project)' },
     { date: 'Dec 25', action: 'Mid-point screenshot submission (optional but recommended)' },
     { date: 'Dec 30', action: 'Final submission with build history visible' },
-    { date: 'Jan 3', action: 'Teams must explain their build process during demo' },
+    { date: 'Jan 7', action: 'Teams must explain their build process during demo' },
   ],
   note: 'Lovable tracks project history. We can verify when projects were created.',
 } as const;
@@ -241,7 +241,6 @@ export const PRIZE_STRUCTURE_DETAILED = {
     { category: 'Best Education Solution', amount: 5000, criteria: 'Education + AI theme' },
     { category: 'Best First-Year Team', amount: 3000, criteria: 'Team with first-year learners' },
     { category: 'Best Cross-Institutional Team', amount: 3000, criteria: 'Members from 2+ institutions' },
-    { category: "People's Choice", amount: 3000, criteria: 'Audience voting on Demo Day' },
     { category: 'Best User Validation', amount: 3000, criteria: 'Most impressive user feedback' },
   ],
   myjkkn: [
@@ -249,7 +248,7 @@ export const PRIZE_STRUCTURE_DETAILED = {
     { category: 'Best Personal Dashboard', amount: 3000, criteria: 'Best use of personal data (grades, timetable, etc.)' },
     { category: 'Best Community Tool', amount: 3000, criteria: 'Most helpful to other learners' },
   ],
-  totalPool: 63000,
+  totalPool: 60000,
   forAllParticipants: [
     'Certificate of Participation',
     'LinkedIn recommendation from JKKN',
@@ -440,8 +439,8 @@ export const APPATHON_FAQ = {
   ],
   demoDay: [
     {
-      question: "What if I can't attend Demo Day on Jan 3?",
-      answer: 'All team members must be present. If you have a genuine emergency, contact organizers before Jan 1.',
+      question: "What if I can't attend Demo Day on Jan 7?",
+      answer: 'All team members must be present. If you have a genuine emergency, contact organizers before Jan 5.',
     },
     {
       question: "What if my app doesn't work during the demo?",
