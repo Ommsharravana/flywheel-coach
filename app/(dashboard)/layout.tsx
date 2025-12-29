@@ -70,15 +70,8 @@ export default async function DashboardLayout({
     }
   }
 
-  // Check if user is an event admin (for event-scoped admin access)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: eventAdminData } = await (supabase as any)
-    .from('event_admins')
-    .select('id')
-    .eq('user_id', effectiveUser.id)
-    .limit(1);
-
-  const isEventAdmin = (eventAdminData && eventAdminData.length > 0) || false;
+  // Simplified model: role='event_admin' grants global admin access (no need to check event_admins table)
+  const isEventAdmin = effectiveProfile?.role === 'event_admin';
 
   // Create a user object compatible with Header
   const displayUser = {
