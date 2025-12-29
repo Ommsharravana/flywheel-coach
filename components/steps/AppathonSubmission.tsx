@@ -383,9 +383,16 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
 
       toast.success('Draft saved!');
       router.refresh();
-    } catch (error) {
+    } catch (error: unknown) {
+      const supabaseError = error as { message?: string; code?: string; details?: string; hint?: string };
       console.error('Error saving draft:', error);
-      toast.error('Failed to save draft');
+      console.error('Error details:', {
+        message: supabaseError?.message,
+        code: supabaseError?.code,
+        details: supabaseError?.details,
+        hint: supabaseError?.hint,
+      });
+      toast.error(`Failed to save draft: ${supabaseError?.message || 'Unknown error'}`);
     } finally {
       setIsPending(false);
     }
@@ -418,9 +425,16 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
       setSubmissionStatus('submitted');
       toast.success('Submission successful! Good luck! 🎉');
       router.refresh();
-    } catch (error) {
+    } catch (error: unknown) {
+      const supabaseError = error as { message?: string; code?: string; details?: string; hint?: string };
       console.error('Error submitting:', error);
-      toast.error('Failed to submit. Please try again.');
+      console.error('Submit error details:', {
+        message: supabaseError?.message,
+        code: supabaseError?.code,
+        details: supabaseError?.details,
+        hint: supabaseError?.hint,
+      });
+      toast.error(`Failed to submit: ${supabaseError?.message || 'Please try again.'}`);
     } finally {
       setIsPending(false);
     }
