@@ -2,7 +2,7 @@
 
 // Role = WHAT you can do (permissions)
 // 'builder' = default role (aspirational - you're a builder in Solution Studio)
-export type UserRole = 'builder' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+export type UserRole = 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
 
 // Category = WHO you are (identity)
 export type UserCategory = 'learner' | 'senior_learner';

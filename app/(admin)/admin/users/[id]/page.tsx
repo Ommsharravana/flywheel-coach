@@ -20,7 +20,7 @@ interface UserRow {
   id: string;
   email: string;
   name: string | null;
-  role: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+  role: 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
@@ -36,8 +36,7 @@ interface CycleRow {
 }
 
 const roleColors: Record<string, string> = {
-  learner: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  facilitator: 'bg-green-500/20 text-green-400 border-green-500/30',
+  builder: 'bg-stone-500/20 text-stone-400 border-stone-500/30',
   admin: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   event_admin: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   institution_admin: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
@@ -142,9 +141,9 @@ export default async function UserDetailPage({
               </h2>
               <Badge
                 variant="outline"
-                className={`mt-2 ${roleColors[user.role] || roleColors.learner}`}
+                className={`mt-2 ${roleColors[user.role] || roleColors.builder}`}
               >
-                {user.role === 'facilitator' ? 'senior learner' : user.role === 'institution_admin' ? 'inst. admin' : user.role === 'event_admin' ? 'event admin' : user.role}
+                {user.role === 'institution_admin' ? 'inst. admin' : user.role === 'event_admin' ? 'event admin' : user.role}
               </Badge>
             </div>
 

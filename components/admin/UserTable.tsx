@@ -30,7 +30,7 @@ interface UserWithCycles {
   id: string;
   email: string;
   name: string | null;
-  role: 'builder' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+  role: 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
   user_category: 'learner' | 'senior_learner';
   avatar_url: string | null;
   created_at: string;
@@ -54,7 +54,6 @@ const categoryColors: Record<string, string> = {
 // Role colors (WHAT you can do - permissions)
 const roleColors: Record<string, string> = {
   builder: 'bg-stone-500/20 text-stone-400 border-stone-500/30',
-  facilitator: 'bg-green-500/20 text-green-400 border-green-500/30',
   admin: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   event_admin: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   institution_admin: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
@@ -187,16 +186,12 @@ export function UserTable({ users, onImpersonate, onDelete, showInstitution = fa
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {user.role && user.role !== 'builder' ? (
-                    <Badge
-                      variant="outline"
-                      className={roleColors[user.role] || roleColors.builder}
-                    >
-                      {user.role === 'institution_admin' ? 'inst. admin' : user.role === 'event_admin' ? 'event admin' : user.role}
-                    </Badge>
-                  ) : (
-                    <span className="text-stone-500 text-sm">—</span>
-                  )}
+                  <Badge
+                    variant="outline"
+                    className={roleColors[user.role] || roleColors.builder}
+                  >
+                    {user.role === 'institution_admin' ? 'inst. admin' : user.role === 'event_admin' ? 'event admin' : user.role}
+                  </Badge>
                 </TableCell>
                 {showInstitution && (
                   <TableCell>

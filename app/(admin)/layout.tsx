@@ -7,7 +7,7 @@ interface ProfileRow {
   name: string | null;
   email: string | null;
   avatar_url: string | null;
-  role: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+  role: 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
   institution_id: string | null;
 }
 

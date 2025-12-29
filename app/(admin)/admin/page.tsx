@@ -95,9 +95,8 @@ export default async function AdminDashboardPage() {
   }
 
   const totalUsers = users.length;
-  const learners = users.filter((u) => u.role === 'learner').length;
-  const facilitators = users.filter((u) => u.role === 'facilitator').length;
-  const admins = users.filter((u) => u.role === 'admin' || u.role === 'superadmin').length;
+  const builders = users.filter((u) => u.role === 'builder').length;
+  const admins = users.filter((u) => u.role === 'admin' || u.role === 'superadmin' || u.role === 'event_admin' || u.role === 'institution_admin').length;
 
   // New users this week
   const oneWeekAgo = new Date();
@@ -167,7 +166,7 @@ export default async function AdminDashboardPage() {
         <StatsCard
           title="Total Users"
           value={totalUsers}
-          description={`${learners} learners, ${facilitators} senior learners`}
+          description={`${builders} builders, ${admins} admins`}
           iconName="users"
           trend={{
             value: newUsersThisWeek,

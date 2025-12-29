@@ -31,7 +31,7 @@ interface HeaderUser {
 
 interface HeaderProps {
   user?: HeaderUser | null
-  role?: 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin' | null
+  role?: 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin' | null
   isImpersonating?: boolean
   isEventAdmin?: boolean  // User is in event_admins table (event-scoped admin)
 }

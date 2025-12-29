@@ -2853,3 +2853,105 @@ ON appathon_submissions(user_id, cycle_id, event_id);
 **Result:** Success. Now each user can have one submission per cycle per event.
 
 **Current State:** Migration applied. Appathon submissions should now work for multiple users.
+
+---
+
+## 2024-12-30 - Session: User Category vs Role Separation
+
+**Worked On:** Separating user identity (category) from permissions (role)
+
+**Problem:**
+- `role` field was overloaded: serving both as identity (learner/senior_learner) AND permissions
+- Users had `role = 'learner'` when they were actually students
+- Needed separation: Category = WHO you are, Role = WHAT you can do
+
+**Solution (Migration 056):**
+1. Added `user_category` column: 'learner' (students) | 'senior_learner' (faculty)
+2. Changed default role from 'learner' to 'builder' (aspirational naming for Solution Studio)
+3. Migrated existing data: role='learner' → user_category='learner', role='builder'
+4. Updated TypeScript types across codebase
+5. Updated admin UI to show Category (identity) and Role (permissions) separately
+6. Fixed RPC function `get_all_users_admin` to return `user_category`
+
+**Files Modified:**
+- `/supabase/migrations/056_user_category_vs_role.sql` (NEW)
+- `/lib/institutions/types.ts` (updated UserRole type)
+- `/lib/supabase/types.ts` (added user_category)
+- `/lib/types/admin.ts` (UserRole, UserCategory types)
+- `/components/admin/UserTable.tsx` (Category + Role columns)
+- `/app/(admin)/admin/users/page.tsx` (stats by category)
+- `/app/(dashboard)/settings/page.tsx` (display user_category)
+
+**Database Updates:**
+- Migration 056 applied (role default = 'builder')
+- RPC function updated to return `user_category`
+
+**Verification:**
+- Admin Users page: Stats showing 997 Learners, 3 Senior Learners
+- Category badges (blue for Learner, green for Senior Learner) displaying
+- Role column shows "—" for default builder role (hidden as expected)
+- Admin count showing correctly
+
+**Current State:** Complete. User identity vs permissions now properly separated.
+
+---
+
+## 2024-12-30 - Role Management Improvements
+
+**Worked On:** Admin role visibility and management improvements
+
+**Done:**
+
+### 1. Show ALL roles on Users page
+- Updated UserTable.tsx to SHOW 'builder' role as a badge instead of hiding it with "—"
+- 'builder' role now displays with stone/gray badge styling
+
+### 2. Removed 'facilitator' role entirely
+Files updated:
+- `/lib/types/admin.ts` - Removed from UserRole type
+- `/lib/supabase/types.ts` - Removed from Insert/Update types  
+- `/lib/institutions/types.ts` - Removed from UserRole type
+- `/components/admin/UserTable.tsx` - Removed from interface and roleColors
+- `/components/admin/UserEditForm.tsx` - Removed from interface and Select options
+- `/app/(admin)/admin/users/new/page.tsx` - Removed from type and Select options
+- `/app/(admin)/admin/users/[id]/edit/page.tsx` - Removed from interface
+- `/app/(admin)/admin/users/page.tsx` - Removed from interface
+- `/app/(admin)/layout.tsx` - Removed from ProfileRow interface
+- `/app/(admin)/admin/users/[id]/page.tsx` - Removed from interface and roleColors
+- `/components/shared/Header.tsx` - Removed from HeaderProps interface
+- `/app/(dashboard)/layout.tsx` - Removed from ProfileRow interface
+- `/app/api/users/search/route.ts` - Updated comment
+- `/components/user-search-combobox.tsx` - Updated comments
+- `/app/(admin)/admin/page.tsx` - Updated role counting logic
+- `/app/(admin)/admin/analytics/page.tsx` - Updated User Roles breakdown section
+
+### 3. Added "View by Role" tab to Role Management page
+- New first tab showing all users with their permission roles
+- Filter dropdown to view users by specific role
+- Shows user count for each role in stats cards (Builders, Event Admins, Institution Admins, Super Admins)
+
+### 4. Added bulk role change functionality
+- Checkbox selection for multiple users
+- "Select All" button
+- "Change Role" button when users selected
+- BulkRoleChangeModal with:
+  - Count of selected users
+  - Superadmins excluded from bulk changes (security)
+  - Role dropdown (builder, admin, event_admin, institution_admin)
+  - Superadmin not available via bulk change
+
+### Updated Role Colors Consistent Across App:
+- `builder`: stone/gray
+- `admin`: purple
+- `event_admin`: cyan
+- `institution_admin`: orange  
+- `superadmin`: amber
+
+**Build Status:** Successful - no errors
+
+**Files Changed:**
+- 17 TypeScript/TSX files updated
+- Build passes with no errors
+- All role management features functional
+
+**Current State:** Complete - Ready for testing in browser

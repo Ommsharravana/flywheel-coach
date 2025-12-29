@@ -24,7 +24,7 @@ export default function NewUserPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: 'learner' as 'learner' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin',
+    role: 'builder' as 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin',
     password: '',
   });
 
@@ -154,11 +154,11 @@ export default function NewUserPage() {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="learner">Learner</SelectItem>
-                    <SelectItem value="facilitator">Senior Learner</SelectItem>
+                    <SelectItem value="builder">Builder (Default)</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="event_admin">Event Admin</SelectItem>
                     <SelectItem value="institution_admin">Institution Admin</SelectItem>
+                    <SelectItem value="superadmin">Super Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

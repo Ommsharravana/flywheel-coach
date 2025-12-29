@@ -18,7 +18,7 @@ export type Database = {
           institution: string
           department: string | null
           year_of_study: number | null
-          role: 'builder' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin'
+          role: 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin'
           user_category: 'learner' | 'senior_learner'
           onboarding_completed: boolean
           language: 'en' | 'ta'
@@ -35,7 +35,7 @@ export type Database = {
           institution?: string
           department?: string | null
           year_of_study?: number | null
-          role?: 'user' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin'
+          role?: 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin'
           user_category?: 'learner' | 'senior_learner'
           onboarding_completed?: boolean
           language?: 'en' | 'ta'
@@ -52,7 +52,7 @@ export type Database = {
           institution?: string
           department?: string | null
           year_of_study?: number | null
-          role?: 'user' | 'facilitator' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin'
+          role?: 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin'
           user_category?: 'learner' | 'senior_learner'
           onboarding_completed?: boolean
           language?: 'en' | 'ta'

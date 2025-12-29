@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
  *
  * Query params:
  * - q: Search query (name or email, partial match)
- * - role: Optional role filter for permission levels (e.g., 'facilitator')
+ * - role: Optional role filter for permission levels (e.g., 'admin', 'builder')
  * - category: Optional category filter ('learner' or 'senior_learner')
  * - event_id: Optional event ID to scope search to event participants
  * - limit: Max results (default 20)

@@ -228,25 +228,16 @@ export default async function AdminAnalyticsPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
-                  <span className="text-sm text-stone-300">Learners</span>
+                  <div className="w-3 h-3 rounded-full bg-stone-500" />
+                  <span className="text-sm text-stone-300">Builders</span>
                 </div>
                 <span className="text-sm font-medium text-stone-100">
-                  {users.filter((u) => u.role === 'learner').length}
+                  {users.filter((u) => u.role === 'builder').length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-purple-500" />
-                  <span className="text-sm text-stone-300">Senior Learners</span>
-                </div>
-                <span className="text-sm font-medium text-stone-100">
-                  {users.filter((u) => u.role === 'facilitator').length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-amber-500" />
                   <span className="text-sm text-stone-300">Admins</span>
                 </div>
                 <span className="text-sm font-medium text-stone-100">
@@ -255,7 +246,25 @@ export default async function AdminAnalyticsPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <div className="w-3 h-3 rounded-full bg-cyan-500" />
+                  <span className="text-sm text-stone-300">Event Admins</span>
+                </div>
+                <span className="text-sm font-medium text-stone-100">
+                  {users.filter((u) => u.role === 'event_admin').length}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-500" />
+                  <span className="text-sm text-stone-300">Institution Admins</span>
+                </div>
+                <span className="text-sm font-medium text-stone-100">
+                  {users.filter((u) => u.role === 'institution_admin').length}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-amber-500" />
                   <span className="text-sm text-stone-300">Superadmins</span>
                 </div>
                 <span className="text-sm font-medium text-stone-100">

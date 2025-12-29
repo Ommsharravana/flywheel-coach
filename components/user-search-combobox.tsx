@@ -19,7 +19,7 @@ interface UserResult {
 interface UserSearchComboboxProps {
   /** Placeholder text for the search input */
   placeholder?: string;
-  /** Filter by role for permission levels (e.g., 'facilitator') */
+  /** Filter by role for permission levels (e.g., 'admin', 'builder') */
   roleFilter?: string;
   /** Filter by category ('learner' or 'senior_learner') */
   categoryFilter?: 'learner' | 'senior_learner';
@@ -276,7 +276,7 @@ export function UserSearchCombobox({
 interface UserMultiSelectProps {
   /** Placeholder text for the search input */
   placeholder?: string;
-  /** Filter by role for permission levels (e.g., 'facilitator') */
+  /** Filter by role for permission levels (e.g., 'admin', 'builder') */
   roleFilter?: string;
   /** Filter by category ('learner' or 'senior_learner') */
   categoryFilter?: 'learner' | 'senior_learner';
