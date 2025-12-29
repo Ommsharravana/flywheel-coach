@@ -9,6 +9,11 @@
 -- 2. Migrate existing senior_learner role users
 -- 3. Remove senior_learner from role CHECK constraint
 -- 4. Update search function to filter by is_senior_learner
+--
+-- APPLIED: 2025-12-29
+
+-- First drop the existing function (with old signature) to avoid ambiguity
+DROP FUNCTION IF EXISTS search_users_for_team(TEXT, TEXT, UUID, INT);
 
 -- Step 1: Add is_senior_learner column
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_senior_learner BOOLEAN DEFAULT false;

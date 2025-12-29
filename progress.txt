@@ -2623,3 +2623,27 @@ User asked: "where do we see received submissions?" - No submissions dashboard e
 ### External Judges Access
 - Add user to `event_admins` table with `role = 'reviewer'`
 - They can access submissions list and score, but not change status to winner
+
+
+## 2025-12-29: Senior Learner Classification Separation
+
+**Problem Solved:**
+- Senior Learner was incorrectly implemented as a role (permission level)
+- This caused issues like Director losing admin access when they set role='senior_learner'
+
+**Solution:**
+- Added `is_senior_learner` boolean column to users table (CLASSIFICATION)
+- Removed `senior_learner` from role CHECK constraint (roles = permissions only)
+- Updated `search_users_for_team` function with `senior_learner_only` parameter
+- Updated UserSearchCombobox component with `seniorLearnerOnly` prop
+- Replaced role dropdown in Settings with checkbox for Senior Learner status
+- Updated AppathonSubmission to use `seniorLearnerOnly={true}`
+
+**Migration Applied:** 051_separate_senior_learner_from_role.sql
+
+**Architecture:**
+- Role = Permission level (learner, facilitator, admin, event_admin, institution_admin, superadmin)
+- Senior Learner = Classification (faculty/staff who mentor teams)
+
+Commit: 4c37c6c - Pushed to main, Vercel deploying
+
