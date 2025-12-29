@@ -11,7 +11,7 @@
 -- 6. Access Expiry: Superadmin manually archives
 -- 7. Event Boundary: Institution-agnostic (anyone can join any event)
 --
--- APPLIED: [pending]
+-- APPLIED: 2024-12-29 (via SQL Editor, with status='open' fix)
 
 -- =============================================================================
 -- NEW TABLE: event_problems (curation junction table)
@@ -692,7 +692,7 @@ BEGIN
     COUNT(*) OVER() as total_count
   FROM public.problem_bank p
   LEFT JOIN public.event_problems ep ON ep.problem_id = p.id AND ep.event_id = event_id_filter
-  WHERE p.status = 'approved'
+  WHERE p.status = 'open'  -- Note: problem_bank uses 'open' status for available problems
     AND (search_term IS NULL OR search_term = '' OR
          p.title ILIKE '%' || search_term || '%' OR
          p.problem_statement ILIKE '%' || search_term || '%')

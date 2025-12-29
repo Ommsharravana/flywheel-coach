@@ -2696,3 +2696,46 @@ Commit: 4c37c6c - Pushed to main, Vercel deploying
 
 **Current State:** Complete - Krishnaveni has full global admin access
 
+
+---
+
+## 2024-12-29 - Session: Event-Scoped Admin Access & Problem Curation Fix
+
+**Context:** Pivoting from global access back to event-scoped access for event_admin role
+
+**Architecture Decisions (confirmed with user):**
+1. User Visibility: Only participants in admin's event(s)
+2. Problem Bank: Global bank → Admin curates "recommended" subset
+3. Participant Choice: Can pick ANY curated problem (recommended highlighted)
+4. Cross-Event Data: View-only access to participant's other cycles
+5. Multi-Event Admin: Event switcher UI
+6. Access Expiry: Superadmin manually archives
+7. Event Boundary: Institution-agnostic
+
+**Files Created:**
+- `/supabase/migrations/054_event_scoped_admin_access.sql` - New event_problems table + RPC functions
+- `/components/admin/EventSwitcher.tsx` - Event selection dropdown for event_admin
+- `/components/admin/ProblemCurationClient.tsx` - Client component for curating problems
+- `/app/(admin)/admin/events/[slug]/curate/page.tsx` - Problem curation page
+
+**Files Modified:**
+- `/components/admin/AdminHeader.tsx` - Added EventSwitcher for event_admin
+- `/app/(admin)/layout.tsx` - Updated with new role check logic
+- `/app/(admin)/admin/events/[slug]/page.tsx` - Added "Curate Problems" quick action
+
+**Bug Fixed:**
+- **Issue:** Curate page showed "No approved problems found"
+- **Root Cause:** RPC `get_global_problems_for_curation` filtered for `status = 'approved'`
+- **Reality:** All 132 problems in `problem_bank` have `status = 'open'`
+- **Fix:** Changed filter from `WHERE p.status = 'approved'` to `WHERE p.status = 'open'`
+
+**Migration Applied:**
+- 054_event_scoped_admin_access.sql applied via Supabase SQL Editor
+- Fixed RPC function applied with DROP + CREATE OR REPLACE
+
+**Verification:**
+- Curate page now shows problems from Global Problem Bank
+- Problems display with title, description, theme
+- Pagination shows "Showing 1 - 20 of X problems"
+
+**Current State:** Complete - Problem curation working
