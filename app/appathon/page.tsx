@@ -110,6 +110,21 @@ export default function AppathonGuidePage() {
         </div>
       </div>
 
+      {/* Update Notice Banner */}
+      <div className="max-w-4xl mx-auto px-4 pt-6">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30"
+        >
+          <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+          <div className="flex-1">
+            <span className="text-amber-400 font-semibold">Updated:</span>
+            <span className="text-stone-300 ml-2">Presentation time is now <span className="font-semibold text-white">5 minutes</span> (was 7 minutes) — 3 min demo + 1 min explain + 1 min Q&A</span>
+          </div>
+        </motion.div>
+      </div>
+
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-12 space-y-16">
 
