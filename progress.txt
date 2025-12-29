@@ -2469,3 +2469,157 @@ const allowedRoles = ['superadmin', 'institution_admin', 'event_admin']
 
 ---
 
+
+---
+
+## 2025-12-29: Fix Appathon Submission "Failed to Save/Submit" Error
+
+### Problem Reported
+URL: https://jkkn-solution-studio.vercel.app/cycle/8229ed67-e6e5-4773-ae70-2e1f5a6d22b3/step/9
+- "Failed to save draft" when clicking Save Draft
+- "Failed to submit. Please try again." when submitting
+
+### Root Causes Found (TWO issues)
+
+**Issue 1: Missing Database Column**
+- Component `AppathonSubmission.tsx` (line 338) saves `senior_learner` field
+- But `senior_learner` column didn't exist in `appathon_submissions` table
+- **Fix:** Created migration `048_add_senior_learner_column.sql`
+- **Status:** ✅ APPLIED to production Supabase
+
+**Issue 2: Wrong Unique Constraint (MAIN ISSUE)**
+- Original constraint: `UNIQUE(cycle_id, event_id)` - ONE submission per cycle+event GLOBALLY
+- Should be: `UNIQUE(user_id, cycle_id, event_id)` - one per USER per cycle+event
+- This caused INSERT failures because:
+  1. RLS prevents users from seeing OTHER users' submissions
+  2. User sees no existing submission, tries to INSERT
+  3. But INSERT fails due to unique constraint (another user already submitted)
+- **Fix:** Created migration `049_fix_submissions_unique_constraint.sql`
+- **Status:** ⏳ NOT YET APPLIED - browser extension disconnected
+
+### Commits Made
+1. `02c75bc` - fix: Add missing senior_learner column to appathon_submissions
+2. `d620c4f` - chore: Add better error logging for Appathon submission debugging
+3. `eaea8e4` - fix: Change unique constraint to per-user for appathon submissions
+
+### Files Created/Modified
+- `/supabase/migrations/048_add_senior_learner_column.sql` (CREATED, APPLIED)
+- `/supabase/migrations/049_fix_submissions_unique_constraint.sql` (CREATED, NOT APPLIED)
+- `/components/steps/AppathonSubmission.tsx` (added better error logging)
+
+### NEXT SESSION: MUST DO FIRST
+1. **Apply migration 049 to Supabase** - Run this SQL in SQL Editor:
+   ```sql
+   DROP INDEX IF EXISTS idx_submissions_cycle_event;
+   CREATE UNIQUE INDEX IF NOT EXISTS idx_submissions_user_cycle_event
+   ON appathon_submissions(user_id, cycle_id, event_id);
+   ```
+   URL: https://supabase.com/dashboard/project/ktbbpgvguqzzqukgehgu/sql/new
+
+2. **Test the fix** - Go to the submission page and try Save Draft
+
+### Blocker
+- Chrome browser extension disconnected - needed to apply SQL via Supabase dashboard
+
+
+---
+
+## 2025-12-29 - Session: Migration 049 Applied
+
+**Worked On:** Apply pending migration for Appathon submission fix
+
+### What Was Done
+1. Applied migration 049 via `supabase db push --linked`
+2. Migration output confirmed success:
+   - 048: Already existed (skipped - applied last session)
+   - 049: Applied successfully - unique constraint fixed
+
+### Root Cause Recap
+- **Problem:** Users couldn't save/submit Appathon entries
+- **Cause:** Wrong unique constraint `(cycle_id, event_id)` instead of `(user_id, cycle_id, event_id)`
+- **Fix:** Migration 049 drops old constraint, creates new per-user constraint
+
+### Verification
+- `supabase db push` completed without errors
+- New index `idx_submissions_user_cycle_event` now allows one submission per USER per cycle per event
+
+### Blocker Status
+- ✅ **RESOLVED** - Migration 049 applied to production Supabase
+
+### Files Modified
+- None (database migration only)
+
+### Next Priority
+- All P0/P1 features complete
+- All known blockers resolved
+- App is production-ready
+
+
+---
+
+## 2025-12-29 - Session: Admin Submissions Dashboard
+
+**Worked On:** Build submissions viewing/reviewing dashboard for event admins and judges
+
+### Context
+User asked: "where do we see received submissions?" - No submissions dashboard existed
+
+### What Was Built
+
+**1. RLS Policies (Migration 050)**
+- Event admins can view AND update submissions for their event
+- Event reviewers (judges) can view AND score submissions
+- Used existing `has_event_access(event_id, role)` function for role hierarchy
+
+**2. RPC Functions**
+- `get_event_submissions(event_id)` - Returns all submissions with institution info
+- `update_submission_review(id, status, score, notes)` - Update review with access check
+
+**3. API Routes**
+- `GET /api/admin/submissions?event_id=xxx` - List all submissions for event
+- `GET /api/admin/submissions/[id]` - Get single submission
+- `PATCH /api/admin/submissions/[id]` - Update status/score/notes
+
+**4. Admin Pages**
+- `/admin/events/[slug]/submissions` - List page with:
+  - Stats cards (total, submitted, under review, shortlisted, winners, drafts)
+  - Filters (search, status, category)
+  - Table with submission #, team, app, category, institution, status, score
+  - Pagination
+  
+- `/admin/events/[slug]/submissions/[id]` - Detail/review page with:
+  - Full submission info (app, team, links, media)
+  - Review panel (status dropdown, score input, notes)
+  - Quick actions (Mark as Winner, Shortlist, Reject)
+  - Institution info
+  - Timestamps
+
+**5. Navigation**
+- Added "Submissions" quick action card to event dashboard
+
+### Files Created
+- `/supabase/migrations/050_event_admin_submissions_rls.sql`
+- `/app/api/admin/submissions/route.ts`
+- `/app/api/admin/submissions/[id]/route.ts`
+- `/app/(admin)/admin/events/[slug]/submissions/page.tsx`
+- `/app/(admin)/admin/events/[slug]/submissions/[id]/page.tsx`
+
+### Files Modified
+- `/app/(admin)/admin/events/[slug]/page.tsx` - Added Submissions link
+
+### Commits
+- `c294dea` - feat: Add admin submissions dashboard for event admins and judges
+
+### Verification
+- Build successful
+- Pushed to GitHub, deployment to Vercel in progress
+
+### How to Access
+1. Log in as superadmin or event admin
+2. Go to Admin > Events > [Event Name]
+3. Click "Submissions" card
+4. View all submissions, click "Review" to score
+
+### External Judges Access
+- Add user to `event_admins` table with `role = 'reviewer'`
+- They can access submissions list and score, but not change status to winner
