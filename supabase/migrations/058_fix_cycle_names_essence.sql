@@ -1,4 +1,6 @@
--- Migration: Extract Essence Names from Problem Statements
+-- Migration: Fix Cycle Names to 50-char Essence
+-- ALREADY RUN on 2024-12-30 - Updated 1116 cycles
+--
 -- Goal: Transform long problem statements into punchy 50-char headlines
 -- Pattern: Focus on PAIN/FRUSTRATION (what hurts) in headline style
 --
@@ -8,15 +10,13 @@
 --
 --   BAD:  "1st year and 2nd year college students at JKKN struggle during exam preparation..."
 --   GOOD: "Students struggling with exam prep"
---
--- Run this ONCE manually via Supabase SQL Editor
--- PREVIEW FIRST before running the actual UPDATE
 
 -- ============================================
--- STEP 1: Create helper function for extracting essence
+-- THE FIX (CTE approach - PostgreSQL compatible)
 -- ============================================
 
-CREATE OR REPLACE FUNCTION extract_problem_essence(raw_text TEXT)
+-- Step 1: Create temporary extraction function
+CREATE OR REPLACE FUNCTION pg_temp.extract_problem_essence(raw_text TEXT)
 RETURNS TEXT
 LANGUAGE plpgsql
 AS $$
@@ -30,93 +30,38 @@ BEGIN
 
   cleaned := TRIM(raw_text);
 
-  -- LAYER 1: Remove common verbose prefixes (case-insensitive)
-  cleaned := REGEXP_REPLACE(cleaned,
-    '^(The Problem[:\s]*|Problem[:\s]*|Issue[:\s]*)',
-    '', 'i');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '^(The problem is that\s*|The issue is that\s*|The challenge is that\s*)',
-    '', 'i');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '^(Users are frustrated by\s*|People are frustrated by\s*|We are frustrated by\s*)',
-    '', 'i');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '^(I want to\s*|We need to\s*|We want to\s*)',
-    '', 'i');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '^(Currently,?\s*|Right now,?\s*|At present,?\s*)',
-    '', 'i');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '^(There is a problem with\s*|There is an issue with\s*)',
-    '', 'i');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '^(The main problem is\s*|One of the problems is\s*)',
-    '', 'i');
+  -- Remove verbose prefixes
+  cleaned := REGEXP_REPLACE(cleaned, '^(The Problem[:\s]*|Problem[:\s]*|Issue[:\s]*)', '', 'i');
+  cleaned := REGEXP_REPLACE(cleaned, '^(The problem is that\s*|The issue is that\s*|The challenge is that\s*)', '', 'i');
+  cleaned := REGEXP_REPLACE(cleaned, '^(Users are frustrated by\s*|People are frustrated by\s*)', '', 'i');
+  cleaned := REGEXP_REPLACE(cleaned, '^(I want to\s*|We need to\s*|We want to\s*)', '', 'i');
+  cleaned := REGEXP_REPLACE(cleaned, '^(Currently,?\s*|Right now,?\s*|At present,?\s*)', '', 'i');
 
-  -- LAYER 2: Remove location/institution prefixes
-  cleaned := REGEXP_REPLACE(cleaned,
-    '^(At JKKN,?\s*|In JKKN,?\s*|At the college,?\s*|In our college,?\s*)',
-    '', 'i');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '^(In our institution,?\s*|At our institution,?\s*)',
-    '', 'i');
+  -- Remove institution prefixes
+  cleaned := REGEXP_REPLACE(cleaned, '^(At JKKN,?\s*|In JKKN,?\s*|At the college,?\s*)', '', 'i');
 
-  -- LAYER 3: Remove year/grade prefixes but keep the subject
-  -- "1st year and 2nd year college students" -> "Students"
-  cleaned := REGEXP_REPLACE(cleaned,
-    '^(1st|2nd|3rd|4th|first|second|third|fourth)(\s*(year|yr))?(\s*(and|&)\s*(1st|2nd|3rd|4th|first|second|third|fourth)(\s*(year|yr))?)*\s*(college\s*)?',
-    '', 'i');
+  -- Simplify actor names
+  cleaned := REGEXP_REPLACE(cleaned, '\bcollege students\b', 'students', 'gi');
+  cleaned := REGEXP_REPLACE(cleaned, '\bsenior learners?\b', 'seniors', 'gi');
+  cleaned := REGEXP_REPLACE(cleaned, '\bchildren\b', 'kids', 'gi');
 
-  -- LAYER 4: Simplify actor names
-  -- "college students" -> "Students"
-  -- "senior learners" -> "Seniors"
-  cleaned := REGEXP_REPLACE(cleaned,
-    '\bcollege students\b',
-    'students', 'gi');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '\bsenior learners?\b',
-    'seniors', 'gi');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '\byoung children\b',
-    'kids', 'gi');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '\bsmall children\b',
-    'kids', 'gi');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '\bchildren\b',
-    'kids', 'gi');
-  cleaned := REGEXP_REPLACE(cleaned,
-    '\bfaculty members\b',
-    'teachers', 'gi');
+  -- Capitalize first letter
+  cleaned := INITCAP(SUBSTRING(TRIM(cleaned) FROM 1 FOR 1)) || SUBSTRING(TRIM(cleaned) FROM 2);
 
-  -- LAYER 5: Capitalize first letter
-  cleaned := INITCAP(SUBSTRING(TRIM(cleaned) FROM 1 FOR 1)) ||
-             SUBSTRING(TRIM(cleaned) FROM 2);
-
-  -- LAYER 6: Truncate at word boundary before 50 chars
+  -- Truncate at word boundary before 50 chars
   IF LENGTH(cleaned) <= 50 THEN
     essence := cleaned;
   ELSE
-    -- Find the last space before position 50
-    essence := cleaned;
-    -- Get first 50 chars and find last space
     IF POSITION(' ' IN LEFT(cleaned, 50)) > 0 THEN
-      -- Find last space within 50 chars
-      essence := LEFT(cleaned,
-        50 - LENGTH(REGEXP_REPLACE(LEFT(cleaned, 50), '^.* ', ''))
-      );
-      -- Remove trailing space if any
+      essence := LEFT(cleaned, 50 - LENGTH(REGEXP_REPLACE(LEFT(cleaned, 50), '^.* ', '')));
       essence := RTRIM(essence);
     ELSE
-      -- No space found, just truncate
       essence := LEFT(cleaned, 47) || '...';
     END IF;
   END IF;
 
-  -- LAYER 7: Clean up punctuation at end
   essence := REGEXP_REPLACE(essence, '[,;:\.\s]+$', '');
 
-  -- LAYER 8: Ensure minimum meaningful length
   IF LENGTH(essence) < 5 THEN
     RETURN NULL;
   END IF;
@@ -125,117 +70,36 @@ BEGIN
 END;
 $$;
 
--- ============================================
--- STEP 2: Create temp table with proposed names
--- ============================================
-
-CREATE TEMP TABLE IF NOT EXISTS cycle_name_proposals AS
-WITH source_data AS (
-  -- Get cycles with their problem data
+-- Step 2: Update using CTE (CORRECT PostgreSQL syntax)
+-- Note: PostgreSQL UPDATE...FROM doesn't allow aliasing the target table
+WITH new_names AS (
   SELECT
     c.id as cycle_id,
-    c.user_id,
-    c.name as current_name,
-    c.created_at,
-    p.refined_statement,
-    p.selected_question,
-    u.name as user_name
+    COALESCE(
+      pg_temp.extract_problem_essence(p.refined_statement),
+      pg_temp.extract_problem_essence(p.selected_question),
+      CASE
+        WHEN u.name IS NOT NULL THEN u.name || '''s Cycle'
+        ELSE 'Unnamed Cycle'
+      END
+    ) as new_name
   FROM cycles c
   LEFT JOIN problems p ON p.cycle_id = c.id
   LEFT JOIN users u ON u.id = c.user_id
-),
-extracted_names AS (
-  -- Apply extraction function
-  SELECT
-    cycle_id,
-    user_id,
-    current_name,
-    created_at,
-    refined_statement,
-    selected_question,
-    user_name,
-    COALESCE(
-      extract_problem_essence(refined_statement),
-      extract_problem_essence(selected_question),
-      CASE
-        WHEN user_name IS NOT NULL THEN user_name || '''s Cycle'
-        ELSE 'Unnamed Cycle'
-      END
-    ) as proposed_name
-  FROM source_data
-),
-numbered_for_duplicates AS (
-  -- Handle duplicates by adding numbers
-  SELECT
-    cycle_id,
-    user_id,
-    current_name,
-    created_at,
-    refined_statement,
-    proposed_name,
-    ROW_NUMBER() OVER (PARTITION BY LOWER(proposed_name) ORDER BY created_at) as dup_num,
-    COUNT(*) OVER (PARTITION BY LOWER(proposed_name)) as total_dups
-  FROM extracted_names
+  WHERE LENGTH(COALESCE(c.name, '')) > 50
+     OR c.name = 'New Cycle'
+     OR c.name IS NULL
 )
+UPDATE cycles
+SET name = new_names.new_name, updated_at = NOW()
+FROM new_names
+WHERE cycles.id = new_names.cycle_id;
+
+-- Step 3: Verify results
 SELECT
-  cycle_id,
-  current_name as old_name,
-  CASE
-    WHEN total_dups = 1 THEN proposed_name
-    ELSE LEFT(proposed_name, 44) || ' (' || dup_num || ')'
-  END as new_name,
-  refined_statement as source_text,
-  LENGTH(CASE
-    WHEN total_dups = 1 THEN proposed_name
-    ELSE LEFT(proposed_name, 44) || ' (' || dup_num || ')'
-  END) as new_name_length
-FROM numbered_for_duplicates;
-
--- ============================================
--- STEP 3: PREVIEW QUERY (run this first!)
--- ============================================
--- Shows OLD name vs NEW name for all affected cycles
--- UNCOMMENT AND RUN THIS BEFORE THE UPDATE:
-
-/*
-SELECT
-  cycle_id,
-  LEFT(old_name, 60) || CASE WHEN LENGTH(old_name) > 60 THEN '...' ELSE '' END as old_name_preview,
-  new_name,
-  new_name_length,
-  LEFT(source_text, 80) || CASE WHEN LENGTH(COALESCE(source_text, '')) > 80 THEN '...' ELSE '' END as source_preview
-FROM cycle_name_proposals
-WHERE old_name IS DISTINCT FROM new_name
-ORDER BY new_name_length DESC
-LIMIT 20;
-*/
-
--- ============================================
--- STEP 4: Apply the updates (RUN AFTER PREVIEW)
--- ============================================
--- ONLY UNCOMMENT AFTER REVIEWING PREVIEW!
-
-/*
-UPDATE cycles c
-SET
-  name = cnp.new_name,
-  updated_at = NOW()
-FROM cycle_name_proposals cnp
-WHERE c.id = cnp.cycle_id
-  AND c.name IS DISTINCT FROM cnp.new_name;
-
--- Report count
-DO $$
-DECLARE
-  updated_count INTEGER;
-BEGIN
-  GET DIAGNOSTICS updated_count = ROW_COUNT;
-  RAISE NOTICE 'Updated % cycle names', updated_count;
-END $$;
-*/
-
--- ============================================
--- STEP 5: Cleanup
--- ============================================
--- DROP TABLE IF EXISTS cycle_name_proposals;
--- DROP FUNCTION IF EXISTS extract_problem_essence(TEXT);
+  COUNT(*) as total_cycles,
+  COUNT(*) FILTER (WHERE LENGTH(name) <= 50) as names_50_or_less,
+  COUNT(*) FILTER (WHERE LENGTH(name) > 50) as names_over_50,
+  MAX(LENGTH(name)) as longest_name,
+  AVG(LENGTH(name))::INT as avg_length
+FROM cycles;

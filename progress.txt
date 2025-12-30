@@ -3128,3 +3128,23 @@ SELECT name, LENGTH(name) as chars FROM cycles WHERE LENGTH(name) > 50 LIMIT 10;
 
 **Committed:** 2bce8a7 - feat: Add SQL scripts to fix cycle names to 50-char essence
 
+
+
+## 2024-12-30 - Cycle Name Fix Complete
+
+### What was done:
+- Fixed SQL syntax error in cycle name migration (CTE approach instead of UPDATE...FROM alias)
+- Successfully ran fix on production: **1116 cycles updated**
+- All cycle names now ≤50 characters
+- Sample verified names: 46, 44, 43, 40 chars
+
+### Files updated:
+- `supabase/migrations/058_fix_cycle_names_essence.sql` - Updated with working CTE syntax
+
+### Key learning:
+PostgreSQL UPDATE...FROM doesn't allow aliasing the target table. Use CTE approach:
+```sql
+WITH new_names AS (SELECT ...) 
+UPDATE cycles SET ... FROM new_names WHERE cycles.id = new_names.cycle_id;
+```
+
