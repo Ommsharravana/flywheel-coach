@@ -3096,3 +3096,35 @@ All recent work committed and verified.
 - **Change:** Dropped `idx_submissions_cycle_event`, created `idx_submissions_user_cycle_event(user_id, cycle_id, event_id)`
 - **Result:** Users can now save drafts without conflicts from other users' submissions
 
+
+## 2025-12-30: Cycle Name Fix Session
+
+**Goal:** Fix cycle names that were full problem statements to be 50-char essence summaries
+
+**What was done:**
+1. Created extract_problem_essence() PostgreSQL function that:
+   - Removes verbose prefixes ('The problem is...', 'I want to...', etc.)
+   - Removes institution/year prefixes ('At JKKN', '1st year', etc.)
+   - Simplifies actor names ('college students' → 'students')
+   - Truncates at word boundary before 50 chars
+   - Capitalizes first letter
+
+2. Created two SQL migration files:
+   - 058_preview_cycle_names.sql - Preview query to see OLD vs NEW names
+   - 058_fix_cycle_names_essence.sql - The actual UPDATE script
+
+3. Ran preview query - showed 30 cycles would be updated with good transformations:
+   - 'College students frequently miss buses...' → 'Students frequently miss buses' (46 chars)
+   - 'New mothers who are breastfeeding...' → 'New mothers who are breastfeeding often face' (45 chars)
+
+4. Loaded fix script into Supabase SQL Editor and clicked Run
+
+**Browser OAuth Issue:** The Chrome extension OAuth token expired during verification, so couldn't confirm the UPDATE completed. User should verify manually.
+
+**Verification query:**
+```sql
+SELECT name, LENGTH(name) as chars FROM cycles WHERE LENGTH(name) > 50 LIMIT 10;
+```
+
+**Committed:** 2bce8a7 - feat: Add SQL scripts to fix cycle names to 50-char essence
+
