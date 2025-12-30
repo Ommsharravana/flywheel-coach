@@ -9,6 +9,7 @@
 - Implemented Problem Clusters feature
 - Created 11 AI-generated clusters from 132 problems
 - Clusters page now fully functional at /dashboard/problem-bank/clusters
+- Added real-time auto-clustering for new problems
 
 ### Blocked
 - None
@@ -16,17 +17,48 @@
 ### Decisions Made
 - Used keyword-based AI clustering (theme + content similarity)
 - Cluster categories: Education, Healthcare, Technology, Environment, Mental Health, Employment, Communication, Documentation, Infrastructure, Agriculture, Uncategorized
+- Real-time clustering integrated into both problem submission endpoints
 
 ### Next Session Should
-1. Add real-time clustering when new problems are submitted
-2. Consider Gemini API integration for smarter clustering (when configured)
-3. Review Appathon 2.0 event functionality
+1. Consider Gemini API integration for smarter clustering (when configured)
+2. Review Appathon 2.0 event functionality
+3. Test real-time clustering with new problem submission
 
 ---
 
 ## Session History
 
 <!-- Append each session summary below. Most recent at top. -->
+
+### 2025-12-30 - Added Real-time Auto-Clustering
+
+**Completed:**
+- Created `/lib/clustering/auto-cluster.ts` utility with:
+  - Cluster definitions with database UUIDs and keyword arrays
+  - `classifyProblem()` - keyword-based classification
+  - `autoClusterProblem()` - assigns new problems to clusters
+  - `getProblemCluster()` - retrieves cluster info for display
+- Integrated auto-clustering into both problem creation endpoints:
+  - `/app/api/problems/submit/route.ts` (direct submission)
+  - `/app/api/problems/from-cycle/route.ts` (cycle-to-bank)
+- Fixed TypeScript type handling for Supabase nested relations
+
+**Files Created:**
+- `/lib/clustering/auto-cluster.ts`
+- `/supabase/migrations/061_add_cluster_increment_function.sql` (reference only)
+
+**Files Modified:**
+- `/app/api/problems/submit/route.ts`
+- `/app/api/problems/from-cycle/route.ts`
+
+**Commit:** `40858d2 feat: Add real-time auto-clustering for new problems`
+
+**State at End:**
+- Build: passes
+- Deployed: pushed to GitHub, Vercel auto-deploys
+- Next: Manual testing with new problem submission
+
+---
 
 ### 2025-12-30 - Implemented Problem Clusters Feature
 
