@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { autoClusterProblem } from '@/lib/clustering/auto-cluster';
 
 // POST /api/problems/submit - Submit a new problem directly to the bank
 // All authenticated users can submit problems
@@ -98,6 +99,15 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Auto-assign to cluster based on content
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await autoClusterProblem(
+      supabase as any,
+      newProblem.id,
+      title,
+      problem_statement
+    );
 
     return NextResponse.json({
       success: true,

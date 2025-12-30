@@ -105,10 +105,11 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
     .select('id, name, short_name')
     .order('name') as { data: Array<{ id: string; name: string; short_name: string | null }> | null };
 
-  // Fetch submissions using RPC
+  // Fetch submissions using RPC (pass explicit userId for Server Component compatibility)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: allSubmissions, error: submissionsError } = await (supabase as any).rpc('get_event_submissions', {
-    target_event_id: event.id
+    target_event_id: event.id,
+    caller_user_id: userId
   }) as { data: Submission[] | null; error: unknown };
 
   if (submissionsError) {

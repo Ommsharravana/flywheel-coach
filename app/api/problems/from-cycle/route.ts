@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { autoClusterProblem } from '@/lib/clustering/auto-cluster';
 
 // POST /api/problems/from-cycle - Extract problem from cycle and save to problem bank
 // All authenticated users can save their own cycles
@@ -193,6 +194,15 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+
+    // Auto-assign to cluster based on content
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await autoClusterProblem(
+      supabase as any,
+      newProblem.id,
+      title,
+      problemStatement
+    );
 
     return NextResponse.json({
       success: true,
