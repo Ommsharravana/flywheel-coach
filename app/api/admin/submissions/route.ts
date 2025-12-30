@@ -18,9 +18,11 @@ export async function GET(request: NextRequest) {
   }
 
   // Use RPC to get submissions (handles access check internally)
+  // Pass caller_user_id explicitly for Server Component auth compatibility
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: submissions, error } = await (supabase as any).rpc('get_event_submissions', {
-    target_event_id: eventId
+    target_event_id: eventId,
+    caller_user_id: user.id
   });
 
   if (error) {

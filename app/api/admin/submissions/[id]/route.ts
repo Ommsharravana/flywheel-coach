@@ -68,12 +68,14 @@ export async function PATCH(
   }
 
   // Use RPC to update (handles access check internally)
+  // Pass caller_user_id explicitly for Server Component auth compatibility
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: result, error } = await (supabase as any).rpc('update_submission_review', {
     submission_id: id,
     new_status: status || null,
     new_score: score !== undefined ? score : null,
-    new_review_notes: review_notes || null
+    new_review_notes: review_notes || null,
+    caller_user_id: user.id
   });
 
   if (error) {

@@ -18,7 +18,9 @@ import {
   Check,
   X,
   Loader2,
+  FileText,
 } from 'lucide-react';
+import Link from 'next/link';
 import type { EventWithParticipantCount, EventBannerColor } from '@/lib/events/types';
 
 const bannerColors: { value: EventBannerColor; label: string; class: string }[] = [
@@ -350,6 +352,13 @@ export default function AdminEventsPage() {
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">
+                      <Link
+                        href={`/admin/events/${event.slug}/submissions`}
+                        className="p-2 rounded-lg text-stone-400 hover:text-purple-400 hover:bg-purple-500/10 transition-colors"
+                        title="View submissions"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </Link>
                       <a
                         href={`/admin/events/${event.slug}/settings`}
                         className="p-2 rounded-lg text-stone-400 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"

@@ -4,32 +4,15 @@ import { getEffectiveUserId } from '@/lib/supabase/effective-user';
 import { checkEventAdminAccess } from '@/lib/methodologies/helpers';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   ArrowLeft,
   Search,
-  FileText,
-  Send,
-  CheckCircle2,
-  Award,
-  XCircle,
-  Clock,
   Download,
-  ExternalLink,
-  Building2,
-  Star,
   Filter,
 } from 'lucide-react';
 import Link from 'next/link';
+import { SubmissionsTableClient } from './SubmissionsTableClient';
 
 interface SubmissionsPageProps {
   params: Promise<{ slug: string }>;
@@ -51,23 +34,6 @@ interface Submission {
   applicant_name: string | null;
   live_url: string | null;
 }
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  draft: { label: 'Draft', color: 'text-stone-400 border-stone-600', icon: Clock },
-  submitted: { label: 'Submitted', color: 'text-blue-400 border-blue-500/30', icon: Send },
-  under_review: { label: 'Under Review', color: 'text-amber-400 border-amber-500/30', icon: FileText },
-  shortlisted: { label: 'Shortlisted', color: 'text-purple-400 border-purple-500/30', icon: CheckCircle2 },
-  winner: { label: 'Winner', color: 'text-green-400 border-green-500/30', icon: Award },
-  rejected: { label: 'Rejected', color: 'text-red-400 border-red-500/30', icon: XCircle },
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  healthcare: 'Healthcare',
-  education: 'Education',
-  operations: 'Operations',
-  productivity: 'Productivity',
-  other: 'Other',
-};
 
 export default async function EventSubmissionsPage({ params, searchParams }: SubmissionsPageProps) {
   const { slug } = await params;
@@ -323,106 +289,19 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="border-stone-700">
-                <TableHead className="text-stone-400">#</TableHead>
-                <TableHead className="text-stone-400">Team / App</TableHead>
-                <TableHead className="text-stone-400">Category</TableHead>
-                <TableHead className="text-stone-400">Institution</TableHead>
-                <TableHead className="text-stone-400">Status</TableHead>
-                <TableHead className="text-stone-400">Score</TableHead>
-                <TableHead className="text-stone-400">Submitted</TableHead>
-                <TableHead className="text-stone-400 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedSubmissions.length > 0 ? (
-                paginatedSubmissions.map((submission) => {
-                  const statusConfig = STATUS_CONFIG[submission.status] || STATUS_CONFIG.draft;
-                  const StatusIcon = statusConfig.icon;
-
-                  return (
-                    <TableRow key={submission.id} className="border-stone-700">
-                      <TableCell className="font-mono text-xs text-stone-500">
-                        {submission.submission_number || '—'}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-stone-100">{submission.team_name || 'Unnamed Team'}</div>
-                          <div className="text-xs text-stone-500">{submission.app_name || 'No app name'}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {submission.category ? (
-                          <Badge variant="outline" className="text-stone-300 border-stone-600">
-                            {CATEGORY_LABELS[submission.category] || submission.category}
-                          </Badge>
-                        ) : (
-                          <span className="text-stone-500">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {submission.institution_short_name ? (
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-stone-500" />
-                            <span className="text-stone-300">{submission.institution_short_name}</span>
-                          </div>
-                        ) : (
-                          <span className="text-stone-500">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={statusConfig.color}>
-                          <StatusIcon className="h-3 w-3 mr-1" />
-                          {statusConfig.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {submission.score !== null ? (
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-amber-400" />
-                            <span className="text-stone-200 font-medium">{submission.score.toFixed(1)}</span>
-                          </div>
-                        ) : (
-                          <span className="text-stone-500">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-stone-400 text-sm">
-                        {submission.submitted_at
-                          ? new Date(submission.submitted_at).toLocaleDateString()
-                          : <span className="text-stone-600">Not submitted</span>}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {submission.live_url && (
-                            <a href={submission.live_url} target="_blank" rel="noopener noreferrer">
-                              <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
-                                <ExternalLink className="h-4 w-4" />
-                              </Button>
-                            </a>
-                          )}
-                          <Link href={`/admin/events/${slug}/submissions/${submission.id}`}>
-                            <Button variant="outline" size="sm" className="border-stone-700">
-                              Review
-                            </Button>
-                          </Link>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-stone-500">
-                    {search || status || category || institution
-                      ? 'No submissions match your filters'
-                      : 'No submissions yet'}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          {paginatedSubmissions.length > 0 ? (
+            <SubmissionsTableClient
+              initialSubmissions={paginatedSubmissions}
+              eventId={event.id}
+              eventSlug={slug}
+            />
+          ) : (
+            <div className="text-center py-8 text-stone-500">
+              {search || status || category || institution
+                ? 'No submissions match your filters'
+                : 'No submissions yet'}
+            </div>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (
