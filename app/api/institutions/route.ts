@@ -35,7 +35,33 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch institutions' }, { status: 500 });
     }
 
-    return NextResponse.json(institutions as Institution[]);
+    // Get user counts per institution
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userCounts, error: countError } = await (supabase as any)
+      .from('users')
+      .select('institution_id')
+      .not('institution_id', 'is', null);
+
+    if (countError) {
+      console.error('Error fetching user counts:', countError);
+      // Continue without counts rather than failing completely
+      return NextResponse.json(institutions as Institution[]);
+    }
+
+    // Count users per institution
+    const countMap = new Map<string, number>();
+    for (const user of userCounts || []) {
+      const instId = user.institution_id;
+      countMap.set(instId, (countMap.get(instId) || 0) + 1);
+    }
+
+    // Merge counts into institutions
+    const institutionsWithCounts = (institutions || []).map((inst: Institution) => ({
+      ...inst,
+      user_count: countMap.get(inst.id) || 0,
+    }));
+
+    return NextResponse.json(institutionsWithCounts);
   } catch (error) {
     console.error('Error in GET /api/institutions:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
