@@ -9,7 +9,7 @@ import { getBannerColorClasses, isEventLive, isEventUpcoming, getDaysRemaining, 
 import { AppathonDetailsModal, isAppathonEvent } from '@/components/appathon/details/AppathonDetailsModal';
 
 export function EventSelector() {
-  const { activeEvent, joinEvent, leaveEvent, isJoining } = useActiveEvent();
+  const { activeEvent, joinEvent, joinAndStart, leaveEvent, isJoining } = useActiveEvent();
   const [events, setEvents] = useState<EventWithParticipantCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<EventWithParticipantCount | null>(null);
@@ -82,7 +82,7 @@ export function EventSelector() {
               key={event.id}
               event={event}
               isActive={activeEvent?.id === event.id}
-              onJoin={() => joinEvent(event.id, event)}
+              onJoinAndStart={() => joinAndStart(event.id, event)}
               onLeave={leaveEvent}
               onViewDetails={() => setSelectedEvent(event)}
               isJoining={isJoining}
@@ -99,7 +99,7 @@ export function EventSelector() {
             <AppathonDetailsModal
               event={selectedEvent}
               isActive={activeEvent?.id === selectedEvent.id}
-              onJoin={() => joinEvent(selectedEvent.id, selectedEvent)}
+              onJoinAndStart={() => joinAndStart(selectedEvent.id, selectedEvent)}
               onLeave={leaveEvent}
               onClose={() => setSelectedEvent(null)}
               isJoining={isJoining}
@@ -108,7 +108,7 @@ export function EventSelector() {
             <EventDetailsModal
               event={selectedEvent}
               isActive={activeEvent?.id === selectedEvent.id}
-              onJoin={() => joinEvent(selectedEvent.id, selectedEvent)}
+              onJoinAndStart={() => joinAndStart(selectedEvent.id, selectedEvent)}
               onLeave={leaveEvent}
               onClose={() => setSelectedEvent(null)}
               isJoining={isJoining}
@@ -123,14 +123,14 @@ export function EventSelector() {
 interface EventCardProps {
   event: EventWithParticipantCount;
   isActive: boolean;
-  onJoin: () => void;
+  onJoinAndStart: () => void;
   onLeave: () => void;
   onViewDetails: () => void;
   isJoining: boolean;
   index: number;
 }
 
-function EventCard({ event, isActive, onJoin, onLeave, onViewDetails, isJoining, index }: EventCardProps) {
+function EventCard({ event, isActive, onJoinAndStart, onLeave, onViewDetails, isJoining, index }: EventCardProps) {
   const colorClasses = getBannerColorClasses(event.banner_color);
   const isLive = isEventLive(event);
   const isUpcoming = isEventUpcoming(event);
@@ -244,7 +244,7 @@ function EventCard({ event, isActive, onJoin, onLeave, onViewDetails, isJoining,
               </>
             ) : (
               <button
-                onClick={onJoin}
+                onClick={onJoinAndStart}
                 disabled={isJoining}
                 className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all bg-gradient-to-r ${colorClasses.gradient} text-white hover:shadow-lg ${colorClasses.glow} disabled:opacity-50`}
               >
@@ -255,17 +255,17 @@ function EventCard({ event, isActive, onJoin, onLeave, onViewDetails, isJoining,
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                     />
-                    <span>Joining...</span>
+                    <span>Starting...</span>
                   </>
                 ) : isLive ? (
                   <>
                     <Zap className="h-4 w-4" />
-                    <span>Enter Arena</span>
+                    <span>Join & Start</span>
                   </>
                 ) : (
                   <>
                     <Zap className="h-4 w-4" />
-                    <span>Join Early</span>
+                    <span>Join & Start</span>
                   </>
                 )}
               </button>
@@ -280,13 +280,13 @@ function EventCard({ event, isActive, onJoin, onLeave, onViewDetails, isJoining,
 interface EventDetailsModalProps {
   event: EventWithParticipantCount;
   isActive: boolean;
-  onJoin: () => void;
+  onJoinAndStart: () => void;
   onLeave: () => void;
   onClose: () => void;
   isJoining: boolean;
 }
 
-function EventDetailsModal({ event, isActive, onJoin, onLeave, onClose, isJoining }: EventDetailsModalProps) {
+function EventDetailsModal({ event, isActive, onJoinAndStart, onLeave, onClose, isJoining }: EventDetailsModalProps) {
   const colorClasses = getBannerColorClasses(event.banner_color);
   const config = event.config;
 
@@ -395,10 +395,21 @@ function EventDetailsModal({ event, isActive, onJoin, onLeave, onClose, isJoinin
             {isActive ? (
               <>
                 <button
-                  onClick={onClose}
-                  className={`flex-1 px-6 py-3 rounded-xl bg-gradient-to-r ${colorClasses.gradient} text-white font-semibold transition-all hover:shadow-lg ${colorClasses.glow}`}
+                  onClick={onJoinAndStart}
+                  disabled={isJoining}
+                  className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r ${colorClasses.gradient} text-white font-semibold transition-all hover:shadow-lg ${colorClasses.glow} disabled:opacity-50`}
                 >
-                  Continue Building
+                  {isJoining ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Starting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-5 w-5" />
+                      <span>+ New Cycle</span>
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => { onLeave(); onClose(); }}
@@ -410,23 +421,19 @@ function EventDetailsModal({ event, isActive, onJoin, onLeave, onClose, isJoinin
               </>
             ) : (
               <button
-                onClick={() => { onJoin(); onClose(); }}
+                onClick={onJoinAndStart}
                 disabled={isJoining}
                 className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r ${colorClasses.gradient} text-white font-semibold transition-all hover:shadow-lg ${colorClasses.glow} disabled:opacity-50`}
               >
                 {isJoining ? (
                   <>
-                    <motion.div
-                      className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    />
-                    <span>Joining...</span>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Starting...</span>
                   </>
                 ) : (
                   <>
                     <Zap className="h-5 w-5" />
-                    <span>Enter the Arena</span>
+                    <span>Join & Start</span>
                   </>
                 )}
               </button>

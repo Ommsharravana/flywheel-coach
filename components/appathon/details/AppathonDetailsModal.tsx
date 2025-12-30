@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { X, Zap, ExternalLink, Calendar, Users } from 'lucide-react';
+import { X, Zap, ExternalLink, Calendar, Users, Loader2 } from 'lucide-react';
 import type { EventWithParticipantCount } from '@/lib/events/types';
 import { getBannerColorClasses, isEventLive, getDaysRemaining, getDaysUntilStart } from '@/lib/events/types';
 import { APPATHON_THEMES } from '@/lib/appathon/content';
@@ -15,7 +15,7 @@ import { PrizeSummary } from './PrizeSummary';
 interface AppathonDetailsModalProps {
   event: EventWithParticipantCount;
   isActive: boolean;
-  onJoin: () => void;
+  onJoinAndStart: () => void;
   onLeave: () => void;
   onClose: () => void;
   isJoining: boolean;
@@ -24,7 +24,7 @@ interface AppathonDetailsModalProps {
 export function AppathonDetailsModal({
   event,
   isActive,
-  onJoin,
+  onJoinAndStart,
   onLeave,
   onClose,
   isJoining
@@ -141,10 +141,21 @@ export function AppathonDetailsModal({
             {isActive ? (
               <>
                 <button
-                  onClick={onClose}
-                  className={`flex-1 px-6 py-3 rounded-xl bg-gradient-to-r ${colorClasses.gradient} text-white font-semibold transition-all hover:shadow-lg ${colorClasses.glow}`}
+                  onClick={onJoinAndStart}
+                  disabled={isJoining}
+                  className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r ${colorClasses.gradient} text-white font-semibold transition-all hover:shadow-lg ${colorClasses.glow} disabled:opacity-50`}
                 >
-                  Continue Building
+                  {isJoining ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Starting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-5 w-5" />
+                      <span>+ New Cycle</span>
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => { onLeave(); onClose(); }}
@@ -156,23 +167,19 @@ export function AppathonDetailsModal({
               </>
             ) : (
               <button
-                onClick={() => { onJoin(); onClose(); }}
+                onClick={onJoinAndStart}
                 disabled={isJoining}
                 className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r ${colorClasses.gradient} text-white font-semibold transition-all hover:shadow-lg ${colorClasses.glow} disabled:opacity-50`}
               >
                 {isJoining ? (
                   <>
-                    <motion.div
-                      className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    />
-                    <span>Joining...</span>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Starting...</span>
                   </>
                 ) : (
                   <>
                     <Zap className="h-5 w-5" />
-                    <span>Enter the Arena</span>
+                    <span>Join & Start</span>
                   </>
                 )}
               </button>

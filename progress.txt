@@ -3,9 +3,33 @@
 ## Current Session: 2025-12-30 (Night)
 
 ### Working On
-- All current bugs fixed! ✅
+- Dashboard hydration fix deployed - needs visual verification on live site
+
+### Just Fixed (2025-12-30 Late Night)
+- **Fixed 500 Error on Inline Scoring PATCH Request**
+  - **Symptom**: PATCH to `/api/admin/submissions/[id]` returning 500 error
+  - **Root cause**: `has_event_access_explicit` function called `is_superadmin(check_user_id)` which was ambiguous
+  - **Problem**: TWO versions of `is_superadmin` exist in database (0-arg and 1-arg) causing PostgreSQL function resolution error
+  - **Fix**: Updated `has_event_access_explicit` function to inline the superadmin check instead of calling ambiguous function
+  - **Applied to Production**: Via Supabase SQL Editor (Success - No rows returned)
+  - **SQL Fix**:
+    ```sql
+    -- Changed FROM: IF is_superadmin(check_user_id) THEN RETURN true; END IF;
+    -- Changed TO: SELECT EXISTS (SELECT 1 FROM users WHERE id = check_user_id AND role = 'superadmin') INTO is_super;
+    ```
+  - **Status**: ⏳ Applied to production, needs manual testing verification
 
 ### Completed This Session
+- **Fixed Dashboard Hydration Mismatch** (2025-12-30)
+  - **Symptom**: Dashboard still flickering after LanguageContext fix
+  - **Root cause**: React Error #418 (hydration mismatch) - `toLocaleDateString()` outputs differ server vs client
+  - **Files fixed**:
+    1. `ActiveCycleCard.tsx:59` - Added `suppressHydrationWarning`
+    2. `CompletedCyclesList.tsx:62` - Added `suppressHydrationWarning`
+    3. `LanguageToggle.tsx:61` - Changed `[contextLocale]` → `[]`
+  - **Commit**: `f85d316 fix: Resolve hydration mismatch causing dashboard flickering`
+  - **Deployed**: ✅ Pushed to Vercel
+
 - **Fixed Dashboard Full-Page Flickering** (2025-12-30)
   - **Symptom**: Entire dashboard page flickering continuously
   - **Root cause**: `LanguageContext.tsx` - `createClient()` called on every render

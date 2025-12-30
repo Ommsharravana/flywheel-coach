@@ -2,6 +2,7 @@
 
 import { CycleNameEditor } from '@/components/shared/CycleNameEditor';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -17,6 +18,8 @@ interface ActiveCycleCardProps {
   startedAt: string;
   flywheelSteps: FlywheelStep[];
   locale: string;
+  eventName?: string;
+  eventBannerColor?: string;
   translations: {
     currentCycle: string;
     untitledCycle: string;
@@ -25,6 +28,15 @@ interface ActiveCycleCardProps {
   };
 }
 
+// Event color classes mapping
+const eventColorClasses: Record<string, { text: string; border: string; bg: string }> = {
+  amber: { text: 'text-amber-400', border: 'border-amber-500/50', bg: 'bg-amber-500/10' },
+  emerald: { text: 'text-emerald-400', border: 'border-emerald-500/50', bg: 'bg-emerald-500/10' },
+  violet: { text: 'text-violet-400', border: 'border-violet-500/50', bg: 'bg-violet-500/10' },
+  rose: { text: 'text-rose-400', border: 'border-rose-500/50', bg: 'bg-rose-500/10' },
+  sky: { text: 'text-sky-400', border: 'border-sky-500/50', bg: 'bg-sky-500/10' },
+};
+
 export function ActiveCycleCard({
   cycleId,
   cycleName,
@@ -32,6 +44,8 @@ export function ActiveCycleCard({
   startedAt,
   flywheelSteps,
   locale,
+  eventName,
+  eventBannerColor,
   translations,
 }: ActiveCycleCardProps) {
   const router = useRouter();
@@ -40,11 +54,13 @@ export function ActiveCycleCard({
     router.refresh();
   };
 
+  const colors = eventColorClasses[eventBannerColor || 'amber'] || eventColorClasses.amber;
+
   return (
     <div className="glass-card rounded-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="font-display text-xl font-semibold text-stone-100">
               {translations.currentCycle}:
             </span>
@@ -55,6 +71,11 @@ export function ActiveCycleCard({
               textClassName="font-display text-xl font-semibold text-amber-400"
               iconSize="sm"
             />
+            {eventName && (
+              <Badge variant="outline" className={`${colors.text} ${colors.border} ${colors.bg}`}>
+                {eventName}
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-stone-400 mt-1" suppressHydrationWarning>
             {translations.started} {new Date(startedAt).toLocaleDateString(locale === 'ta' ? 'ta-IN' : 'en-US')}

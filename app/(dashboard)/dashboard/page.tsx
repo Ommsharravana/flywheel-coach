@@ -56,14 +56,23 @@ export default async function DashboardPage() {
     { number: 8, name: t('steps.impact.name'), description: t('steps.impact.description'), status: 'locked' },
   ]
 
-  // Get user's cycles using effective user ID
-  const { data } = await supabase
+  // Get user's cycles with event data using effective user ID
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase as any)
     .from('cycles')
-    .select('*')
+    .select(`
+      *,
+      event:events (
+        id,
+        name,
+        slug,
+        banner_color
+      )
+    `)
     .eq('user_id', effectiveUser.id)
     .order('created_at', { ascending: false })
 
-  const cycles = data as Cycle[] | null
+  const cycles = data as (Cycle & { event: { id: string; name: string; slug: string; banner_color: string } | null })[] | null
   const activeCycle = cycles?.find(c => c.status === 'active')
   const completedCycles = cycles?.filter(c => c.status === 'completed') || []
 
@@ -104,6 +113,8 @@ export default async function DashboardPage() {
           startedAt={activeCycle.started_at}
           flywheelSteps={flywheelSteps}
           locale={locale}
+          eventName={activeCycle.event?.name}
+          eventBannerColor={activeCycle.event?.banner_color}
           translations={{
             currentCycle: t('dashboard.currentCycle'),
             untitledCycle: t('dashboard.untitledCycle'),
@@ -115,19 +126,12 @@ export default async function DashboardPage() {
         <div className="glass-card rounded-2xl p-6 sm:p-8 text-center">
           <div className="mx-auto max-w-md">
             <h2 className="font-display text-xl font-semibold text-stone-100">
-              {t('dashboard.startNewCycle')}
+              {t('dashboard.noActiveCycle') || 'No Active Cycle'}
             </h2>
             <p className="mt-2 text-stone-400">
-              {t('dashboard.beginJourney')}
+              {t('dashboard.joinEventToStart') || 'Join an event above to start a new flywheel cycle'}
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                asChild
-                size="lg"
-                className="bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-semibold hover:from-amber-400 hover:to-orange-500 shadow-lg shadow-orange-500/25"
-              >
-                <Link href="/cycle/new">{t('dashboard.beginNewCycle')}</Link>
-              </Button>
               <Button
                 asChild
                 size="lg"
@@ -138,7 +142,7 @@ export default async function DashboardPage() {
               </Button>
             </div>
             <p className="mt-4 text-xs text-stone-500">
-              💡 Or fork a validated problem from the Problem Bank
+              ☝️ Select an event from the section above to start a new cycle
             </p>
           </div>
         </div>

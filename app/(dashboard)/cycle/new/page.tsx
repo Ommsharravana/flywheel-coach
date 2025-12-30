@@ -21,6 +21,13 @@ export default async function NewCyclePage() {
     .rpc('get_user_profile', { p_user_id: effectiveUserId });
 
   const profile = (profileData as { role: string; institution_id: string | null; active_event_id: string | null }[] | null)?.[0] || null;
+
+  // REQUIRED: Must have an active event to create a cycle
+  // Users should join an event from the event page first
+  if (!profile?.active_event_id) {
+    redirect('/dashboard?no_event=true');
+  }
+
   const needsInstitution = !profile?.institution_id && profile?.role !== 'superadmin';
 
   if (needsInstitution) {
@@ -38,7 +45,7 @@ export default async function NewCyclePage() {
     name: 'New Cycle',
     status: 'active',
     current_step: 1,
-    event_id: profile?.active_event_id || null,
+    event_id: profile.active_event_id, // Required - validated above
   });
 
   if (error) {

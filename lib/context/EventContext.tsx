@@ -13,6 +13,8 @@ interface EventContextType {
   isAppathonMode: boolean;
   // Actions - joinEvent accepts optional event for optimistic updates
   joinEvent: (eventId: string, eventData?: Event) => Promise<void>;
+  // Join event AND start a new cycle in one action
+  joinAndStart: (eventId: string, eventData?: Event) => Promise<void>;
   leaveEvent: () => Promise<void>;
   // Loading state
   isJoining: boolean;
@@ -23,6 +25,7 @@ const EventContext = createContext<EventContextType>({
   eventConfig: null,
   isAppathonMode: false,
   joinEvent: async () => {},
+  joinAndStart: async () => {},
   leaveEvent: async () => {},
   isJoining: false,
 });
@@ -89,6 +92,43 @@ export function EventProvider({ children, activeEvent: serverActiveEvent }: Even
     }
   }, [router, serverActiveEvent]);
 
+  const joinAndStart = useCallback(async (eventId: string, eventData?: Event) => {
+    setIsJoining(true);
+
+    // OPTIMISTIC UPDATE: Set event immediately if provided
+    if (eventData) {
+      setLocalActiveEvent(eventData);
+    }
+
+    try {
+      const response = await fetch('/api/events/join-and-start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        // Revert optimistic update on error
+        setLocalActiveEvent(serverActiveEvent);
+        throw new Error(error.error || 'Failed to join event and start cycle');
+      }
+
+      const data = await response.json();
+
+      // Redirect to the new cycle (or dashboard if cycle creation failed)
+      if (data.redirectUrl) {
+        router.push(data.redirectUrl);
+      }
+    } catch (err) {
+      // Revert optimistic update on any error
+      setLocalActiveEvent(serverActiveEvent);
+      throw err;
+    } finally {
+      setIsJoining(false);
+    }
+  }, [router, serverActiveEvent]);
+
   const leaveEvent = useCallback(async () => {
     setIsJoining(true);
 
@@ -129,6 +169,7 @@ export function EventProvider({ children, activeEvent: serverActiveEvent }: Even
         eventConfig,
         isAppathonMode,
         joinEvent,
+        joinAndStart,
         leaveEvent,
         isJoining: isJoining || isPending,
       }}

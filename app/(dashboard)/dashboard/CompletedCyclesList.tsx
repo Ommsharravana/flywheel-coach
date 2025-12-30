@@ -2,6 +2,7 @@
 
 import { CycleNameEditor } from '@/components/shared/CycleNameEditor';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -10,7 +11,22 @@ interface CompletedCycle {
   name: string | null;
   completed_at: string | null;
   impact_score: number | null;
+  event?: {
+    id: string;
+    name: string;
+    slug: string;
+    banner_color: string;
+  } | null;
 }
+
+// Event color classes mapping (same as ActiveCycleCard)
+const eventColorClasses: Record<string, { text: string; border: string; bg: string }> = {
+  amber: { text: 'text-amber-400', border: 'border-amber-500/50', bg: 'bg-amber-500/10' },
+  emerald: { text: 'text-emerald-400', border: 'border-emerald-500/50', bg: 'bg-emerald-500/10' },
+  violet: { text: 'text-violet-400', border: 'border-violet-500/50', bg: 'bg-violet-500/10' },
+  rose: { text: 'text-rose-400', border: 'border-rose-500/50', bg: 'bg-rose-500/10' },
+  sky: { text: 'text-sky-400', border: 'border-sky-500/50', bg: 'bg-sky-500/10' },
+};
 
 interface CompletedCyclesListProps {
   cycles: CompletedCycle[];
@@ -52,13 +68,23 @@ export function CompletedCyclesList({
             className="flex items-center justify-between p-4 rounded-xl bg-stone-800/50 hover:bg-stone-800/70 transition-colors"
           >
             <div>
-              <CycleNameEditor
-                cycleId={cycle.id}
-                initialName={cycle.name || translations.untitledCycle}
-                onNameChange={handleNameChange}
-                textClassName="font-medium text-stone-100"
-                iconSize="sm"
-              />
+              <div className="flex items-center gap-2 flex-wrap">
+                <CycleNameEditor
+                  cycleId={cycle.id}
+                  initialName={cycle.name || translations.untitledCycle}
+                  onNameChange={handleNameChange}
+                  textClassName="font-medium text-stone-100"
+                  iconSize="sm"
+                />
+                {cycle.event && (() => {
+                  const colors = eventColorClasses[cycle.event.banner_color] || eventColorClasses.amber;
+                  return (
+                    <Badge variant="outline" className={`${colors.text} ${colors.border} ${colors.bg} text-xs`}>
+                      {cycle.event.name}
+                    </Badge>
+                  );
+                })()}
+              </div>
               <p className="text-sm text-stone-400" suppressHydrationWarning>
                 {translations.completed} {cycle.completed_at ? new Date(cycle.completed_at).toLocaleDateString(locale === 'ta' ? 'ta-IN' : 'en-US') : translations.notAvailable}
               </p>

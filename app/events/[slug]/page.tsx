@@ -8,7 +8,6 @@ import {
   Users,
   Target,
   Database,
-  ArrowRight,
   Play,
   CheckCircle,
   Clock,
@@ -17,6 +16,7 @@ import {
 import Link from 'next/link';
 import { InstitutionLeaderboard } from '@/components/problem-bank/InstitutionLeaderboard';
 import { getMethodologyForEvent } from '@/lib/methodologies';
+import { JoinAndStartButton } from '@/components/events/JoinAndStartButton';
 
 interface EventPageProps {
   params: Promise<{ slug: string }>;
@@ -46,6 +46,10 @@ export default async function EventPage({ params }: EventPageProps) {
   if (error || !event) {
     redirect('/');
   }
+
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  const isAuthenticated = !!user;
 
   // Get methodology for this event
   const methodology = getMethodologyForEvent(event.config);
@@ -125,12 +129,11 @@ export default async function EventPage({ params }: EventPageProps) {
               </Button>
             </Link>
             {eventStatus !== 'ended' && (
-              <Link href="/cycle/new">
-                <Button size="lg" variant="outline" className="border-stone-700 text-stone-200">
-                  Start New Cycle
-                  <ArrowRight className="h-5 w-5 ml-2" />
-                </Button>
-              </Link>
+              <JoinAndStartButton
+                eventId={event.id}
+                eventSlug={slug}
+                isAuthenticated={isAuthenticated}
+              />
             )}
           </div>
         </div>
