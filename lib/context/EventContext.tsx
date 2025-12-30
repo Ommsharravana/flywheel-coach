@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useCallback, useState, useTransition, useEffect } from 'react';
+import { createContext, useContext, ReactNode, useCallback, useState, useTransition, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Event, EventConfig } from '@/lib/events/types';
 
@@ -162,18 +162,22 @@ export function EventProvider({ children, activeEvent: serverActiveEvent }: Even
     }
   }, [router, localActiveEvent]);
 
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(
+    () => ({
+      activeEvent,
+      eventConfig,
+      isAppathonMode,
+      joinEvent,
+      joinAndStart,
+      leaveEvent,
+      isJoining: isJoining || isPending,
+    }),
+    [activeEvent, eventConfig, isAppathonMode, joinEvent, joinAndStart, leaveEvent, isJoining, isPending]
+  );
+
   return (
-    <EventContext.Provider
-      value={{
-        activeEvent,
-        eventConfig,
-        isAppathonMode,
-        joinEvent,
-        joinAndStart,
-        leaveEvent,
-        isJoining: isJoining || isPending,
-      }}
-    >
+    <EventContext.Provider value={value}>
       {children}
     </EventContext.Provider>
   );

@@ -85,7 +85,7 @@ export function EventBanner() {
               ) : (
                 <Calendar className="w-3.5 h-3.5" />
               )}
-              <span className="text-sm">{statusText}</span>
+              <span className="text-sm" suppressHydrationWarning>{statusText}</span>
             </div>
 
             {/* Themes badge (collapsed on mobile) */}
@@ -101,7 +101,7 @@ export function EventBanner() {
           {/* Right: Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Mobile status */}
-            <span className="sm:hidden text-xs text-stone-400">
+            <span className="sm:hidden text-xs text-stone-400" suppressHydrationWarning>
               {statusText}
             </span>
 

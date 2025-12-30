@@ -318,7 +318,7 @@ function EventDetailsModal({ event, isActive, onJoinAndStart, onLeave, onClose, 
             <h2 className="font-display text-2xl font-bold text-white drop-shadow-lg">
               {event.name}
             </h2>
-            <p className="text-white/80 text-sm mt-1">
+            <p className="text-white/80 text-sm mt-1" suppressHydrationWarning>
               {new Date(event.start_date).toLocaleDateString()} - {new Date(event.end_date).toLocaleDateString()}
             </p>
           </div>
