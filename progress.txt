@@ -3148,3 +3148,26 @@ WITH new_names AS (SELECT ...)
 UPDATE cycles SET ... FROM new_names WHERE cycles.id = new_names.cycle_id;
 ```
 
+
+
+
+## 2024-12-30 - Problem Bank Title Fix Verified
+
+### What was done:
+1. Verified problem_bank.title fix from previous session
+2. Ran verification query: **0 remaining "New Cycle" records** out of 132 total
+3. Confirmed Problem Bank UI displays meaningful titles
+
+### Verification:
+- Database: `SELECT COUNT(*) FROM problem_bank WHERE title = 'New Cycle'` → 0
+- UI: Problem Bank page shows descriptive titles like:
+  - "It identifies the root cause: It's not just 'forge"
+  - "the government students are not getting proper edu"
+  - "Taking attendance for different batches of odd an"
+
+### Decision:
+- For records without problem_statement, used linked cycles.name via original_cycle_id as fallback
+
+### Status:
+- Project working
+- All 132 problem_bank records have meaningful titles
