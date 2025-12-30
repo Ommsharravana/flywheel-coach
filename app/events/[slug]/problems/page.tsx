@@ -197,7 +197,7 @@ export default function EventProblemsPage() {
         <Card className="bg-stone-900/50 border-stone-800 max-w-md">
           <CardContent className="pt-6 text-center py-12">
             <h2 className="text-xl font-semibold text-stone-100 mb-2">Event Not Found</h2>
-            <p className="text-stone-400 mb-4">The event you're looking for doesn't exist.</p>
+            <p className="text-stone-400 mb-4">The event you&apos;re looking for doesn&apos;t exist.</p>
             <Link href="/">
               <Button variant="outline" className="border-stone-700">
                 <ArrowLeft className="h-4 w-4 mr-2" />

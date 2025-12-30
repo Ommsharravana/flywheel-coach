@@ -71,8 +71,8 @@ export function SuccessStoryBanner({ compact = false, onViewHallOfFame }: Succes
         {/* What made it special */}
         <div className="p-3 rounded-lg bg-stone-800/50 border border-stone-700/50">
           <p className="text-sm text-stone-300 italic">
-            "Non-coders from Dental built an AI-powered analyzer that won First Prize.
-            Ideas mattered more than programming skills."
+            &ldquo;Non-coders from Dental built an AI-powered analyzer that won First Prize.
+            Ideas mattered more than programming skills.&rdquo;
           </p>
         </div>
 

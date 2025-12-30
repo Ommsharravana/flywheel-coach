@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -136,23 +136,7 @@ export default function AdminRolesPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  async function fetchData() {
-    setLoading(true);
-    await Promise.all([
-      fetchEventAdmins(),
-      fetchInstitutionAdmins(),
-      fetchEvents(),
-      fetchInstitutions(),
-      fetchAllUsers(),
-    ]);
-    setLoading(false);
-  }
-
-  async function fetchAllUsers() {
+  const fetchAllUsers = useCallback(async () => {
     const { data, error } = await supabase
       .from('users')
       .select('id, name, email, role, user_category, created_at')
@@ -161,9 +145,9 @@ export default function AdminRolesPage() {
     if (!error && data) {
       setAllUsers(data as UserWithRole[]);
     }
-  }
+  }, [supabase]);
 
-  async function fetchEventAdmins() {
+  const fetchEventAdmins = useCallback(async () => {
     const { data, error } = await supabase
       .from('event_admins')
       .select(`
@@ -188,9 +172,9 @@ export default function AdminRolesPage() {
         assigned_at: ea.assigned_at as string,
       })));
     }
-  }
+  }, [supabase]);
 
-  async function fetchInstitutionAdmins() {
+  const fetchInstitutionAdmins = useCallback(async () => {
     const { data, error } = await supabase
       .from('institution_admins')
       .select(`
@@ -215,9 +199,9 @@ export default function AdminRolesPage() {
         assigned_at: ia.assigned_at as string,
       })));
     }
-  }
+  }, [supabase]);
 
-  async function fetchEvents() {
+  const fetchEvents = useCallback(async () => {
     const { data, error } = await supabase
       .from('events')
       .select('id, name, slug')
@@ -227,9 +211,9 @@ export default function AdminRolesPage() {
     if (!error && data) {
       setEvents(data);
     }
-  }
+  }, [supabase]);
 
-  async function fetchInstitutions() {
+  const fetchInstitutions = useCallback(async () => {
     const { data, error } = await supabase
       .from('institutions')
       .select('id, name, short_name')
@@ -238,7 +222,24 @@ export default function AdminRolesPage() {
     if (!error && data) {
       setInstitutions(data as Institution[]);
     }
-  }
+  }, [supabase]);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchEventAdmins(),
+      fetchInstitutionAdmins(),
+      fetchEvents(),
+      fetchInstitutions(),
+      fetchAllUsers(),
+    ]);
+    setLoading(false);
+  }, [fetchEventAdmins, fetchInstitutionAdmins, fetchEvents, fetchInstitutions, fetchAllUsers]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching is a valid useEffect pattern
+    fetchData();
+  }, [fetchData]);
 
   async function removeEventAdmin(id: string) {
     if (!confirm('Are you sure you want to remove this event admin?')) return;

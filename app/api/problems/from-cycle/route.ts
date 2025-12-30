@@ -196,8 +196,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Auto-assign to cluster based on content
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await autoClusterProblem(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- supabase client typing
       supabase as any,
       newProblem.id,
       title,

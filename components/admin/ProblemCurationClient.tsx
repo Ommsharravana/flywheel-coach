@@ -68,6 +68,7 @@ export function ProblemCurationClient({ eventId, userId }: ProblemCurationClient
   }, [supabase, userId, eventId, searchTerm, page]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching is a valid useEffect pattern
     fetchProblems();
   }, [fetchProblems]);
 

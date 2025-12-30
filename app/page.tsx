@@ -13,9 +13,11 @@ export default function Home() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initialization on mount is valid
     setMounted(true)
     const saved = localStorage.getItem('flywheel-locale') as Locale | null
     if (saved && (saved === 'en' || saved === 'ta')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reading localStorage on mount is valid
       setLocale(saved)
     }
   }, [])

@@ -68,7 +68,7 @@ export default function AppathonGuidePage() {
               Appathon 2.0
             </h1>
             <p className="text-xl text-stone-300 mb-8 max-w-2xl mx-auto">
-              JKKN's AI-Powered App Building Competition
+              JKKN&apos;s AI-Powered App Building Competition
             </p>
 
             {/* Key Stats */}

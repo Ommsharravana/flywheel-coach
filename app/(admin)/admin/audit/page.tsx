@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,11 +83,7 @@ export default function AdminAuditPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchLogs();
-  }, [page, actionFilter, resourceFilter, dateFrom, dateTo]);
-
-  async function fetchLogs() {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
 
     let query = supabase
@@ -128,7 +124,12 @@ export default function AdminAuditPage() {
     }
 
     setLoading(false);
-  }
+  }, [supabase, page, perPage, actionFilter, resourceFilter, dateFrom, dateTo]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching is a valid useEffect pattern
+    fetchLogs();
+  }, [fetchLogs]);
 
   function exportCSV() {
     const headers = ['Timestamp', 'Admin', 'Role', 'Action', 'Resource Type', 'Resource ID', 'Page', 'Event', 'Institution'];

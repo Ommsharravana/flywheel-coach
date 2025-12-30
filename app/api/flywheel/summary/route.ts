@@ -32,22 +32,30 @@ export async function GET(request: NextRequest) {
 
     // Outcomes
     const { data: outcomes } = await db.from('problem_outcomes').select('problem_id, outcome_type, time_to_solution_days, users_impacted, time_saved_hours, cost_saved, revenue_generated');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- database response typing
     const problemsWithOutcomes = new Set(outcomes?.map((o: any) => o.problem_id) || []).size;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- database response typing
     const successfulOutcomes = outcomes?.filter((o: any) => o.outcome_type === 'success').length || 0;
     const outcomeRate = totalProblems ? problemsWithOutcomes / totalProblems : 0;
     const successRate = outcomes?.length ? successfulOutcomes / outcomes.length : 0;
     const avgSolutionTime = outcomes?.length
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- database response typing
       ? outcomes.reduce((sum: number, o: any) => sum + (o.time_to_solution_days || 0), 0) / outcomes.length
       : null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- database response typing
     const totalUsersImpacted = outcomes?.reduce((sum: number, o: any) => sum + (o.users_impacted || 0), 0) || 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- database response typing
     const totalTimeSavedHours = outcomes?.reduce((sum: number, o: any) => sum + (o.time_saved_hours || 0), 0) || 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- database response typing
     const totalCostSaved = outcomes?.reduce((sum: number, o: any) => sum + (o.cost_saved || 0), 0) || 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- database response typing
     const totalRevenueGenerated = outcomes?.reduce((sum: number, o: any) => sum + (o.revenue_generated || 0), 0) || 0;
 
     // Case Studies
     const { count: totalCaseStudies } = await db.from('case_studies').select('*', { count: 'exact', head: true });
     const { count: publishedCaseStudies } = await db.from('case_studies').select('*', { count: 'exact', head: true }).eq('status', 'published');
     const { data: caseStudyViews } = await db.from('case_studies').select('view_count');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- database response typing
     const totalCaseStudyViews = caseStudyViews?.reduce((sum: number, cs: any) => sum + (cs.view_count || 0), 0) || 0;
 
     // AI Refinements
