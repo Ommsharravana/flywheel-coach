@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   // 2. Get all events
   const { data: events, error: eventsError } = await supabase
     .from('events')
-    .select('id, name, slug');
+    .select('id, name, slug') as { data: Array<{ id: string; name: string; slug: string }> | null; error: unknown };
 
   // 3. Get submissions per event
   const { data: submissionsByEvent, error: subError } = await supabase
