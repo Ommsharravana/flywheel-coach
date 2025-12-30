@@ -1,34 +1,80 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Current Session: 2025-12-30
+## Current Session: 2025-12-30 (Afternoon)
 
 ### Working On
-- (Completed)
+- Admin Submissions Feature - BLOCKED on event_admins access
 
 ### Completed This Session
-- Implemented Problem Clusters feature
-- Created 11 AI-generated clusters from 132 problems
-- Clusters page now fully functional at /dashboard/problem-bank/clusters
-- Added real-time auto-clustering for new problems
+- Added FileText icon to events list page for quick submissions access
+- Created SubmissionsTableClient.tsx with inline scoring (0-5 scale)
+- Added status dropdown with confirmation dialog for safety
+- Added quick action buttons (Shortlist, Winner, Reject)
+- Fixed API routes to pass caller_user_id for Server Component auth
+- Created migration 060 for RPC functions with explicit user_id support
+- Deployed to Vercel (production working)
 
 ### Blocked
-- None
+- **Submissions showing 0**: User needs to run SQL to add themselves to `event_admins` table
+- SQL provided in chat - user needs to execute query #4 to grant access
 
 ### Decisions Made
-- Used keyword-based AI clustering (theme + content similarity)
-- Cluster categories: Education, Healthcare, Technology, Environment, Mental Health, Employment, Communication, Documentation, Infrastructure, Agriculture, Uncategorized
-- Real-time clustering integrated into both problem submission endpoints
+- Used confirmation dialog for status changes (prevents accidental changes)
+- Inline scoring with blur-to-save for quick reviews
+- RPC functions accept explicit caller_user_id for Server Component compatibility
 
 ### Next Session Should
-1. Consider Gemini API integration for smarter clustering (when configured)
-2. Review Appathon 2.0 event functionality
-3. Test real-time clustering with new problem submission
+1. **FIRST**: Verify user ran the event_admins SQL and submissions now display
+2. Test inline scoring functionality
+3. Test status change workflow (shortlist/reject buttons)
+4. Consider magic link auth for external judges (deferred - complex feature)
 
 ---
 
 ## Session History
 
 <!-- Append each session summary below. Most recent at top. -->
+
+### 2025-12-30 (Afternoon) - Admin Submissions Feature
+
+**Completed:**
+- Added FileText icon link to `/admin/events` list for quick access to submissions
+- Created `SubmissionsTableClient.tsx` client component with:
+  - Inline score input (0-5 scale with 0.1 step)
+  - Status dropdown with 6 options
+  - Confirmation dialog before status changes
+  - Quick action buttons (Shortlist, Winner, Reject)
+  - Loading states during save operations
+- Fixed API routes (`/api/admin/submissions/route.ts`, `/api/admin/submissions/[id]/route.ts`) to pass `caller_user_id`
+- Created migration `060_fix_event_submissions_auth.sql` with:
+  - `has_event_access_explicit(event_id, user_id, role)` function
+  - Updated `get_event_submissions()` to accept `caller_user_id`
+  - Updated `update_submission_review()` to accept `caller_user_id`
+
+**Files Created:**
+- `/app/(admin)/admin/events/[slug]/submissions/SubmissionsTableClient.tsx`
+- `/supabase/migrations/060_fix_event_submissions_auth.sql`
+
+**Files Modified:**
+- `/app/(admin)/admin/events/page.tsx` (added FileText icon)
+- `/app/(admin)/admin/events/[slug]/submissions/page.tsx` (uses client component)
+- `/app/api/admin/submissions/route.ts` (added caller_user_id)
+- `/app/api/admin/submissions/[id]/route.ts` (added caller_user_id)
+
+**Commits:**
+- `c5dc1a3 feat(submissions): Add inline scoring with confirmation dialogs`
+- `b95b0b0 fix: Remove debug endpoint causing build failures`
+
+**Blocker:**
+- Submissions page shows 0 because user not in `event_admins` table
+- User needs to run: `INSERT INTO event_admins (user_id, event_id, role) SELECT (SELECT id FROM users WHERE email = 'director@jkkn.ac.in'), e.id, 'admin' FROM events e ON CONFLICT (user_id, event_id) DO UPDATE SET role = 'admin';`
+
+**State at End:**
+- Build: passes (deployed to Vercel)
+- Feature: UI complete, awaiting event_admins access fix
+- Next: User runs SQL, then verify submissions display
+
+---
 
 ### 2025-12-30 - Added Real-time Auto-Clustering
 
