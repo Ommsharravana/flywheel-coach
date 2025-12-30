@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useTransition, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Cycle, FLYWHEEL_STEPS } from '@/lib/types/cycle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +29,6 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [isPending, startTransition] = useTransition();
   const [isStreaming, setIsStreaming] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,7 +145,8 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
     } finally {
       setIsLoading(false);
     }
-  }, [cycle.id, currentStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cycle.id, currentStep]); // supabase client is stable - only reload on cycle/step change
 
   // Save a message to DB
   const saveMessage = async (
@@ -235,7 +235,7 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || isPending || isStreaming || !conversationId) return;
+    if (!input.trim() || isStreaming || !conversationId) return;
 
     const userContent = input.trim();
     setInput('');

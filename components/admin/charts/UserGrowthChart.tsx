@@ -50,7 +50,7 @@ export function UserGrowthChart({ data, title = 'User Growth' }: UserGrowthChart
           <>
             {/* Bar Chart */}
             <div className="flex items-end gap-1 h-32">
-              {data.map((item, index) => {
+              {data.map((item) => {
                 const height = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
                 return (
                   <div

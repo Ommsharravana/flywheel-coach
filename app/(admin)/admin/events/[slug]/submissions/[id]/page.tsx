@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -398,8 +399,13 @@ export default function SubmissionDetailPage({ params }: SubmissionDetailPagePro
                   </Label>
                   <div className="grid grid-cols-3 gap-2">
                     {submission.screenshots.map((url, idx) => (
-                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block">
-                        <img src={url} alt={`Screenshot ${idx + 1}`} className="rounded border border-stone-700 hover:opacity-80 transition-opacity" />
+                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block relative h-32">
+                        <Image
+                          src={url}
+                          alt={`Screenshot ${idx + 1}`}
+                          fill
+                          className="rounded border border-stone-700 hover:opacity-80 transition-opacity object-cover"
+                        />
                       </a>
                     ))}
                   </div>

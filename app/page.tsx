@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Header } from '@/components/shared/Header'
@@ -10,14 +10,12 @@ import { createTranslator, type Locale } from '@/lib/i18n'
 
 export default function Home() {
   const [locale, setLocale] = useState<Locale>('en')
-  const [mounted, setMounted] = useState(false)
 
+  // Hydrate locale from localStorage after mount - valid pattern for SSR hydration
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initialization on mount is valid
-    setMounted(true)
     const saved = localStorage.getItem('flywheel-locale') as Locale | null
     if (saved && (saved === 'en' || saved === 'ta')) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- reading localStorage on mount is valid
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocale(saved)
     }
   }, [])

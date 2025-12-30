@@ -24,7 +24,6 @@ import {
   Settings,
   Shield,
   Trash2,
-  AlertTriangle,
   Users,
   Plus,
   X,

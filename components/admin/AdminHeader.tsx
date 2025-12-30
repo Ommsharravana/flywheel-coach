@@ -64,7 +64,7 @@ export function AdminHeader({ user, profile, userRole }: AdminHeaderProps) {
           <EventSwitcher
             userId={user.id}
             userRole={userRole}
-            onEventChange={(eventId) => {
+            onEventChange={() => {
               // Refresh the page to reload data with new event context
               router.refresh();
             }}

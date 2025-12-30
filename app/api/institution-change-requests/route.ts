@@ -36,11 +36,6 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Build query based on role
-    const query = supabase
-      .from('admin_pending_change_requests')
-      .select('*');
-
     // Institution admins can only see requests for their institution
     if (adminCheck.role === 'institution_admin' && adminCheck.institutionId) {
       // Filter by to_institution matching admin's institution

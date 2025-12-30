@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Users,
   Shield,
   Building2,
   Calendar,
@@ -106,14 +105,6 @@ const roleLabels: Record<string, string> = {
   event_admin: 'Global Event Admin',
   institution_admin: 'Global Institution Admin',
   superadmin: 'Super Admin',
-};
-
-const roleDescriptions: Record<string, string> = {
-  builder: 'Regular user who can create solutions',
-  admin: 'Platform administrator',
-  event_admin: 'Can manage ALL events globally',
-  institution_admin: 'Can manage ALL institutions globally',
-  superadmin: 'Full platform access',
 };
 
 export default function AdminRolesPage() {

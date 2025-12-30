@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect } from 'react';
 import { Globe } from 'lucide-react';
 import { useOptionalLanguage } from '@/lib/i18n/LanguageContext';
 import type { Locale } from '@/lib/i18n/types';
@@ -35,7 +35,9 @@ export function LanguageToggle({ className = '', showLabel = true }: LanguageTog
   const [hasContext, setHasContext] = useState(false);
 
   // Load preference from localStorage on mount (for unauthenticated users)
+  // These setState calls are valid SSR hydration patterns - they run once on mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
 
     // Check if we have a real context by seeing if locale is not the default
@@ -44,6 +46,7 @@ export function LanguageToggle({ className = '', showLabel = true }: LanguageTog
     const savedLocale = localStorage.getItem('flywheel-locale') as Locale | null;
 
     if (savedLocale && (savedLocale === 'en' || savedLocale === 'ta')) {
+       
       setLocalLocale(savedLocale);
     }
 
@@ -57,9 +60,9 @@ export function LanguageToggle({ className = '', showLabel = true }: LanguageTog
        window.location.pathname.startsWith('/cycle') ||
        window.location.pathname.startsWith('/admin'));
 
+     
     setHasContext(onDashboardPage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount - pathname is stable, localStorage read is one-time
+  }, []); // Run only on mount - pathname is stable, localStorage read is one-time
 
   // Determine current locale to display
   const currentLocale = hasContext ? contextLocale : localLocale;

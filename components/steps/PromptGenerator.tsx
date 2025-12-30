@@ -401,7 +401,7 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
                   <div className="text-xs text-stone-500 uppercase tracking-wider px-2 mb-2">
                     {section.phase}
                   </div>
-                  {section.prompts.map((promptTitle, idx) => {
+                  {section.prompts.map((promptTitle) => {
                     const promptNum = parseInt(promptTitle.split('.')[0]) - 1;
                     const isActive = currentPromptIndex === promptNum;
                     const isCopied = copiedPrompts.has(promptNum);

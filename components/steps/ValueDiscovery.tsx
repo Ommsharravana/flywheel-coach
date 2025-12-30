@@ -17,15 +17,6 @@ interface ValueDiscoveryProps {
   cycle: Cycle;
 }
 
-const CRITERIA_IDS = ['activelySearching', 'triedAlternatives', 'willingToPay', 'urgentNeed', 'frequentProblem'] as const;
-const CRITERIA_WEIGHTS: Record<string, number> = {
-  activelySearching: 20,
-  triedAlternatives: 20,
-  willingToPay: 25,
-  urgentNeed: 20,
-  frequentProblem: 15,
-};
-
 export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
@@ -103,8 +94,6 @@ export function ValueDiscovery({ cycle }: ValueDiscoveryProps) {
   };
 
   const decision = getDecision();
-
-  const hasEvidence = Object.values(evidence).some((e) => e.trim().length > 0);
 
   const saveValue = async (complete = false) => {
     setIsPending(true);

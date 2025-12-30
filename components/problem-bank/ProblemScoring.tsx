@@ -85,15 +85,6 @@ function getScoreColor(score: number | null): string {
   return 'text-red-400';
 }
 
-function getScoreLabel(score: number | null): string {
-  if (score === null) return 'Not scored';
-  if (score >= 9) return 'Excellent';
-  if (score >= 7) return 'Good';
-  if (score >= 5) return 'Moderate';
-  if (score >= 3) return 'Low';
-  return 'Very Low';
-}
-
 export function ProblemScoring({
   problemId,
   onScoreUpdate,
@@ -101,7 +92,6 @@ export function ProblemScoring({
   isInPipeline = false,
 }: ProblemScoringProps) {
   const [scores, setScores] = useState<ProblemScore | null>(null);
-  const [averageScore, setAverageScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -119,7 +109,8 @@ export function ProblemScoring({
 
   useEffect(() => {
     fetchScores();
-  }, [problemId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [problemId]); // fetchScores is stable - only refetch when problemId changes
 
   const fetchScores = async () => {
     try {
@@ -140,7 +131,6 @@ export function ProblemScoring({
         });
         setEditNotes(latestScore.notes || '');
       }
-      setAverageScore(data.average_score);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load scores');
     } finally {

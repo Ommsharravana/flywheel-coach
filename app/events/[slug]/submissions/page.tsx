@@ -75,7 +75,7 @@ export default async function SubmissionsPage({ params }: SubmissionsPageProps) 
 
   // Get submissions using RPC (bypasses RLS)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: submissionsData, error: submissionsError } = await (supabase as any)
+  const { data: submissionsData } = await (supabase as any)
     .rpc('get_event_submissions_public', { target_event_slug: slug });
 
   const submissions = (submissionsData || []) as Submission[];

@@ -68,7 +68,6 @@ interface Submission {
 
 interface SubmissionsTableClientProps {
   initialSubmissions: Submission[];
-  eventId: string;
   eventSlug: string;
 }
 
@@ -106,13 +105,12 @@ interface PendingStatusChange {
 
 export function SubmissionsTableClient({
   initialSubmissions,
-  eventId,
   eventSlug,
 }: SubmissionsTableClientProps) {
   const router = useRouter();
   const [submissions, setSubmissions] = useState<Submission[]>(initialSubmissions);
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
-  const [editingScoreId, setEditingScoreId] = useState<string | null>(null);
+  const [, setEditingScoreId] = useState<string | null>(null);
   const [pendingScores, setPendingScores] = useState<Record<string, string>>({});
   const [pendingStatusChange, setPendingStatusChange] = useState<PendingStatusChange | null>(null);
 
@@ -134,7 +132,7 @@ export function SubmissionsTableClient({
         throw new Error(error.message || 'Failed to update');
       }
 
-      const { submission: updated } = await response.json();
+      await response.json();
 
       // Update local state
       setSubmissions(prev =>
@@ -260,7 +258,6 @@ export function SubmissionsTableClient({
             const statusConfig = STATUS_CONFIG[submission.status] || STATUS_CONFIG.draft;
             const StatusIcon = statusConfig.icon;
             const saving = isSaving(submission.id);
-            const isEditingScore = editingScoreId === submission.id;
             const displayScore = pendingScores[submission.id] ?? (submission.score?.toString() ?? '');
 
             return (

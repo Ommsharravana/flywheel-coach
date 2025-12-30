@@ -51,10 +51,11 @@ export function CycleReviewStatus({ cycleId }: CycleReviewStatusProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Fetch review on mount
+  // Fetch review on mount and when cycleId changes
   useEffect(() => {
     fetchReview();
-  }, [cycleId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cycleId]); // fetchReview is stable - only refetch when cycleId changes
 
   async function fetchReview() {
     try {

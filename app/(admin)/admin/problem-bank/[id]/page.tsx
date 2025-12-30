@@ -12,7 +12,6 @@ import {
   Building2,
   User,
   AlertTriangle,
-  CheckCircle,
   Users,
   MessageSquare,
   Clock,
@@ -73,7 +72,7 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ id: st
   const [attemptTeamName, setAttemptTeamName] = useState('');
   const [forking, setForking] = useState(false);
   const [isInPipeline, setIsInPipeline] = useState(false);
-  const [addingToPipeline, setAddingToPipeline] = useState(false);
+  const [, setAddingToPipeline] = useState(false);
 
   // Edit state
   const [editTitle, setEditTitle] = useState('');

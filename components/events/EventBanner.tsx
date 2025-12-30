@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, X, Clock, Calendar, Users, ExternalLink } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Trophy, X, Clock, Calendar } from 'lucide-react';
 import { useActiveEvent } from '@/lib/context/EventContext';
 import { getBannerColorClasses, isEventLive, getDaysRemaining } from '@/lib/events/types';
 

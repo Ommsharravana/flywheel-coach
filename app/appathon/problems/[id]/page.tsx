@@ -10,13 +10,11 @@ import {
   Calendar,
   Building2,
   AlertTriangle,
-  Users,
   MessageSquare,
   Target,
   GitFork,
   Loader2,
   Sparkles,
-  CheckCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ProblemWithDetails } from '@/lib/types/problem-bank';
@@ -27,7 +25,6 @@ import {
   VALIDATION_STATUSES,
   getSeverityLabel,
   getSeverityColor,
-  formatDesperateUserScore,
 } from '@/lib/types/problem-bank';
 
 export default function PublicProblemDetailPage({ params }: { params: Promise<{ id: string }> }) {

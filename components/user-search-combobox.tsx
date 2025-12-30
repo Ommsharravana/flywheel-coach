@@ -150,14 +150,6 @@ export function UserSearchCombobox({
     inputRef.current?.focus();
   };
 
-  // Format role for display
-  const formatRole = (role: string) => {
-    return role
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
   return (
     <div ref={containerRef} className="relative w-full">
       {label && (

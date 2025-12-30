@@ -37,7 +37,7 @@ interface InstitutionChangeRequestProps {
 }
 
 export function InstitutionChangeRequest({
-  userId,
+  userId: _userId,
   currentInstitution,
 }: InstitutionChangeRequestProps) {
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -50,7 +50,8 @@ export function InstitutionChangeRequest({
 
   useEffect(() => {
     fetchData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only on mount - fetchData handles both institutions and pending request
 
   async function fetchData() {
     try {
@@ -94,7 +95,7 @@ export function InstitutionChangeRequest({
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         toast.success('Change request submitted successfully');
         setShowModal(false);
         setSelectedInstitution(null);

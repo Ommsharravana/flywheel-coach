@@ -292,7 +292,6 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
           {paginatedSubmissions.length > 0 ? (
             <SubmissionsTableClient
               initialSubmissions={paginatedSubmissions}
-              eventId={event.id}
               eventSlug={slug}
             />
           ) : (

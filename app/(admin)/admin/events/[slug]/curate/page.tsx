@@ -4,8 +4,7 @@ import { getEffectiveUserId } from '@/lib/supabase/effective-user';
 import { checkEventAdminAccess } from '@/lib/methodologies/helpers';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Star, Check, Plus } from 'lucide-react';
+import { ArrowLeft, Star, Check } from 'lucide-react';
 import Link from 'next/link';
 import { ProblemCurationClient } from '@/components/admin/ProblemCurationClient';
 

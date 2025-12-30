@@ -61,7 +61,8 @@ export function ImpersonationBanner() {
     updateTime();
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
-  }, [session?.expiresAt]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.expiresAt]); // endImpersonation is stable - only re-run when expiresAt changes
 
   async function checkImpersonationStatus() {
     try {

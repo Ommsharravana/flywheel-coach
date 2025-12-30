@@ -181,7 +181,7 @@ export function FlywheelNavigator({ cycle, currentStep, onStepClick, compact = f
 
       {/* Linear list for mobile */}
       <div className="md:hidden space-y-2">
-        {steps.map((step, index) => {
+        {steps.map((step) => {
           const colors = statusColors[step.status];
           const isActive = currentStep === step.id;
 

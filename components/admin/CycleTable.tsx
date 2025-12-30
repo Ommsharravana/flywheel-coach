@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Target } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface CycleWithUser {

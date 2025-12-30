@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, ExternalLink, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import { PROBLEM_THEMES } from '@/lib/types/problem-bank';
@@ -34,7 +33,7 @@ export function SimilarProblems({ problemId, variant = 'admin' }: SimilarProblem
           const data = await response.json();
           setSimilar(data.similar || []);
         }
-      } catch (err) {
+      } catch (_err) {
         setError('Failed to load similar problems');
       } finally {
         setLoading(false);

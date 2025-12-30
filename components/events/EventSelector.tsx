@@ -9,7 +9,7 @@ import { getBannerColorClasses, isEventLive, isEventUpcoming, getDaysRemaining, 
 import { AppathonDetailsModal, isAppathonEvent } from '@/components/appathon/details/AppathonDetailsModal';
 
 export function EventSelector() {
-  const { activeEvent, joinEvent, joinAndStart, leaveEvent, isJoining } = useActiveEvent();
+  const { activeEvent, joinAndStart, leaveEvent, isJoining } = useActiveEvent();
   const [events, setEvents] = useState<EventWithParticipantCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<EventWithParticipantCount | null>(null);

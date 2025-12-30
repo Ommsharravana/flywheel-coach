@@ -90,7 +90,7 @@ export function MyJKKNTrackHighlight({ expanded = false, onLearnMore }: MyJKKNTr
               App Ideas
             </h4>
             <div className="grid grid-cols-2 gap-2">
-              {track.categories.map((category, index) => (
+              {track.categories.map((category) => (
                 <div
                   key={category.id}
                   className="p-2 rounded-lg bg-stone-800/30 border border-stone-700/30"

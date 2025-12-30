@@ -39,7 +39,7 @@ export function WorkflowPieChart({ data, title = 'Workflow Distribution' }: Work
   }, []);
 
   // Build conic gradient
-  const gradientStops = slices.map((slice, index) => {
+  const gradientStops = slices.map((slice) => {
     const colorClass = workflowColors[slice.type.toLowerCase()] || 'bg-stone-500';
     const color = colorClass.replace('bg-', '');
     // Map tailwind color names to actual colors

@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Search,
   Database,
-  Users,
   Target,
   ExternalLink,
   Loader2,
@@ -105,13 +104,16 @@ export default function PublicProblemsPage() {
     fetchProblems();
   }, [fetchProblems]);
 
-  // Debounced search
+  // Debounced search - fetchProblems is excluded because we want to control
+  // when it's called (only when search changes), not recreate the timer on every
+  // fetchProblems identity change. The function is stable via useCallback.
   useEffect(() => {
     const timer = setTimeout(() => {
       setPage(1);
       fetchProblems();
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   const handleFork = async (problemId: string) => {

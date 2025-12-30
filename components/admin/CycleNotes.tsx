@@ -33,10 +33,11 @@ export function CycleNotes({ cycleId }: CycleNotesProps) {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Fetch notes on mount
+  // Fetch notes on mount and when cycleId changes
   useEffect(() => {
     fetchNotes();
-  }, [cycleId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cycleId]); // fetchNotes is stable - only refetch when cycleId changes
 
   async function fetchNotes() {
     try {

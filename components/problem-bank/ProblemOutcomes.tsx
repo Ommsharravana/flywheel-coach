@@ -23,7 +23,6 @@ import {
   ChevronUp,
   Users,
   Clock,
-  DollarSign,
   Lightbulb,
   CheckCircle,
   XCircle,
@@ -62,7 +61,8 @@ export function ProblemOutcomes({ problemId, onOutcomeAdded }: ProblemOutcomesPr
 
   useEffect(() => {
     fetchOutcomes();
-  }, [problemId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [problemId]); // fetchOutcomes is stable - only refetch when problemId changes
 
   const fetchOutcomes = async () => {
     try {

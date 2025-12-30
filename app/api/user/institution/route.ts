@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Use RPC function to set institution (bypasses RLS to avoid infinite recursion)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: success, error: rpcError } = await (supabase as any)
+    const { error: rpcError } = await (supabase as any)
       .rpc('set_user_institution', {
         p_user_id: user.id,
         p_institution_id: institution_id,

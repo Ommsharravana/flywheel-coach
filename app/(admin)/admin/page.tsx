@@ -64,9 +64,6 @@ export default async function AdminDashboardPage() {
   const { data: cyclesData } = await cyclesQuery;
   const cycles = (cyclesData || []) as unknown as CycleRow[];
 
-  // Get unique user IDs from cycles for event admins
-  const cycleUserIds = [...new Set(cycles.map((c) => c.user_id))];
-
   // Fetch users using RPC to bypass RLS
   // Use get_all_users_admin for superadmin, filter by cycle users for event admins
   let users: UserRow[] = [];

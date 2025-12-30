@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getEffectiveUserId } from '@/lib/supabase/effective-user';
-import { checkEventAdminAccess, getMethodologyForCycle } from '@/lib/methodologies/helpers';
+import { checkEventAdminAccess } from '@/lib/methodologies/helpers';
 import { getMethodologyForEvent } from '@/lib/methodologies';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

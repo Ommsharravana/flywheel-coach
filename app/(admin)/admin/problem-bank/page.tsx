@@ -8,11 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import {
   Search,
   Database,
-  CheckCircle,
   AlertTriangle,
   Users,
-  TrendingUp,
-  Filter,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -451,13 +448,16 @@ export default function ProblemBankPage() {
     fetchCycles();
   }, [fetchCycles]);
 
-  // Debounced search
+  // Debounced search - fetchProblems is excluded because we want to control
+  // when it's called (only when search changes), not recreate the timer on every
+  // fetchProblems identity change. The function is stable via useCallback.
   useEffect(() => {
     const timer = setTimeout(() => {
       setPage(1);
       fetchProblems();
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   const handleFilterChange = () => {

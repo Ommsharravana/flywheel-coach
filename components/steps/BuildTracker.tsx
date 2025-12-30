@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Check, ChevronRight, ExternalLink, Hammer, Save, Trophy, Upload } from 'lucide-react';
+import { Check, ChevronRight, ExternalLink, Hammer, Save, Trophy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -199,11 +199,12 @@ export function BuildTracker({ cycle }: BuildTrackerProps) {
               className="bg-stone-800/50 border-stone-700 focus:border-amber-500"
             />
             {screenshotUrl && (
-              <div className="mt-3 rounded-lg overflow-hidden border border-stone-700">
-                <img
+              <div className="mt-3 rounded-lg overflow-hidden border border-stone-700 relative h-48">
+                <Image
                   src={screenshotUrl}
                   alt="Project screenshot"
-                  className="w-full h-48 object-cover"
+                  fill
+                  className="object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}

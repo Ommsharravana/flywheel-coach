@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,22 +20,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowLeft,
   Rocket,
   TrendingUp,
   Users,
   DollarSign,
-  ChevronRight,
-  Plus,
   Search,
   Building,
   Star,
   AlertTriangle,
   Loader2,
   GraduationCap,
-  Briefcase,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -84,7 +80,6 @@ export default function NIFPipelinePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [selectedCandidate, setSelectedCandidate] = useState<PipelineCandidate | null>(null);
   const [updating, setUpdating] = useState(false);
 
   const fetchPipeline = useCallback(async () => {
@@ -330,7 +325,6 @@ export default function NIFPipelinePage() {
                         <DialogTrigger asChild>
                           <Card
                             className="bg-stone-800/50 border-stone-700 hover:border-stone-600 cursor-pointer transition-all"
-                            onClick={() => setSelectedCandidate(candidate)}
                           >
                             <CardContent className="p-4">
                               {/* Theme & Score */}

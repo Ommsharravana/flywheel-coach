@@ -86,7 +86,7 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
   const to = from + perPage - 1;
   query = query.range(from, to);
 
-  const { data: participants, count, error: participantsError } = await query as {
+  const { data: participants, count } = await query as {
     data: Array<{
       id: string;
       name: string;

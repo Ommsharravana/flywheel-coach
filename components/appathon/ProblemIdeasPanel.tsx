@@ -14,7 +14,6 @@ import {
   type ProblemIdea,
 } from '@/lib/appathon/content';
 import {
-  Sparkles,
   Database,
   Copy,
   Check,

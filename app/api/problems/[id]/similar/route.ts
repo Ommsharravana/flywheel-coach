@@ -10,8 +10,8 @@ export async function GET(
     const { id } = await params;
     const supabase = await createClient();
 
-    // Get authenticated user (optional for public view)
-    const { data: { user } } = await supabase.auth.getUser();
+    // Verify user is authenticated (optional for public view)
+    await supabase.auth.getUser();
 
     // Fetch the source problem
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,7 +68,6 @@ export async function GET(
     let textMatches: any[] = [];
     if (titleWords.length > 0) {
       // Search for problems containing any of the key words
-      const searchPattern = titleWords.join('|');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: matches } = await (supabase as any)
         .from('problem_bank')

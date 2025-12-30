@@ -94,7 +94,7 @@ export default function AdminEventsPage() {
         const data = await response.json();
         setError(data.error || 'Failed to create event');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to create event');
     } finally {
       setCreating(false);

@@ -21,7 +21,6 @@ import {
   Edit3,
   ChevronDown,
   ChevronUp,
-  RefreshCw,
   Zap,
 } from 'lucide-react';
 import {
@@ -61,7 +60,8 @@ export function AIRefinements({
 
   useEffect(() => {
     fetchRefinements();
-  }, [problemId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [problemId]); // fetchRefinements is stable - only refetch when problemId changes
 
   const fetchRefinements = async () => {
     try {

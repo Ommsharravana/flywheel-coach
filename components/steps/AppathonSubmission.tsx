@@ -29,20 +29,12 @@ import {
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import { UserSearchCombobox, UserMultiSelect, UserResult } from '@/components/user-search-combobox';
+import { UserMultiSelect, UserResult } from '@/components/user-search-combobox';
 
 interface AppathonSubmissionProps {
   cycle: Cycle;
 }
 
-// Legacy interface for backward compatibility with existing submissions
-interface LegacyTeamMember {
-  name: string;
-  email: string;
-  institution: string;
-  department: string;
-  year: string;
-}
 
 interface Institution {
   id: string;
@@ -250,11 +242,6 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
   // Get total team size (senior learners + other team members)
   const totalTeamSize = seniorLearners.length + teamMembers.length;
 
-  // Get all team member IDs for exclusion from search
-  const allTeamMemberIds = [
-    ...seniorLearners.map(s => s.id),
-    ...teamMembers.map(m => m.id),
-  ];
 
   // Validation
   const isValid = () => {

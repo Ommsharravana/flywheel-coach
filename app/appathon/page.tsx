@@ -4,19 +4,15 @@ import { motion } from 'framer-motion';
 import {
   Trophy, Calendar, Clock, Users, Zap, ChevronRight,
   ExternalLink, CheckCircle, AlertCircle, BookOpen,
-  Sparkles, Medal, Gift, Code, Target, Smartphone, HelpCircle,
+  Sparkles, Code, Target, Smartphone, HelpCircle,
   Database
 } from 'lucide-react';
 import Link from 'next/link';
 import {
-  APPATHON_SUCCESS_STORY,
-  TWO_PHASE_FORMAT,
-  MYJKKN_TRACK,
   APPATHON_TIMELINE,
   ELIGIBILITY,
   BUILD_PHASE_RULES,
   DEMO_DAY_RULES,
-  PRIZE_STRUCTURE_DETAILED,
   APPATHON_FAQ,
   RESOURCES,
   getTotalPrizePoolDetailed,

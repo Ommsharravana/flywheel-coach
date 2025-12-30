@@ -147,7 +147,9 @@ export default function EventProblemsPage() {
     }
   }, [event, fetchProblems]);
 
-  // Debounced search
+  // Debounced search - fetchProblems is excluded because we want to control
+  // when it's called (only when search changes), not recreate the timer on every
+  // fetchProblems identity change. The function is stable via useCallback.
   useEffect(() => {
     if (!event) return;
     const timer = setTimeout(() => {
@@ -155,6 +157,7 @@ export default function EventProblemsPage() {
       fetchProblems();
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, event]);
 
   const handleFork = async (problemId: string) => {

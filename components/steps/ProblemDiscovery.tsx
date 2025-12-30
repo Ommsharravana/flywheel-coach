@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Cycle, Problem } from '@/lib/types/cycle';
+import { Cycle } from '@/lib/types/cycle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -109,7 +109,6 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
 
   // Appathon template state
   const [selectedProblem, setSelectedProblem] = useState<ProblemIdea | null>(null);
-  const [selectedTheme, setSelectedTheme] = useState<AppathonThemeId | null>(null);
   const [templateValues, setTemplateValues] = useState<Record<string, string>>({});
   const [copiedStatement, setCopiedStatement] = useState(false);
 
@@ -331,9 +330,8 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   };
 
   // Handler for Appathon problem selection - receives full ProblemIdea
-  const handleAppathonProblemSelect = (problem: ProblemIdea, themeId: AppathonThemeId) => {
+  const handleAppathonProblemSelect = (problem: ProblemIdea, _themeId: AppathonThemeId) => {
     setSelectedProblem(problem);
-    setSelectedTheme(themeId);
     setTemplateValues({}); // Reset template values for new problem
     setCurrentTab('statement');
   };
@@ -376,7 +374,6 @@ export function ProblemDiscovery({ cycle }: ProblemDiscoveryProps) {
   // Clear selected problem
   const clearSelectedProblem = () => {
     setSelectedProblem(null);
-    setSelectedTheme(null);
     setTemplateValues({});
   };
 

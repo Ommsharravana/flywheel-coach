@@ -102,7 +102,6 @@ export async function GET(request: NextRequest) {
     };
 
     // Transform RPC data - filter and map
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const allCycles = (cyclesData || [])
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter((row: any) => hasProblemData(row))

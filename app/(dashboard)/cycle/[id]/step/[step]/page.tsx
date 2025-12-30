@@ -55,16 +55,13 @@ export default async function StepPage({ params }: StepPageProps) {
   const isSuperadmin = userProfile?.role === 'superadmin';
 
   // Get methodology for this cycle (determines steps, features, etc.)
-  const { methodology, eventSlug, eventName } = await getMethodologyForCycle(id);
+  const { methodology } = await getMethodologyForCycle(id);
   const maxStep = methodology.steps.length;
 
   // Validate step number based on methodology
   if (isNaN(stepNumber) || stepNumber < 1 || stepNumber > maxStep) {
     redirect(`/cycle/${id}`);
   }
-
-  // Check if this is an Appathon-type event (for component-level logic)
-  const isAppathonMode = methodology.features?.submission === true;
 
   // Fetch the cycle using effective user ID
   const { data: rawCycleData, error } = await supabase

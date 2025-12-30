@@ -142,16 +142,6 @@ async function generateRefinement(
   type: RefinementType,
   basedOn: RefinementBasedOn
 ): Promise<{ suggested_statement: string; reason: string; confidence: number }> {
-  // Build context for the refinement
-  const context = {
-    original: problem.problem_statement,
-    title: problem.title,
-    who: problem.who_affected,
-    when: problem.when_occurs,
-    where: problem.where_occurs,
-    theme: problem.theme,
-  };
-
   // For now, return a heuristic-based refinement
   // TODO: Replace with actual LLM call when OpenAI/Anthropic SDK is added
 

@@ -40,7 +40,6 @@ interface UserWithCycles {
 
 interface UserTableProps {
   users: UserWithCycles[];
-  onImpersonate?: (userId: string) => void;
   onDelete?: (userId: string) => void;
   showInstitution?: boolean;
 }
@@ -60,7 +59,7 @@ const roleColors: Record<string, string> = {
   superadmin: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
 };
 
-export function UserTable({ users, onImpersonate, onDelete, showInstitution = false }: UserTableProps) {
+export function UserTable({ users, onDelete, showInstitution = false }: UserTableProps) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
