@@ -59,7 +59,7 @@ export function CompletedCyclesList({
                 textClassName="font-medium text-stone-100"
                 iconSize="sm"
               />
-              <p className="text-sm text-stone-400">
+              <p className="text-sm text-stone-400" suppressHydrationWarning>
                 {translations.completed} {cycle.completed_at ? new Date(cycle.completed_at).toLocaleDateString(locale === 'ta' ? 'ta-IN' : 'en-US') : translations.notAvailable}
               </p>
             </div>

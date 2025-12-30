@@ -56,7 +56,7 @@ export function ActiveCycleCard({
               iconSize="sm"
             />
           </div>
-          <p className="text-sm text-stone-400 mt-1">
+          <p className="text-sm text-stone-400 mt-1" suppressHydrationWarning>
             {translations.started} {new Date(startedAt).toLocaleDateString(locale === 'ta' ? 'ta-IN' : 'en-US')}
           </p>
         </div>

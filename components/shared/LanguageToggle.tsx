@@ -58,7 +58,8 @@ export function LanguageToggle({ className = '', showLabel = true }: LanguageTog
        window.location.pathname.startsWith('/admin'));
 
     setHasContext(onDashboardPage);
-  }, [contextLocale]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount - pathname is stable, localStorage read is one-time
 
   // Determine current locale to display
   const currentLocale = hasContext ? contextLocale : localLocale;
