@@ -18,11 +18,30 @@ async function isSuperAdmin(supabase: any): Promise<boolean> {
 }
 
 // GET /api/events - List all active events with participant counts
-export async function GET() {
+// Optional query param: ?slug=xxx to get a single event
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
+    const slug = request.nextUrl.searchParams.get('slug');
 
-    // Fetch active events (using type assertion for new table)
+    // If slug is provided, fetch single event
+    if (slug) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: event, error } = await (supabase as any)
+        .from('events')
+        .select('*')
+        .eq('slug', slug)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !event) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      }
+
+      return NextResponse.json(event as Event);
+    }
+
+    // Fetch all active events (using type assertion for new table)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: events, error } = await (supabase as any)
       .from('events')
