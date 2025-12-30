@@ -244,7 +244,8 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
     }
 
     loadData();
-  }, [cycle, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cycle.id]); // Only re-run when cycle changes, supabase client is stable
 
   // Get total team size (senior learners + other team members)
   const totalTeamSize = seniorLearners.length + teamMembers.length;
