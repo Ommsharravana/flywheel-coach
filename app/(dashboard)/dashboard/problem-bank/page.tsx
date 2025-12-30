@@ -81,10 +81,8 @@ export default function DashboardProblemBankPage() {
       if (response.ok) {
         const data = await response.json();
         setAdminEvents(data.events || []);
-        // Smart default: auto-select user's active event
-        if (data.activeEventId) {
-          setEventId(data.activeEventId);
-        }
+        // Keep "All Events" as default - don't auto-filter by active event
+        // Users can manually filter by event if they want
       }
     } catch {
       // Non-critical, events filter will just be empty
