@@ -7,6 +7,7 @@ import {
   useMemo,
   useCallback,
   useState,
+  useRef,
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -51,7 +52,8 @@ export function LanguageProvider({
   userId,
 }: LanguageProviderProps) {
   const router = useRouter();
-  const supabase = createClient();
+  // Use ref to ensure supabase client is created only once and stable across renders
+  const supabaseRef = useRef(createClient());
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
   const [isChanging, setIsChanging] = useState(false);
 
@@ -70,7 +72,7 @@ export function LanguageProvider({
 
       setIsChanging(true);
       try {
-        const { error } = await supabase
+        const { error } = await supabaseRef.current
           .from('users')
           .update({
             language: newLocale,
@@ -99,7 +101,7 @@ export function LanguageProvider({
         setIsChanging(false);
       }
     },
-    [locale, userId, supabase, router]
+    [locale, userId, router] // supabaseRef is stable, doesn't need to be a dependency
   );
 
   // Memoize context value
