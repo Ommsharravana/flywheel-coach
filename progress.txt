@@ -3,9 +3,17 @@
 ## Current Session: 2025-12-30 (Night)
 
 ### Working On
-- Senior Learner Search Bug Fix - **COMPLETE!**
+- All current bugs fixed! ✅
 
 ### Completed This Session
+- **Fixed UI Flickering Bug** (2025-12-30)
+  - **Symptom**: Navigation/header area flickering continuously
+  - **Root cause**: `AppathonSubmission.tsx` line 247 had `[cycle, supabase]` as useEffect dependencies
+  - **Problem**: `createClient()` returns new reference every render → useEffect runs every render → infinite loop
+  - **Fix**: Changed `[cycle, supabase]` → `[cycle.id]` (supabase client is stable)
+  - **Commit**: `4018a10 fix: Stop infinite re-renders in AppathonSubmission causing UI flickering`
+  - **Deployed & Verified** ✅ - Live site stable, no flickering
+
 - **Fixed "Failed to search users" bug** for Senior Learner selection
 - **Root cause**: Migration 056 never applied to production Supabase
   - API expected `category_filter: TEXT` parameter
