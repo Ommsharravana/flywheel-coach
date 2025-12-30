@@ -6,7 +6,15 @@
 - All current bugs fixed! ✅
 
 ### Completed This Session
-- **Fixed UI Flickering Bug** (2025-12-30)
+- **Fixed Dashboard Full-Page Flickering** (2025-12-30)
+  - **Symptom**: Entire dashboard page flickering continuously
+  - **Root cause**: `LanguageContext.tsx` - `createClient()` called on every render
+  - **Problem**: supabase in useCallback deps → callback recreated → context value changed → all consumers re-render
+  - **Fix**: Used `useRef(createClient())` to create client once, removed from dependencies
+  - **Commit**: `7b5d2bc fix: Stop LanguageProvider from causing full page re-renders`
+  - **Deployed & Verified** ✅ - Dashboard stable
+
+- **Fixed Step 9 Flickering Bug** (2025-12-30)
   - **Symptom**: Navigation/header area flickering continuously
   - **Root cause**: `AppathonSubmission.tsx` line 247 had `[cycle, supabase]` as useEffect dependencies
   - **Problem**: `createClient()` returns new reference every render → useEffect runs every render → infinite loop
