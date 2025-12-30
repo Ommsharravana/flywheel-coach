@@ -85,7 +85,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
 
   // Team info (always team-based, no individual option)
   const [teamName, setTeamName] = useState('');
-  const [seniorLearner, setSeniorLearner] = useState<UserResult | null>(null);
+  const [seniorLearners, setSeniorLearners] = useState<UserResult[]>([]); // 1-3 senior learners required
   const [teamMembers, setTeamMembers] = useState<UserResult[]>([]);
 
   // Applicant details
@@ -106,7 +106,6 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
 
   // Competition
   const [category, setCategory] = useState('');
-  const [facultyMentor, setFacultyMentor] = useState('');
 
   // Declaration
   const [declarationAccepted, setDeclarationAccepted] = useState(false);
@@ -175,9 +174,15 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
           setSubmissionNumber(submissionData.submission_number);
           setTeamName(submissionData.team_name || '');
 
-          // Handle senior learner (new format: UserResult object)
+          // Handle senior learners (new format: array of UserResult objects)
+          // Also support legacy format (single object) for backward compatibility
           if (submissionData.senior_learner) {
-            setSeniorLearner(submissionData.senior_learner as UserResult);
+            if (Array.isArray(submissionData.senior_learner)) {
+              setSeniorLearners(submissionData.senior_learner as UserResult[]);
+            } else {
+              // Legacy single object - convert to array
+              setSeniorLearners([submissionData.senior_learner as UserResult]);
+            }
           }
 
           // Handle team members (new format: array of UserResult objects)
@@ -206,7 +211,6 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
           setLovableUrl(submissionData.lovable_url || '');
           setGithubUrl(submissionData.github_url || '');
           setCategory(submissionData.category || '');
-          setFacultyMentor(submissionData.faculty_mentor || '');
           setDeclarationAccepted(submissionData.declaration_accepted || false);
         } else {
           // Auto-fill from cycle data
@@ -242,12 +246,12 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
     loadData();
   }, [cycle, supabase]);
 
-  // Get total team size (senior learner + other team members)
-  const totalTeamSize = (seniorLearner ? 1 : 0) + teamMembers.length;
+  // Get total team size (senior learners + other team members)
+  const totalTeamSize = seniorLearners.length + teamMembers.length;
 
   // Get all team member IDs for exclusion from search
   const allTeamMemberIds = [
-    ...(seniorLearner ? [seniorLearner.id] : []),
+    ...seniorLearners.map(s => s.id),
     ...teamMembers.map(m => m.id),
   ];
 
@@ -261,12 +265,12 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
     if (!teamName) {
       return false;
     }
-    // Must have at least 1 senior learner
-    if (!seniorLearner) {
+    // Must have 1-3 senior learners
+    if (seniorLearners.length < 1 || seniorLearners.length > 3) {
       return false;
     }
-    // Total team size must be at least 2 (senior learner + at least 1 other member)
-    if (totalTeamSize < 2) {
+    // Total team size must be at least 2 and max 10
+    if (totalTeamSize < 2 || totalTeamSize > 10) {
       return false;
     }
     return true;
@@ -302,7 +306,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
         user_id: user.id,
         participation_type: 'team', // Always team now
         team_name: teamName,
-        senior_learner: seniorLearner, // Store the full UserResult object
+        senior_learner: seniorLearners, // Store array of UserResult objects (1-3 senior learners)
         team_members: teamMembers, // Store array of UserResult objects
         applicant_name: applicantName,
         applicant_email: applicantEmail,
@@ -320,7 +324,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
         demo_video_url: null,
         screenshots: [],
         category,
-        faculty_mentor: facultyMentor || null,
+        faculty_mentor: null, // Removed - senior learners serve as mentors
         declaration_accepted: declarationAccepted,
         declaration_timestamp: declarationAccepted ? new Date().toISOString() : null,
         impact_metrics: {
@@ -521,7 +525,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
             Team Details
           </CardTitle>
           <CardDescription>
-            Build your team with at least 2 members (including 1 Senior Learner)
+            Build your team with 2-10 members. Every team requires 1-3 Senior Learners as mentors.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -536,28 +540,40 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
             />
           </div>
 
-          {/* Senior Learner (Mandatory) */}
+          {/* Senior Learners (1-3 Required) */}
           <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30 space-y-3">
             <div className="flex items-center gap-2">
               <UserCheck className="w-5 h-5 text-amber-400" />
-              <Label className="text-amber-300 font-medium">Senior Learner (Mandatory)</Label>
+              <Label className="text-amber-300 font-medium">
+                Senior Learners (1-3 Required)
+                <span className="text-stone-400 font-normal ml-2">
+                  ({seniorLearners.length}/3 selected)
+                </span>
+              </Label>
             </div>
             <p className="text-stone-400 text-sm">
-              Every team must have at least one Senior Learner as a mentor/guide.
+              Every team must have 1-3 Senior Learners as mentors/guides.
             </p>
-            <UserSearchCombobox
-              placeholder="Search for a Senior Learner..."
+            <UserMultiSelect
+              placeholder="Search for Senior Learners..."
               categoryFilter="senior_learner"
               eventId={activeEvent?.id}
-              value={seniorLearner}
-              onSelect={setSeniorLearner}
+              value={seniorLearners}
+              onChange={setSeniorLearners}
               excludeIds={teamMembers.map(m => m.id)}
-              required
+              minUsers={1}
+              maxUsers={3}
             />
-            {!seniorLearner && (
+            {seniorLearners.length === 0 && (
               <p className="text-red-400 text-sm flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
-                A Senior Learner is required
+                At least 1 Senior Learner is required
+              </p>
+            )}
+            {seniorLearners.length > 3 && (
+              <p className="text-red-400 text-sm flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                Maximum 3 Senior Learners allowed
               </p>
             )}
           </div>
@@ -571,20 +587,27 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
               </span>
             </Label>
             <p className="text-stone-400 text-sm">
-              Add learners to your team. Total team size must be at least 2 (including the Senior Learner).
+              Add learners to your team. Total team size must be 2-10 members (including Senior Learners).
             </p>
             <UserMultiSelect
               placeholder="Search for team members..."
               eventId={activeEvent?.id}
               value={teamMembers}
               onChange={setTeamMembers}
-              minUsers={1}
-              maxUsers={9} // Max 9 other members + 1 senior learner = 10 total
+              excludeIds={seniorLearners.map(s => s.id)}
+              minUsers={0}
+              maxUsers={10 - seniorLearners.length} // Dynamic max based on senior learners
             />
-            {totalTeamSize < 2 && seniorLearner && (
+            {totalTeamSize < 2 && seniorLearners.length > 0 && (
               <p className="text-amber-400 text-sm flex items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
-                Add at least 1 more team member
+                Add at least 1 more team member (or 1 more Senior Learner)
+              </p>
+            )}
+            {totalTeamSize > 10 && (
+              <p className="text-red-400 text-sm flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                Maximum 10 team members allowed
               </p>
             )}
           </div>
@@ -768,16 +791,6 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
                 </Button>
               ))}
             </div>
-          </div>
-
-          <div>
-            <Label className="text-stone-300">Faculty Mentor (optional)</Label>
-            <Input
-              value={facultyMentor}
-              onChange={(e) => setFacultyMentor(e.target.value)}
-              placeholder="Name of faculty who guided you"
-              className="bg-stone-800/50 border-stone-700 mt-1"
-            />
           </div>
         </CardContent>
       </Card>

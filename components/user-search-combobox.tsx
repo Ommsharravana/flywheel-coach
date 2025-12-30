@@ -286,6 +286,8 @@ interface UserMultiSelectProps {
   value: UserResult[];
   /** Callback when users change */
   onChange: (users: UserResult[]) => void;
+  /** Users to exclude from search (in addition to already selected) */
+  excludeIds?: string[];
   /** Custom label for the search */
   label?: string;
   /** Minimum number of users required */
@@ -303,12 +305,14 @@ export function UserMultiSelect({
   eventId,
   value,
   onChange,
+  excludeIds: externalExcludeIds = [],
   label,
   minUsers = 0,
   maxUsers = 10,
   disabled = false,
 }: UserMultiSelectProps) {
-  const excludeIds = value.map(u => u.id);
+  // Combine already selected users with externally excluded IDs
+  const excludeIds = [...value.map(u => u.id), ...externalExcludeIds];
   const canAddMore = value.length < maxUsers;
 
   const handleSelect = (user: UserResult | null) => {
