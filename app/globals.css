@@ -192,6 +192,26 @@
   color: #fafaf9;
 }
 
+/* Bug Reporter SDK - Fix transparent text in dark mode */
+[data-bug-reporter] input,
+[data-bug-reporter] textarea,
+[data-bug-reporter] select,
+div[style*="background: white"] input,
+div[style*="background: white"] textarea,
+div[style*="background-color: white"] input,
+div[style*="background-color: white"] textarea,
+div[style*="background: rgb(255, 255, 255)"] input,
+div[style*="background: rgb(255, 255, 255)"] textarea {
+  color: #1c1917 !important;
+}
+
+div[style*="background: white"] input::placeholder,
+div[style*="background: white"] textarea::placeholder,
+div[style*="background-color: white"] input::placeholder,
+div[style*="background-color: white"] textarea::placeholder {
+  color: #78716c !important;
+}
+
 /* Focus visible styling */
 :focus-visible {
   outline: 2px solid var(--ring);
