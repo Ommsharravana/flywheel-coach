@@ -2,6 +2,31 @@
 
 ## Current Session: 2025-12-31 - Bug Fix
 
+### Fixed "Invalid input syntax for type integer" Bug (2025-12-31)
+
+**Bug Report:** "Failed to submit: invalid input syntax for type integer: """
+**Bug ID:** `#39ac0824`
+**Reporter:** POOJA SURESH (poojasuresh@jkkn.ac.in) - Senior Learner
+
+**Root Cause:**
+- Empty strings being passed to PostgreSQL INT columns
+- `parseInt()` called without proper empty string validation
+- Missing `trim()` check and radix parameter
+
+**Solution:**
+- Added robust empty string handling: `value && value.trim() !== '' ? parseInt(value, 10) : null`
+- Applied fix to all integer parsing in forms
+
+**Files Modified:**
+- `app/(dashboard)/settings/SettingsForm.tsx` - Fixed year_of_study parsing
+- `app/(dashboard)/dashboard/problem-bank/submit/page.tsx` - Fixed severity_rating parsing
+- `components/problem-bank/ProblemOutcomes.tsx` - Fixed multiple integer fields
+
+**Commit:** `4314c78 fix: Handle empty string to integer conversion`
+**Deployed:** ✅ Vercel
+
+---
+
 ### Fixed Total Cycles Showing 1000 Bug (2025-12-31)
 
 **Bug Report:** "total cycles is constant at 1000. it is updating in realtime"
