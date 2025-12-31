@@ -268,8 +268,8 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
     return isValid() && declarationAccepted && submissionStatus === 'draft';
   };
 
-  // Save draft
-  const saveDraft = async () => {
+  // Save draft - returns the submission ID for use in submitForReview
+  const saveDraft = async (): Promise<string | null> => {
     setIsPending(true);
     try {
       const {
@@ -324,6 +324,8 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
         updated_at: new Date().toISOString(),
       };
 
+      let submissionId = existingSubmissionId;
+
       if (existingSubmissionId) {
         const { error } = await supabase
           .from('appathon_submissions')
@@ -337,11 +339,15 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
           .select('id')
           .single();
         if (error) throw error;
-        if (data) setExistingSubmissionId(data.id);
+        if (data) {
+          submissionId = data.id;
+          setExistingSubmissionId(data.id);
+        }
       }
 
       toast.success('Draft saved!');
       router.refresh();
+      return submissionId;
     } catch (error: unknown) {
       const supabaseError = error as { message?: string; code?: string; details?: string; hint?: string };
       console.error('Error saving draft:', error);
@@ -352,6 +358,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
         hint: supabaseError?.hint,
       });
       toast.error(`Failed to save draft: ${supabaseError?.message || 'Unknown error'}`);
+      return null;
     } finally {
       setIsPending(false);
     }
@@ -366,10 +373,14 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
 
     setIsPending(true);
     try {
-      // First save the draft
-      await saveDraft();
+      // First save the draft and get the submission ID
+      const submissionId = await saveDraft();
 
-      // Then update status to submitted
+      if (!submissionId) {
+        throw new Error('Failed to save draft before submission');
+      }
+
+      // Then update status to submitted using the returned ID (not state)
       const { error } = await supabase
         .from('appathon_submissions')
         .update({
@@ -377,7 +388,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
           submitted_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', existingSubmissionId);
+        .eq('id', submissionId);
 
       if (error) throw error;
 
