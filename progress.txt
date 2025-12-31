@@ -32,6 +32,36 @@
 
 ---
 
+### Fixed Problem Statement Not Displaying Bug (2025-12-31)
+
+**Bug Report:** "Submitted step 8 but problem statement not displayed"
+**Bug ID:** `91f6e531-1f8a-4872-9d59-58da5dbe67e9`
+**Page:** `/cycle/bb6351ef-1c1b-473e-b6c7-32d1603dccbe`
+**Reporter:** Rangarajan CEO JKKN (ceo@jkkn.ac.in)
+
+**Root Cause:**
+- Code used `.single()` to fetch problem record (line 70-74 of cycle/[id]/page.tsx)
+- Cycle had **2 duplicate problem records** in database
+- `.single()` fails when multiple rows exist → returns null
+- Problem card only renders when `cycle.problem` is truthy
+
+**Solution:**
+- Changed `.single()` to `.order('updated_at', { ascending: false }).limit(1)`
+- Now gracefully handles duplicate records by taking the most recent one
+
+**Files Modified:**
+- `app/(dashboard)/cycle/[id]/page.tsx` - Fixed problem query
+
+**Verification:**
+- Database query with `LIMIT 1` returns 1 row with correct refined_statement
+- Build passes ✅
+- Deployed to Vercel ✅
+
+**Commit:** `51fcafd fix: Problem statement not displaying on completed cycles`
+**Deployed:** ✅ Vercel
+
+---
+
 ## Previous Session: 2025-12-30 (Night) - QA Session
 
 ### QA Testing Completed (2025-12-30)
