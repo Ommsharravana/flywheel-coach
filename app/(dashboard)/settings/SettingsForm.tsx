@@ -43,7 +43,7 @@ export function SettingsForm({ profile, userId }: SettingsFormProps) {
           .update({
             name: name.trim() || null,
             department: department.trim() || null,
-            year_of_study: yearOfStudy ? parseInt(yearOfStudy) : null,
+            year_of_study: yearOfStudy && yearOfStudy.trim() !== '' ? parseInt(yearOfStudy, 10) : null,
             language,
             user_category: userCategory,
             updated_at: new Date().toISOString(),

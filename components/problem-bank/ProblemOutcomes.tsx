@@ -89,9 +89,9 @@ export function ProblemOutcomes({ problemId, onOutcomeAdded }: ProblemOutcomesPr
         body: JSON.stringify({
           outcome_type: formData.outcome_type,
           outcome_description: formData.outcome_description || null,
-          time_to_solution_days: formData.time_to_solution_days ? parseInt(formData.time_to_solution_days) : null,
-          iterations_count: parseInt(formData.iterations_count) || 1,
-          users_impacted: parseInt(formData.users_impacted) || 0,
+          time_to_solution_days: formData.time_to_solution_days && String(formData.time_to_solution_days).trim() !== '' ? parseInt(String(formData.time_to_solution_days), 10) : null,
+          iterations_count: parseInt(String(formData.iterations_count || '1'), 10) || 1,
+          users_impacted: parseInt(String(formData.users_impacted || '0'), 10) || 0,
           time_saved_hours: parseFloat(formData.time_saved_hours) || 0,
           satisfaction_score: formData.satisfaction_score ? parseFloat(formData.satisfaction_score) : null,
           what_worked: formData.what_worked || null,

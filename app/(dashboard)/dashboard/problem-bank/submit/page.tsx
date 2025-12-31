@@ -54,7 +54,7 @@ export default function SubmitProblemPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          severity_rating: formData.severity_rating ? parseInt(formData.severity_rating) : null,
+          severity_rating: formData.severity_rating && String(formData.severity_rating).trim() !== '' ? parseInt(String(formData.severity_rating), 10) : null,
         }),
       });
 
