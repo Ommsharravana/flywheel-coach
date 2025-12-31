@@ -66,12 +66,15 @@ export default async function CyclePage({ params }: CyclePageProps) {
     completedAt: cycleData.completed_at,
   };
 
-  // Fetch problem if exists
-  const { data: rawProblemData } = await supabase
+  // Fetch problem if exists (use limit(1) instead of single() to handle duplicate records)
+  const { data: problemsArray } = await supabase
     .from('problems')
     .select('*')
     .eq('cycle_id', id)
-    .single();
+    .order('updated_at', { ascending: false })
+    .limit(1);
+
+  const rawProblemData = problemsArray?.[0] ?? null;
 
   if (rawProblemData) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

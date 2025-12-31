@@ -1,6 +1,38 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Current Session: 2025-12-30 (Night) - QA Session
+## Current Session: 2025-12-31 - Bug Fix
+
+### Fixed Total Cycles Showing 1000 Bug (2025-12-31)
+
+**Bug Report:** "total cycles is constant at 1000. it is updating in realtime"
+**Page:** `/admin/cycles`
+
+**Root Cause:**
+- Supabase RPC functions return max 1000 rows by default
+- Stats were calculated client-side from `cyclesData.length` (capped at 1000)
+- Aggregate queries (COUNT) bypass this limit since they return single rows
+
+**Solution:**
+- Created new RPC function `get_cycle_stats_admin()` that returns aggregate counts directly
+- Updated `admin/cycles/page.tsx` to use dedicated stats RPC instead of array.length
+
+**Files Created:**
+- `supabase/migrations/067_get_cycle_stats_admin.sql` - Dedicated stats function
+
+**Files Modified:**
+- `app/(admin)/admin/cycles/page.tsx` - Uses new stats RPC
+
+**Verification:**
+- Function returns correct counts: **1494** total cycles (was showing 1000)
+- Breakdown: 1153 active, 341 completed, 0 abandoned
+- Step distribution working correctly
+
+**Commit:** `e2f8701 fix: Total cycles showing 1000 instead of actual count`
+**Deployed:** ✅ Vercel (commit a812f63)
+
+---
+
+## Previous Session: 2025-12-30 (Night) - QA Session
 
 ### QA Testing Completed (2025-12-30)
 
