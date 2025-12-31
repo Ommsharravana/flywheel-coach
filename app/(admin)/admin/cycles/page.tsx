@@ -29,12 +29,33 @@ interface CycleRow {
   users: { id: string; name: string | null; email: string } | null;
 }
 
+interface CycleStats {
+  total_cycles: number;
+  active_cycles: number;
+  completed_cycles: number;
+  abandoned_cycles: number;
+  step_1_count: number;
+  step_2_count: number;
+  step_3_count: number;
+  step_4_count: number;
+  step_5_count: number;
+  step_6_count: number;
+  step_7_count: number;
+  step_8_count: number;
+}
+
 export default async function AdminCyclesPage() {
   const supabase = await createClient();
 
   // Get auth user for passing to RPC
   const { data: { user: authUser } } = await supabase.auth.getUser();
   if (!authUser) redirect('/login');
+
+  // Fetch stats separately (aggregates bypass 1000 row limit)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: statsData } = await (supabase as any).rpc('get_cycle_stats_admin', {
+    caller_user_id: authUser.id
+  });
 
   // Use RPC function to fetch cycles (bypasses RLS issues with auth.uid() in server components)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,17 +81,29 @@ export default async function AdminCyclesPage() {
     user: cycle.users,
   }));
 
-  // Stats
-  const totalCycles = cycles?.length || 0;
-  const activeCycles = cycles?.filter((c) => c.status === 'active').length || 0;
-  const completedCycles = cycles?.filter((c) => c.status === 'completed').length || 0;
-  const abandonedCycles = cycles?.filter((c) => c.status === 'abandoned').length || 0;
+  // Stats from dedicated RPC (accurate counts, not limited to 1000)
+  const stats: CycleStats = statsData?.[0] || {
+    total_cycles: 0, active_cycles: 0, completed_cycles: 0, abandoned_cycles: 0,
+    step_1_count: 0, step_2_count: 0, step_3_count: 0, step_4_count: 0,
+    step_5_count: 0, step_6_count: 0, step_7_count: 0, step_8_count: 0
+  };
 
-  // Step distribution
-  const stepCounts = Array.from({ length: 8 }, (_, i) => ({
-    step: i + 1,
-    count: cycles?.filter((c) => c.status === 'active' && c.current_step === i + 1).length || 0,
-  }));
+  const totalCycles = stats.total_cycles;
+  const activeCycles = stats.active_cycles;
+  const completedCycles = stats.completed_cycles;
+  const abandonedCycles = stats.abandoned_cycles;
+
+  // Step distribution from stats
+  const stepCounts = [
+    { step: 1, count: stats.step_1_count },
+    { step: 2, count: stats.step_2_count },
+    { step: 3, count: stats.step_3_count },
+    { step: 4, count: stats.step_4_count },
+    { step: 5, count: stats.step_5_count },
+    { step: 6, count: stats.step_6_count },
+    { step: 7, count: stats.step_7_count },
+    { step: 8, count: stats.step_8_count },
+  ];
 
   return (
     <div className="space-y-6">
