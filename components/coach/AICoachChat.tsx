@@ -630,7 +630,7 @@ export function AICoachButton({ onClick, isOpen }: { onClick: () => void; isOpen
       onClick={onClick}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className={`fixed bottom-4 right-20 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
+      className={`fixed bottom-4 right-24 z-[9990] w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
         isOpen
           ? 'bg-stone-800 text-stone-400'
           : 'bg-gradient-to-r from-amber-500 to-orange-500 text-stone-900'
