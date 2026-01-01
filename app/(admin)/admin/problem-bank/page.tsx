@@ -179,6 +179,7 @@ export default function ProblemBankPage() {
 
   // Realtime subscription
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState<string>('INITIALIZING');
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
 
@@ -571,7 +572,9 @@ export default function ProblemBankPage() {
           setLeaderboard(null);
         }
       )
-      .subscribe((status: string) => {
+      .subscribe((status: string, err?: Error) => {
+        console.log('[Realtime] Subscription status:', status, err ? `Error: ${err.message}` : '');
+        setRealtimeStatus(status);
         setRealtimeConnected(status === 'SUBSCRIBED');
       });
 
@@ -609,9 +612,21 @@ export default function ProblemBankPage() {
         <div className="flex items-center gap-3">
           {/* Realtime status indicator */}
           <div className="flex items-center gap-2 text-xs">
-            <div className={`w-2 h-2 rounded-full ${realtimeConnected ? 'bg-green-500 animate-pulse' : 'bg-stone-500'}`} />
-            <span className="text-stone-500">
-              {realtimeConnected ? 'Live' : 'Connecting...'}
+            <div className={`w-2 h-2 rounded-full ${
+              realtimeConnected
+                ? 'bg-green-500 animate-pulse'
+                : realtimeStatus === 'CHANNEL_ERROR' || realtimeStatus === 'TIMED_OUT'
+                  ? 'bg-amber-500'
+                  : 'bg-stone-500'
+            }`} />
+            <span className={realtimeStatus === 'CHANNEL_ERROR' || realtimeStatus === 'TIMED_OUT' ? 'text-amber-500' : 'text-stone-500'}>
+              {realtimeConnected
+                ? 'Live'
+                : realtimeStatus === 'CHANNEL_ERROR'
+                  ? 'Error'
+                  : realtimeStatus === 'TIMED_OUT'
+                    ? 'Timeout'
+                    : 'Connecting...'}
             </span>
             {lastUpdate && (
               <span className="text-stone-600">

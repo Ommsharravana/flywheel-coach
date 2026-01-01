@@ -428,12 +428,12 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
 
                 <div>
                   <h3 className="text-lg font-semibold text-stone-100 mb-2">
-                    {needsReconnect ? 'Reconnect Google Account' : 'Connect Google to Enable AI'}
+                    {needsReconnect ? 'Update Gemini API Key' : 'Add Gemini API Key'}
                   </h3>
                   <p className="text-sm text-stone-400">
                     {needsReconnect
-                      ? 'Your Google connection expired. Please reconnect to continue using AI features.'
-                      : 'Sign in with Google to use the AI Coach. Your subscription powers all AI features.'}
+                      ? 'Your API key may be invalid or expired. Please update it to continue using AI features.'
+                      : 'Add your Gemini API key to use the AI Coach. Get a free key from Google AI Studio.'}
                   </p>
                 </div>
 
@@ -446,7 +446,7 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
                 </Button>
 
                 <p className="text-xs text-stone-500">
-                  We only request permission to use Gemini AI. We never access your email or other data.
+                  Your API key is stored securely. Free tier includes 1,500 requests/day.
                 </p>
               </div>
             </CardContent>
@@ -510,7 +510,7 @@ export function AICoachChat({ cycle, currentStep, isOpen, onClose }: AICoachChat
             {/* Provider indicator */}
             <div className="flex items-center gap-1.5 mt-2 text-xs text-teal-400">
               <Zap className="w-3 h-3" />
-              <span>Powered by your Google subscription</span>
+              <span>Powered by your Gemini API key</span>
             </div>
           </CardHeader>
 
