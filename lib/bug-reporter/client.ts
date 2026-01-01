@@ -62,7 +62,8 @@ export async function getUserBugs(email: string): Promise<BugReport[]> {
     }
 
     const data = await response.json()
-    return data.bugs || []
+    // API returns { success, data: { bug_reports, pagination } }
+    return data.data?.bug_reports || []
   } catch (error) {
     console.error('Failed to fetch user bugs:', error)
     return []
@@ -94,7 +95,8 @@ export async function getAllBugs(): Promise<BugReport[]> {
     }
 
     const data = await response.json()
-    return data.bugs || []
+    // API returns { success, data: { bug_reports, pagination } }
+    return data.data?.bug_reports || []
   } catch (error) {
     console.error('Failed to fetch all bugs:', error)
     return []
