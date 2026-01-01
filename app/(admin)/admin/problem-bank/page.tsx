@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,9 @@ import {
   Building2,
   Trophy,
   Medal,
+  RefreshCw,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import {
   Select,
   SelectContent,
@@ -174,6 +176,11 @@ export default function ProblemBankPage() {
     who_affected: '',
   });
   const [quickSubmitting, setQuickSubmitting] = useState(false);
+
+  // Realtime subscription
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
 
   const fetchProblems = useCallback(async () => {
     setLoading(true);
@@ -523,16 +530,105 @@ export default function ProblemBankPage() {
     setCyclesPage(1);
   }, [activeTab, search]);
 
+  // Realtime subscription for live stats updates
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Create a channel for problem bank realtime updates
+    const channel = supabase
+      .channel('problem-bank-stats')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cycles',
+        },
+        () => {
+          // Refetch data when cycles table changes
+          setLastUpdate(new Date());
+          fetchCycles();
+          fetchProblems();
+          // Reset analytics cache so it refetches
+          setAnalyticsData(null);
+          setLeaderboard(null);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'problem_bank',
+        },
+        () => {
+          // Refetch data when problem_bank table changes
+          setLastUpdate(new Date());
+          fetchCycles();
+          fetchProblems();
+          // Reset analytics cache so it refetches
+          setAnalyticsData(null);
+          setLeaderboard(null);
+        }
+      )
+      .subscribe((status: string) => {
+        setRealtimeConnected(status === 'SUBSCRIBED');
+      });
+
+    channelRef.current = channel;
+
+    // Cleanup on unmount
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+  }, [fetchCycles, fetchProblems]);
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    setLastUpdate(new Date());
+    await Promise.all([fetchCycles(), fetchProblems()]);
+    // Reset analytics cache
+    setAnalyticsData(null);
+    setLeaderboard(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-display font-bold text-stone-100">
-          Problem Bank
-        </h1>
-        <p className="text-stone-400">
-          All problem statements from Flywheel cycles across JKKN institutions
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-stone-100">
+            Problem Bank
+          </h1>
+          <p className="text-stone-400">
+            All problem statements from Flywheel cycles across JKKN institutions
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Realtime status indicator */}
+          <div className="flex items-center gap-2 text-xs">
+            <div className={`w-2 h-2 rounded-full ${realtimeConnected ? 'bg-green-500 animate-pulse' : 'bg-stone-500'}`} />
+            <span className="text-stone-500">
+              {realtimeConnected ? 'Live' : 'Connecting...'}
+            </span>
+            {lastUpdate && (
+              <span className="text-stone-600">
+                Updated {lastUpdate.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleManualRefresh}
+            className="text-stone-400 hover:text-stone-100"
+            title="Refresh data"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Stats Row */}
