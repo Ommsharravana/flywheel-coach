@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { AdminCoachWrapper } from '@/components/admin/coach';
 
 interface ProfileRow {
   name: string | null;
@@ -73,6 +74,8 @@ export default async function AdminLayout({
         />
         <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
+      {/* Admin AI Coach - positioned above bug reporter button */}
+      <AdminCoachWrapper />
     </div>
   );
 }
