@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,6 +113,11 @@ export function SubmissionsTableClient({
   const [, setEditingScoreId] = useState<string | null>(null);
   const [pendingScores, setPendingScores] = useState<Record<string, string>>({});
   const [pendingStatusChange, setPendingStatusChange] = useState<PendingStatusChange | null>(null);
+
+  // Sync local state when initialSubmissions changes (e.g., pagination)
+  useEffect(() => {
+    setSubmissions(initialSubmissions);
+  }, [initialSubmissions]);
 
   const updateSubmission = useCallback(async (
     submissionId: string,
