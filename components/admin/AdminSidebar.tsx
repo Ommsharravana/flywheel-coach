@@ -126,14 +126,14 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      {/* Footer */}
+      {/* Footer - Exit Admin (made prominent) */}
       <div className="p-4 border-t border-stone-800">
         <Link
           href="/dashboard"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold bg-stone-800 border border-stone-700 text-stone-200 hover:text-white hover:bg-stone-700 hover:border-stone-600 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back to App
+          Exit Admin Panel
         </Link>
       </div>
     </aside>
