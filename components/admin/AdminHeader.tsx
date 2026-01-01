@@ -11,7 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, User as UserIcon, Settings } from 'lucide-react';
+import { LogOut, User as UserIcon, Settings, Home } from 'lucide-react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { EventSwitcher } from './EventSwitcher';
@@ -73,6 +74,18 @@ export function AdminHeader({ user, profile, userRole }: AdminHeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Exit Admin Button - Prominent placement */}
+        <Link href="/dashboard">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-stone-700 bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white gap-2"
+          >
+            <Home className="h-4 w-4" />
+            Exit Admin
+          </Button>
+        </Link>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
