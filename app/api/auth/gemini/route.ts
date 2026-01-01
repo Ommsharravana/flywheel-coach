@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-// Gemini API OAuth scopes - peruserquota allows using user's personal Gemini quota
+// Gemini API OAuth scopes:
+// - generative-language: Permission to call the Gemini API
+// - peruserquota: Use the user's personal subscription quota (BYOS)
 const GEMINI_SCOPES = [
+  'https://www.googleapis.com/auth/generative-language',
   'https://www.googleapis.com/auth/generative-language.peruserquota',
 ];
 
