@@ -35,19 +35,41 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');
 
-    // Use RPC to get all users (bypasses RLS)
+    // Fetch users in batches to overcome Supabase's 1000 row limit
+    const BATCH_SIZE = 1000;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: users, error } = await (supabase as any).rpc('get_all_users_admin', {
-      caller_user_id: user.id
-    });
+    let allUsers: any[] = [];
+    let offset = 0;
+    let hasMore = true;
 
-    if (error) {
-      console.error('Export error:', error);
-      return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+    while (hasMore) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: batch, error } = await (supabase as any).rpc('get_all_users_admin', {
+        caller_user_id: user.id,
+        page_offset: offset,
+        page_limit: BATCH_SIZE
+      });
+
+      if (error) {
+        console.error('Export error:', error);
+        return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+      }
+
+      if (!batch || batch.length === 0) {
+        hasMore = false;
+      } else {
+        allUsers = [...allUsers, ...batch];
+        offset += BATCH_SIZE;
+
+        // Stop if we've fetched less than batch size (last batch)
+        if (batch.length < BATCH_SIZE) {
+          hasMore = false;
+        }
+      }
     }
 
     // Filter by role if specified (RPC returns all users)
-    let usersData = (users || []) as unknown as UserExportRow[];
+    let usersData = allUsers as unknown as UserExportRow[];
     if (role) {
       usersData = usersData.filter((u: UserExportRow) => u.role === role);
     }

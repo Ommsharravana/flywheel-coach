@@ -1977,14 +1977,21 @@ export type Database = {
       }
       get_all_users_admin: {
         Args: {
-          caller_user_id: string
-          search_term?: string | null
-          institution_filter?: string | null
-          role_filter?: string | null
+          caller_user_id?: string | null
           page_offset?: number
-          page_limit?: number
+          page_limit?: number | null
         }
-        Returns: Json[]
+        Returns: {
+          id: string
+          email: string
+          name: string | null
+          role: string
+          user_category: string
+          avatar_url: string | null
+          created_at: string
+          institution_id: string | null
+          total_count: number
+        }[]
       }
       update_user_admin: {
         Args: {

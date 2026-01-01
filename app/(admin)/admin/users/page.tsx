@@ -60,16 +60,46 @@ export default async function AdminUsersPage() {
 
   // Use RPC function to fetch users (bypasses RLS, handles role-based filtering)
   // Pass effective user ID to support impersonation
+  // Fetch in batches to overcome Supabase's 1000 row default limit
+  const BATCH_SIZE = 1000;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: usersData } = await (supabase as any).rpc('get_all_users_admin', {
-    caller_user_id: effectiveUser.id
-  });
+  let allUsersData: any[] = [];
+  let offset = 0;
+  let hasMore = true;
 
-  // Map users with institution names
-  const users = (usersData || []).map((u: Record<string, unknown>) => ({
-    ...u,
+  while (hasMore) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: batch } = await (supabase as any).rpc('get_all_users_admin', {
+      caller_user_id: effectiveUser.id,
+      page_offset: offset,
+      page_limit: BATCH_SIZE
+    });
+
+    if (!batch || batch.length === 0) {
+      hasMore = false;
+    } else {
+      allUsersData = [...allUsersData, ...batch];
+      offset += BATCH_SIZE;
+
+      // Stop if we've fetched less than batch size (last batch)
+      if (batch.length < BATCH_SIZE) {
+        hasMore = false;
+      }
+    }
+  }
+
+  // Map users with institution names, remove total_count from batch response
+  const users = allUsersData.map((u: Record<string, unknown>) => ({
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    role: u.role,
+    user_category: u.user_category || 'learner',
+    avatar_url: u.avatar_url,
+    created_at: u.created_at,
+    institution_id: u.institution_id,
     institution_name: u.institution_id ? institutionMap.get(u.institution_id as string)?.short_name : null,
-  })) as unknown as UserRow[];
+  })) as UserRow[];
 
   // Get current admin's institution name for display
   const adminInstitution = isInstitutionAdmin && admin?.institution_id
