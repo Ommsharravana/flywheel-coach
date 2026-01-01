@@ -14,6 +14,7 @@ interface LeaderboardEntry {
   problems_saved: number;
   problems_solved: number;
   problems_validated: number;
+  participant_count: number;
 }
 
 interface LeaderboardData {
@@ -28,6 +29,7 @@ interface LeaderboardData {
     completed_cycles: number;
     problems_identified: number;
     problems_saved: number;
+    total_participants: number;
     institutions: number;
   };
 }
@@ -117,12 +119,16 @@ export function InstitutionLeaderboard({ eventSlug = 'appathon-2' }: Institution
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-3 text-sm">
+                <div className="text-right">
+                  <span className="font-bold text-blue-400">{entry.participant_count}</span>
+                  <span className="text-stone-500 ml-1 hidden sm:inline">learners</span>
+                </div>
                 <div className="text-right">
                   <span className="font-bold text-amber-400">{entry.problems_identified}</span>
-                  <span className="text-stone-500 ml-1">problems</span>
+                  <span className="text-stone-500 ml-1 hidden sm:inline">problems</span>
                 </div>
-                <div className="text-right hidden sm:block">
+                <div className="text-right hidden md:block">
                   <span className="font-medium text-stone-300">{entry.total_cycles}</span>
                   <span className="text-stone-500 ml-1">cycles</span>
                 </div>
@@ -133,18 +139,22 @@ export function InstitutionLeaderboard({ eventSlug = 'appathon-2' }: Institution
 
         {/* Totals */}
         <div className="mt-4 pt-4 border-t border-stone-700/50">
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-4 gap-2 text-center">
             <div>
-              <div className="text-xl font-bold text-stone-100">{data.totals.institutions}</div>
+              <div className="text-lg font-bold text-stone-100">{data.totals.institutions}</div>
               <div className="text-xs text-stone-500">Institutions</div>
             </div>
             <div>
-              <div className="text-xl font-bold text-amber-400">{data.totals.problems_identified}</div>
-              <div className="text-xs text-stone-500">Problems Found</div>
+              <div className="text-lg font-bold text-blue-400">{data.totals.total_participants}</div>
+              <div className="text-xs text-stone-500">Learners</div>
             </div>
             <div>
-              <div className="text-xl font-bold text-stone-100">{data.totals.total_cycles}</div>
-              <div className="text-xs text-stone-500">Total Cycles</div>
+              <div className="text-lg font-bold text-amber-400">{data.totals.problems_identified}</div>
+              <div className="text-xs text-stone-500">Problems</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-stone-300">{data.totals.total_cycles}</div>
+              <div className="text-xs text-stone-500">Cycles</div>
             </div>
           </div>
         </div>
