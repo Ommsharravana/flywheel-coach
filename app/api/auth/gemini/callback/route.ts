@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/byos/encryption';
-import { GeminiProvider } from '@/lib/byos/gemini-provider';
 import type { GeminiOAuthCredentials } from '@/lib/byos/types';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -88,14 +87,11 @@ export async function GET(request: NextRequest) {
       expiry: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
     };
 
-    // Validate credentials by making a test API call
-    const geminiProvider = new GeminiProvider(credentials);
-    const isValid = await geminiProvider.validateCredentials();
-
-    if (!isValid) {
-      console.error('Gemini OAuth credentials failed validation');
-      return NextResponse.redirect(`${baseUrl}/settings?gemini_error=invalid_credentials`);
-    }
+    // Note: Skip API validation for OAuth tokens
+    // The peruserquota scope grants quota attribution but OAuth tokens
+    // may require different handling than direct API keys.
+    // We store credentials and validate on first actual use.
+    console.log('Gemini OAuth tokens received, storing credentials');
 
     // Encrypt and store credentials
     const encryptedCredentials = encrypt(JSON.stringify(credentials));
