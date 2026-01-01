@@ -6,11 +6,42 @@ import {
   getContextualAppathonTips,
 } from '@/lib/appathon/coach-context';
 import { createClient } from '@/lib/supabase/server';
-import { decrypt, GeminiProvider, parseGeminiCredentials } from '@/lib/byos';
-import type { GeminiOAuthCredentials } from '@/lib/byos';
+import {
+  decrypt,
+  GeminiProvider,
+  parseGeminiCredentials,
+  ClaudeProvider,
+  parseClaudeCredentials,
+} from '@/lib/byos';
+import type { GeminiOAuthCredentials, ClaudeOAuthCredentials } from '@/lib/byos';
 
 // Type for Gemini credentials - can be API key (string) or OAuth credentials
 type GeminiCredentials = string | GeminiOAuthCredentials;
+
+// Helper to get user's Claude credentials (OAuth only)
+async function getUserClaudeCredentials(userId: string): Promise<ClaudeOAuthCredentials | null> {
+  try {
+    const supabase = await createClient();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from('provider_credentials')
+      .select('credentials_encrypted, credential_type, is_valid')
+      .eq('user_id', userId)
+      .eq('provider', 'claude')
+      .single();
+
+    if (error || !data || !data.is_valid) {
+      return null;
+    }
+
+    const decrypted = decrypt(data.credentials_encrypted);
+    return parseClaudeCredentials(decrypted);
+  } catch (error) {
+    console.error('Error getting Claude credentials:', error);
+    return null;
+  }
+}
 
 // Helper to get user's Gemini credentials (API key or OAuth)
 async function getUserGeminiCredentials(userId: string): Promise<GeminiCredentials | null> {
@@ -65,15 +96,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's Gemini credentials
+    // Get user's credentials - try Claude first, then Gemini
+    const claudeCredentials = await getUserClaudeCredentials(user.id);
     const geminiCredentials = await getUserGeminiCredentials(user.id);
 
-    // BYOS: User must have Gemini API key configured
-    if (!geminiCredentials) {
+    // BYOS: User must have at least one provider configured
+    if (!claudeCredentials && !geminiCredentials) {
       return NextResponse.json(
         {
-          error: 'Gemini not connected',
-          message: 'Please add your Gemini API key in Settings to enable AI features.',
+          error: 'No AI provider connected',
+          message: 'Please connect Claude or add your Gemini API key in Settings to enable AI features.',
           requiresSetup: true
         },
         { status: 401 }
@@ -189,26 +221,55 @@ ${contextInfo}
 
 Help the user succeed at their current step. If they're stuck, help them move forward. If they're confused, clarify. If they need encouragement, provide it. Always relate your advice back to the flywheel methodology.${isAppathonMode ? ' Remember: The user is in Appathon 2.0 competition mode. Prioritize advice that helps them win: focus on judging criteria, time constraints, and demo-ready deliverables.' : ''}`;
 
-    // Use Gemini with user's credentials
-    const geminiProvider = new GeminiProvider(geminiCredentials);
-
-    // Combine conversation history for Gemini
+    // Combine conversation history for the AI
     const conversationHistory = messages
       .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
       .join('\n\n');
 
     const fullPrompt = `${conversationHistory}`;
 
-    const response = await geminiProvider.query(fullPrompt, {
-      systemPrompt,
-      model: 'gemini-2.0-flash',
-      maxTokens: 1024,
-      temperature: 0.7,
-    });
+    // Try Claude first (if connected), then fall back to Gemini
+    let response;
+    let usedProvider: 'claude' | 'gemini';
+
+    if (claudeCredentials) {
+      try {
+        const claudeProvider = new ClaudeProvider(claudeCredentials);
+        response = await claudeProvider.query(fullPrompt, {
+          systemPrompt,
+          model: 'claude-sonnet-4-20250514',
+          maxTokens: 1024,
+          temperature: 0.7,
+        });
+        usedProvider = 'claude';
+      } catch (claudeError) {
+        console.error('Claude API failed, trying Gemini fallback:', claudeError);
+        // Fall through to Gemini
+      }
+    }
+
+    // Use Gemini if Claude didn't work or isn't configured
+    if (!response && geminiCredentials) {
+      const geminiProvider = new GeminiProvider(geminiCredentials);
+      response = await geminiProvider.query(fullPrompt, {
+        systemPrompt,
+        model: 'gemini-2.0-flash',
+        maxTokens: 1024,
+        temperature: 0.7,
+      });
+      usedProvider = 'gemini';
+    }
+
+    if (!response) {
+      return NextResponse.json(
+        { error: 'All AI providers failed' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       message: response.content,
-      provider: 'gemini'
+      provider: usedProvider!
     });
   } catch (error) {
     console.error('Coach API error:', error);
@@ -218,8 +279,8 @@ Help the user succeed at their current step. If they're stuck, help them move fo
     if (errorMessage.includes('401') || errorMessage.includes('403') || errorMessage.includes('Invalid')) {
       return NextResponse.json(
         {
-          error: 'Gemini API key invalid',
-          message: 'Your API key may be incorrect or expired. Please update it in Settings.',
+          error: 'AI credentials invalid',
+          message: 'Your credentials may be incorrect or expired. Please update them in Settings.',
           requiresSetup: true
         },
         { status: 401 }
