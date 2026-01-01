@@ -10,6 +10,7 @@ import { AppathonToggle } from '@/components/appathon/AppathonToggle';
 import { InstitutionChangeRequest } from '@/components/settings/InstitutionChangeRequest';
 import { Suspense } from 'react';
 import { GeminiSetup } from '@/components/settings/GeminiSetup';
+import { ClaudeSetup } from '@/components/settings/ClaudeSetup';
 import { LanguageSettings } from '@/components/settings/LanguageSettings';
 import { createTranslator } from '@/lib/i18n';
 import type { Locale } from '@/lib/i18n/types';
@@ -172,6 +173,10 @@ export default async function SettingsPage() {
       {/* AI Provider Setup */}
       <Suspense fallback={<div className="glass-card p-6 animate-pulse" />}>
         <GeminiSetup />
+      </Suspense>
+
+      <Suspense fallback={<div className="glass-card p-6 animate-pulse" />}>
+        <ClaudeSetup />
       </Suspense>
 
       {/* Institution Change Request */}
