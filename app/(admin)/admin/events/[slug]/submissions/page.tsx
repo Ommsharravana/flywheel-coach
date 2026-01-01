@@ -14,6 +14,9 @@ import {
 import Link from 'next/link';
 import { SubmissionsTableClient } from './SubmissionsTableClient';
 
+// Force dynamic rendering to ensure pagination works correctly
+export const dynamic = 'force-dynamic';
+
 interface SubmissionsPageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ search?: string; status?: string; category?: string; institution?: string; page?: string }>;
