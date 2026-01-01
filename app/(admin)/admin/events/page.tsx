@@ -19,6 +19,7 @@ import {
   X,
   Loader2,
   FileText,
+  LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { EventWithParticipantCount, EventBannerColor } from '@/lib/events/types';
@@ -352,6 +353,13 @@ export default function AdminEventsPage() {
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">
+                      <Link
+                        href={`/admin/events/${event.slug}`}
+                        className="p-2 rounded-lg text-stone-400 hover:text-sky-400 hover:bg-sky-500/10 transition-colors"
+                        title="Event dashboard"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                      </Link>
                       <Link
                         href={`/admin/events/${event.slug}/submissions`}
                         className="p-2 rounded-lg text-stone-400 hover:text-purple-400 hover:bg-purple-500/10 transition-colors"
