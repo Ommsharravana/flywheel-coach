@@ -39,12 +39,14 @@ export interface LeaderboardEntry {
 
 /**
  * Fetch bugs for a specific user by email
+ * Note: API reporter_email filter is broken, so we filter client-side
  */
 export async function getUserBugs(email: string): Promise<BugReport[]> {
   try {
+    // Fetch all bugs for the application (API filter is broken)
     const params = new URLSearchParams({
-      reporter_email: email,
       application: APPLICATION_NAME,
+      limit: '1000',
     })
     const response = await fetch(
       `${BUG_REPORTER_URL}/api/v1/public/bug-reports?${params.toString()}`,
@@ -62,8 +64,13 @@ export async function getUserBugs(email: string): Promise<BugReport[]> {
     }
 
     const data = await response.json()
-    // API returns { success, data: { bug_reports, pagination } }
-    return data.data?.bug_reports || []
+    const allBugs: BugReport[] = data.data?.bug_reports || []
+
+    // Filter client-side by reporter email (case-insensitive)
+    const normalizedEmail = email.toLowerCase()
+    return allBugs.filter(bug =>
+      bug.metadata?.reporter_email?.toLowerCase() === normalizedEmail
+    )
   } catch (error) {
     console.error('Failed to fetch user bugs:', error)
     return []
