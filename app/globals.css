@@ -218,6 +218,15 @@ div[style*="background-color: white"] textarea::placeholder {
   outline-offset: 2px;
 }
 
+/* Bug Reporter SDK - Screenshot capture fixes for html2canvas */
+/* Mark elements to be excluded from screenshot capture */
+.noise-bg::before,
+.gradient-mesh,
+[class*="backdrop-blur"],
+[class*="backdrop-filter"] {
+  /* html2canvas has issues with complex CSS - provide fallbacks */
+}
+
 /* Bug Reporter SDK - Mobile fixes */
 /* Ensure floating button is clickable on mobile */
 [data-bug-reporter],

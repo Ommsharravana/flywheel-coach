@@ -127,10 +127,14 @@ export default function ProblemBankPage() {
   // Active tab
   const [activeTab, setActiveTab] = useState('all');
 
-  // Pagination
+  // Pagination for saved problems
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+
+  // Pagination for cycles (to limit DOM size for screenshot capture)
+  const CYCLES_PER_PAGE = 20;
+  const [cyclesPage, setCyclesPage] = useState(1);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -501,6 +505,23 @@ export default function ProblemBankPage() {
         c.user_name.toLowerCase().includes(searchLower)
     );
   };
+
+  // Paginate cycles (to limit DOM size for screenshot capture)
+  const paginateCycles = (cycles: CycleData[]) => {
+    const start = (cyclesPage - 1) * CYCLES_PER_PAGE;
+    const end = start + CYCLES_PER_PAGE;
+    return cycles.slice(start, end);
+  };
+
+  // Get total pages for cycles
+  const getCyclesTotalPages = (cycles: CycleData[]) => {
+    return Math.ceil(cycles.length / CYCLES_PER_PAGE);
+  };
+
+  // Reset cycles page when tab or search changes
+  useEffect(() => {
+    setCyclesPage(1);
+  }, [activeTab, search]);
 
   return (
     <div className="space-y-6">
@@ -977,66 +998,180 @@ export default function ProblemBankPage() {
 
         {/* All Problems Tab */}
         <TabsContent value="all" className="mt-4">
-          <CyclesList
-            cycles={filterCycles(allCycles)}
-            loading={cyclesLoading}
-            savingCycleId={savingCycleId}
-            onSave={saveCycleToProblemBank}
-            getStepLabel={getStepLabel}
-            getStepColor={getStepColor}
-            emptyMessage="No problem statements found. Cycles will appear here once learners define their problems."
-          />
+          {(() => {
+            const filteredCycles = filterCycles(allCycles);
+            const totalCyclesPages = getCyclesTotalPages(filteredCycles);
+            return (
+              <>
+                <CyclesList
+                  cycles={paginateCycles(filteredCycles)}
+                  loading={cyclesLoading}
+                  savingCycleId={savingCycleId}
+                  onSave={saveCycleToProblemBank}
+                  getStepLabel={getStepLabel}
+                  getStepColor={getStepColor}
+                  emptyMessage="No problem statements found. Cycles will appear here once learners define their problems."
+                />
+                {totalCyclesPages > 1 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-sm text-stone-400">
+                      Showing {(cyclesPage - 1) * CYCLES_PER_PAGE + 1} to {Math.min(cyclesPage * CYCLES_PER_PAGE, filteredCycles.length)} of {filteredCycles.length}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCyclesPage(p => Math.max(1, p - 1))}
+                        disabled={cyclesPage === 1}
+                        className="border-stone-700"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm text-stone-300">
+                        Page {cyclesPage} of {totalCyclesPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCyclesPage(p => Math.min(totalCyclesPages, p + 1))}
+                        disabled={cyclesPage === totalCyclesPages}
+                        className="border-stone-700"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </TabsContent>
 
         {/* In Progress Tab */}
         <TabsContent value="in-progress" className="mt-4">
-          <CyclesList
-            cycles={filterCycles(cyclesData.in_progress)}
-            loading={cyclesLoading}
-            savingCycleId={savingCycleId}
-            onSave={saveCycleToProblemBank}
-            getStepLabel={getStepLabel}
-            getStepColor={getStepColor}
-            emptyMessage="No cycles in progress. Problems appear here when learners are still working on their cycles."
-          />
+          {(() => {
+            const filteredCycles = filterCycles(cyclesData.in_progress);
+            const totalCyclesPages = getCyclesTotalPages(filteredCycles);
+            return (
+              <>
+                <CyclesList
+                  cycles={paginateCycles(filteredCycles)}
+                  loading={cyclesLoading}
+                  savingCycleId={savingCycleId}
+                  onSave={saveCycleToProblemBank}
+                  getStepLabel={getStepLabel}
+                  getStepColor={getStepColor}
+                  emptyMessage="No cycles in progress. Problems appear here when learners are still working on their cycles."
+                />
+                {totalCyclesPages > 1 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-sm text-stone-400">
+                      Showing {(cyclesPage - 1) * CYCLES_PER_PAGE + 1} to {Math.min(cyclesPage * CYCLES_PER_PAGE, filteredCycles.length)} of {filteredCycles.length}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCyclesPage(p => Math.max(1, p - 1))}
+                        disabled={cyclesPage === 1}
+                        className="border-stone-700"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm text-stone-300">
+                        Page {cyclesPage} of {totalCyclesPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCyclesPage(p => Math.min(totalCyclesPages, p + 1))}
+                        disabled={cyclesPage === totalCyclesPages}
+                        className="border-stone-700"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </TabsContent>
 
         {/* Ready to Save Tab */}
         <TabsContent value="eligible" className="mt-4">
-          {cyclesData.eligible.length > 0 && (
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-stone-400">
-                {cyclesData.eligible.length} problem{cyclesData.eligible.length !== 1 ? 's' : ''} ready to save
-              </p>
-              <Button
-                onClick={saveAllEligible}
-                disabled={bulkSaving}
-                className="bg-amber-500 text-stone-900 hover:bg-amber-400"
-              >
-                {bulkSaving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving {bulkProgress.current}/{bulkProgress.total}...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Save All {cyclesData.eligible.length} to Bank
-                  </>
+          {(() => {
+            const filteredCycles = filterCycles(cyclesData.eligible);
+            const totalCyclesPages = getCyclesTotalPages(filteredCycles);
+            return (
+              <>
+                {cyclesData.eligible.length > 0 && (
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-stone-400">
+                      {cyclesData.eligible.length} problem{cyclesData.eligible.length !== 1 ? 's' : ''} ready to save
+                    </p>
+                    <Button
+                      onClick={saveAllEligible}
+                      disabled={bulkSaving}
+                      className="bg-amber-500 text-stone-900 hover:bg-amber-400"
+                    >
+                      {bulkSaving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving {bulkProgress.current}/{bulkProgress.total}...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Save All {cyclesData.eligible.length} to Bank
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
-              </Button>
-            </div>
-          )}
-          <CyclesList
-            cycles={filterCycles(cyclesData.eligible)}
-            loading={cyclesLoading}
-            savingCycleId={savingCycleId}
-            onSave={saveCycleToProblemBank}
-            getStepLabel={getStepLabel}
-            getStepColor={getStepColor}
-            showSaveButton
-            emptyMessage="No cycles ready to save. Cycles at Impact Discovery stage or beyond will appear here."
-          />
+                <CyclesList
+                  cycles={paginateCycles(filteredCycles)}
+                  loading={cyclesLoading}
+                  savingCycleId={savingCycleId}
+                  onSave={saveCycleToProblemBank}
+                  getStepLabel={getStepLabel}
+                  getStepColor={getStepColor}
+                  showSaveButton
+                  emptyMessage="No cycles ready to save. Cycles at Impact Discovery stage or beyond will appear here."
+                />
+                {totalCyclesPages > 1 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-sm text-stone-400">
+                      Showing {(cyclesPage - 1) * CYCLES_PER_PAGE + 1} to {Math.min(cyclesPage * CYCLES_PER_PAGE, filteredCycles.length)} of {filteredCycles.length}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCyclesPage(p => Math.max(1, p - 1))}
+                        disabled={cyclesPage === 1}
+                        className="border-stone-700"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm text-stone-300">
+                        Page {cyclesPage} of {totalCyclesPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCyclesPage(p => Math.min(totalCyclesPages, p + 1))}
+                        disabled={cyclesPage === totalCyclesPages}
+                        className="border-stone-700"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </TabsContent>
 
         {/* Saved Tab */}
