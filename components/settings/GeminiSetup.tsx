@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, CheckCircle2, AlertCircle, Loader2, Trash2, Zap } from 'lucide-react';
+import { Sparkles, CheckCircle2, AlertCircle, Loader2, Trash2, Zap, ExternalLink, Eye, EyeOff } from 'lucide-react';
 
 interface ProviderInfo {
   id: string;
@@ -18,40 +18,13 @@ interface ProviderInfo {
 }
 
 export function GeminiSetup() {
-  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [existingCredential, setExistingCredential] = useState<ProviderInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isConnecting, setIsConnecting] = useState(false);
-
-  // Check for OAuth callback results
-  useEffect(() => {
-    const geminiSuccess = searchParams.get('gemini_success');
-    const geminiError = searchParams.get('gemini_error');
-
-    if (geminiSuccess === 'true') {
-      setSuccess('Google account connected! AI features are now enabled.');
-      // Clean up URL
-      window.history.replaceState({}, '', '/settings');
-    } else if (geminiError) {
-      const errorMessages: Record<string, string> = {
-        'access_denied': 'Access was denied. Please try again and grant the required permissions.',
-        'missing_params': 'Something went wrong. Please try again.',
-        'invalid_state': 'Session expired. Please try again.',
-        'expired': 'The connection request expired. Please try again.',
-        'auth_mismatch': 'Authentication mismatch. Please sign in and try again.',
-        'not_configured': 'Google Sign-in is not configured. Contact administrator.',
-        'token_exchange_failed': 'Failed to complete sign-in. Please try again.',
-        'validation_failed': 'Could not validate Google account. Please try again.',
-        'storage_failed': 'Failed to save credentials. Please try again.',
-        'internal': 'An unexpected error occurred. Please try again.',
-      };
-      setError(errorMessages[geminiError] || 'Failed to connect. Please try again.');
-      // Clean up URL
-      window.history.replaceState({}, '', '/settings');
-    }
-  }, [searchParams]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
 
   // Check for existing credentials on mount
   const checkExisting = async () => {
@@ -74,31 +47,45 @@ export function GeminiSetup() {
     checkExisting();
   }, []);
 
-  const handleConnect = async () => {
-    setIsConnecting(true);
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) {
+      setError('Please enter your API key');
+      return;
+    }
+
+    setIsSaving(true);
     setError(null);
     setSuccess(null);
 
     try {
-      // Get the OAuth URL from the API
-      const res = await fetch('/api/auth/gemini');
+      const res = await fetch('/api/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'gemini',
+          credentials: apiKey.trim(),
+          credentialType: 'api_key',
+        }),
+      });
+
       const data = await res.json();
 
-      if (res.ok && data.authUrl) {
-        // Redirect to Google OAuth
-        window.location.href = data.authUrl;
+      if (res.ok) {
+        setSuccess('API key saved! AI features are now enabled.');
+        setApiKey('');
+        await checkExisting();
       } else {
-        setError(data.error || 'Failed to start Google Sign-in');
-        setIsConnecting(false);
+        setError(data.error || 'Failed to save API key');
       }
     } catch {
-      setError('Failed to connect. Please try again.');
-      setIsConnecting(false);
+      setError('Failed to save. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDisconnect = async () => {
-    if (!confirm('Disconnect your Google account? AI features will be disabled until you reconnect.')) {
+    if (!confirm('Remove your API key? AI features will be disabled until you add a new one.')) {
       return;
     }
 
@@ -109,13 +96,13 @@ export function GeminiSetup() {
 
       if (res.ok) {
         setExistingCredential(null);
-        setSuccess('Google account disconnected.');
+        setSuccess('API key removed.');
       } else {
         const data = await res.json();
-        setError(data.error || 'Failed to disconnect');
+        setError(data.error || 'Failed to remove');
       }
     } catch {
-      setError('Failed to disconnect');
+      setError('Failed to remove');
     }
   };
 
@@ -137,7 +124,7 @@ export function GeminiSetup() {
           AI Coach
         </CardTitle>
         <CardDescription>
-          Connect your Google account to enable AI features
+          Add your Gemini API key to enable AI features
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -163,13 +150,13 @@ export function GeminiSetup() {
             <div className="flex items-center gap-3 p-4 bg-teal-500/10 border border-teal-500/30 rounded-lg">
               <CheckCircle2 className="w-6 h-6 text-teal-400" />
               <div className="flex-1">
-                <div className="font-medium text-stone-100">Google Account Connected</div>
+                <div className="font-medium text-stone-100">Gemini API Connected</div>
                 <div className="text-sm text-stone-400">
-                  AI features are enabled using your subscription
+                  AI features are enabled
                 </div>
               </div>
               <Badge className="bg-teal-500/20 text-teal-400 border-teal-500/30">
-                {existingCredential.isValid ? 'Active' : 'Reconnect Needed'}
+                {existingCredential.isValid ? 'Active' : 'Invalid Key'}
               </Badge>
             </div>
 
@@ -177,49 +164,43 @@ export function GeminiSetup() {
               <div className="flex items-start gap-3">
                 <Zap className="w-5 h-5 text-amber-400 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-stone-200 mb-1">Unlimited AI Usage</h4>
+                  <h4 className="font-medium text-stone-200 mb-1">AI Features Enabled</h4>
                   <p className="text-sm text-stone-400">
-                    Using your Google/Gemini subscription. All AI features powered by your account.
+                    AI Coach and other features are powered by your Gemini API key.
                   </p>
                 </div>
               </div>
             </div>
 
             {!existingCredential.isValid && (
-              <Button
-                onClick={handleConnect}
-                disabled={isConnecting}
-                className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white"
-              >
-                {isConnecting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
-                      <path
-                        fill="currentColor"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
-                    </svg>
-                    Reconnect Google Account
-                  </>
-                )}
-              </Button>
+              <div className="space-y-3">
+                <p className="text-sm text-amber-400">Your API key is invalid. Please enter a new one:</p>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type={showApiKey ? 'text' : 'password'}
+                      placeholder="AIza..."
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="pr-10 bg-stone-800/50 border-stone-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-300"
+                    >
+                      {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <Button
+                    onClick={handleSaveApiKey}
+                    disabled={isSaving}
+                    className="bg-teal-600 hover:bg-teal-700"
+                  >
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                  </Button>
+                </div>
+              </div>
             )}
 
             <Button
@@ -229,7 +210,7 @@ export function GeminiSetup() {
               className="text-stone-400 border-stone-600 hover:bg-stone-800"
             >
               <Trash2 className="w-4 h-4 mr-1" />
-              Disconnect Account
+              Remove API Key
             </Button>
           </div>
         ) : (
@@ -238,62 +219,73 @@ export function GeminiSetup() {
             <div className="flex items-center gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
               <AlertCircle className="w-6 h-6 text-amber-400" />
               <div className="flex-1">
-                <div className="font-medium text-stone-100">Connect Google to Enable AI</div>
+                <div className="font-medium text-stone-100">Add Gemini API Key</div>
                 <div className="text-sm text-stone-400">
-                  Sign in with Google to use the AI Coach and other AI features
+                  Enter your API key to enable AI Coach and other AI features
                 </div>
               </div>
             </div>
 
-            <div className="p-4 bg-stone-800/50 rounded-lg">
+            <div className="p-4 bg-stone-800/50 rounded-lg space-y-3">
               <div className="flex items-start gap-3">
                 <Sparkles className="w-5 h-5 text-teal-400 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-stone-200 mb-1">Bring Your Own Subscription</h4>
-                  <p className="text-sm text-stone-400">
-                    Your Google account gives you access to Gemini AI. All usage is powered by your subscription - completely free for you.
-                  </p>
+                  <h4 className="font-medium text-stone-200 mb-1">How to get your API key</h4>
+                  <ol className="text-sm text-stone-400 list-decimal list-inside space-y-1">
+                    <li>Go to Google AI Studio</li>
+                    <li>Sign in with your Google account</li>
+                    <li>Click &quot;Get API key&quot; in the left sidebar</li>
+                    <li>Create a new API key and copy it</li>
+                  </ol>
                 </div>
               </div>
+              <a
+                href="https://aistudio.google.com/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-teal-400 hover:text-teal-300"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open Google AI Studio
+              </a>
             </div>
 
-            <Button
-              onClick={handleConnect}
-              disabled={isConnecting}
-              className="w-full bg-white hover:bg-gray-100 text-gray-700 border border-gray-300"
-            >
-              {isConnecting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  Sign in with Google
-                </>
-              )}
-            </Button>
+            <div className="space-y-3">
+              <div className="relative">
+                <Input
+                  type={showApiKey ? 'text' : 'password'}
+                  placeholder="Paste your API key here (AIza...)"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="pr-10 bg-stone-800/50 border-stone-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-300"
+                >
+                  {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              <Button
+                onClick={handleSaveApiKey}
+                disabled={isSaving || !apiKey.trim()}
+                className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Validating...
+                  </>
+                ) : (
+                  'Save API Key'
+                )}
+              </Button>
+            </div>
 
             <p className="text-xs text-stone-500 text-center">
-              We only request permission to use Gemini AI on your behalf. We never access your email, Drive, or other data.
+              Your API key is encrypted and stored securely. You can use the free tier (1,500 requests/day) or a paid plan.
             </p>
           </div>
         )}

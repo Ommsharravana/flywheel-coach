@@ -9,8 +9,11 @@ import { createClient } from '@/lib/supabase/server';
 import { decrypt, GeminiProvider, parseGeminiCredentials } from '@/lib/byos';
 import type { GeminiOAuthCredentials } from '@/lib/byos';
 
-// Helper to get user's Gemini credentials
-async function getUserGeminiCredentials(userId: string): Promise<GeminiOAuthCredentials | null> {
+// Type for Gemini credentials - can be API key (string) or OAuth credentials
+type GeminiCredentials = string | GeminiOAuthCredentials;
+
+// Helper to get user's Gemini credentials (API key or OAuth)
+async function getUserGeminiCredentials(userId: string): Promise<GeminiCredentials | null> {
   try {
     const supabase = await createClient();
 
@@ -27,7 +30,15 @@ async function getUserGeminiCredentials(userId: string): Promise<GeminiOAuthCred
     }
 
     const decrypted = decrypt(data.credentials_encrypted);
-    return parseGeminiCredentials(decrypted);
+
+    // Handle different credential types
+    if (data.credential_type === 'api_key') {
+      // API key - return the decrypted string directly
+      return decrypted;
+    } else {
+      // OAuth credentials - parse as JSON
+      return parseGeminiCredentials(decrypted);
+    }
   } catch (error) {
     console.error('Error getting Gemini credentials:', error);
     return null;
@@ -57,12 +68,12 @@ export async function POST(request: NextRequest) {
     // Get user's Gemini credentials
     const geminiCredentials = await getUserGeminiCredentials(user.id);
 
-    // BYOS: User must have Gemini connected
+    // BYOS: User must have Gemini API key configured
     if (!geminiCredentials) {
       return NextResponse.json(
         {
           error: 'Gemini not connected',
-          message: 'Please connect your Google account in Settings to enable AI features.',
+          message: 'Please add your Gemini API key in Settings to enable AI features.',
           requiresSetup: true
         },
         { status: 401 }
@@ -207,8 +218,8 @@ Help the user succeed at their current step. If they're stuck, help them move fo
     if (errorMessage.includes('401') || errorMessage.includes('403') || errorMessage.includes('Invalid')) {
       return NextResponse.json(
         {
-          error: 'Gemini credentials expired or invalid',
-          message: 'Please reconnect your Google account in Settings.',
+          error: 'Gemini API key invalid',
+          message: 'Your API key may be incorrect or expired. Please update it in Settings.',
           requiresSetup: true
         },
         { status: 401 }

@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-// Gemini API OAuth scopes:
-// peruserquota: Use the user's personal Gemini subscription quota (BYOS)
-// Note: This scope grants quota access, not direct API access
+// Gemini API OAuth scopes (matching Gemini CLI):
+// cloud-platform: Full access to Google Cloud services including Gemini API
+// userinfo.email/profile: User identification
+// openid: OpenID Connect authentication
 const GEMINI_SCOPES = [
-  'https://www.googleapis.com/auth/generative-language.peruserquota',
+  'https://www.googleapis.com/auth/cloud-platform',
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'openid',
 ];
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
