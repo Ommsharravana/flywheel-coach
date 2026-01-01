@@ -1,11 +1,12 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/problems/leaderboard/public - Public institution leaderboard (no auth required)
 // Supports event scoping via ?event=appathon-2 query parameter
+// Uses admin client to bypass RLS for anonymous access
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { searchParams } = new URL(request.url);
     const eventSlug = searchParams.get('event') || 'appathon-2'; // Default to Appathon 2.0
 
