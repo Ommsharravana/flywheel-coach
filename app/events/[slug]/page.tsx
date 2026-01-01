@@ -12,7 +12,34 @@ import {
   CheckCircle,
   Clock,
   Sparkles,
+  Search,
+  Gem,
+  Settings,
+  Hammer,
+  Rocket,
+  BarChart3,
+  Trophy,
+  type LucideIcon,
 } from 'lucide-react';
+
+// Map icon name strings to Lucide components
+const ICON_MAP: Record<string, LucideIcon> = {
+  Search,
+  Target,
+  Gem,
+  Settings,
+  Sparkles,
+  Hammer,
+  Rocket,
+  BarChart3,
+  Trophy,
+  Users,
+  Database,
+  Calendar,
+  Play,
+  CheckCircle,
+  Clock,
+};
 import Link from 'next/link';
 import { InstitutionLeaderboard } from '@/components/problem-bank/InstitutionLeaderboard';
 import { getMethodologyForEvent } from '@/lib/methodologies';
@@ -210,25 +237,43 @@ export default async function EventPage({ params }: EventPageProps) {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {methodology.steps.map((step, index) => (
-                    <div
-                      key={step.id}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-stone-800/50 border border-stone-700/50"
-                    >
+                  {methodology.steps.map((step, index) => {
+                    const IconComponent = ICON_MAP[step.icon] || Search;
+                    // Extract color class (e.g., "text-amber-400" -> "#f59e0b")
+                    const colorClass = step.color.replace('text-', '');
+                    const colorMap: Record<string, string> = {
+                      'amber-400': '#fbbf24',
+                      'blue-400': '#60a5fa',
+                      'purple-400': '#c084fc',
+                      'green-400': '#4ade80',
+                      'pink-400': '#f472b6',
+                      'orange-400': '#fb923c',
+                      'cyan-400': '#22d3ee',
+                      'emerald-400': '#34d399',
+                      'yellow-400': '#facc15',
+                    };
+                    const bgColor = colorMap[colorClass] || '#fbbf24';
+
+                    return (
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
-                        style={{ backgroundColor: `${step.color}20` }}
+                        key={step.id}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-stone-800/50 border border-stone-700/50"
                       >
-                        {step.icon}
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-stone-100">
-                          Step {index + 1}: {step.shortName}
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: `${bgColor}20` }}
+                        >
+                          <IconComponent className={`h-5 w-5 ${step.color}`} />
                         </div>
-                        <div className="text-xs text-stone-500">{step.name}</div>
+                        <div>
+                          <div className="text-sm font-medium text-stone-100">
+                            Step {index + 1}: {step.shortName}
+                          </div>
+                          <div className="text-xs text-stone-500">{step.name}</div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
