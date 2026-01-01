@@ -201,14 +201,18 @@ export class GeminiProvider implements Provider {
       console.error('Gemini credential validation failed:', errorMessage);
 
       // Parse specific error types for better user feedback
+      // Check invalid key FIRST (most common error for new users)
+      if (errorMessage.includes('API_KEY_INVALID') || errorMessage.includes('API key not valid') || errorMessage.includes('INVALID_ARGUMENT')) {
+        return { valid: false, error: 'Invalid API key. Please check and try again.' };
+      }
       if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
         return {
           valid: false,
           error: 'Quota exhausted. Wait a minute or check your usage at ai.google.dev/usage'
         };
       }
-      if (errorMessage.includes('401') || errorMessage.includes('API_KEY_INVALID')) {
-        return { valid: false, error: 'Invalid API key. Please check and try again.' };
+      if (errorMessage.includes('401')) {
+        return { valid: false, error: 'Unauthorized. Please check your API key.' };
       }
       if (errorMessage.includes('403') || errorMessage.includes('PERMISSION_DENIED')) {
         return { valid: false, error: 'API key lacks permission. Enable the Generative Language API in Google Cloud Console.' };
