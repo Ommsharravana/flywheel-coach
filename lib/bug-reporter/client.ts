@@ -5,6 +5,7 @@
 
 const BUG_REPORTER_URL = process.env.NEXT_PUBLIC_BUG_REPORTER_API_URL || 'https://jkkn-centralized-bug-reporter.vercel.app'
 const API_KEY = process.env.NEXT_PUBLIC_BUG_REPORTER_API_KEY || ''
+const APPLICATION_NAME = 'JKKN Solution Studio'
 
 export interface BugReport {
   uuid: string
@@ -41,8 +42,12 @@ export interface LeaderboardEntry {
  */
 export async function getUserBugs(email: string): Promise<BugReport[]> {
   try {
+    const params = new URLSearchParams({
+      reporter_email: email,
+      application: APPLICATION_NAME,
+    })
     const response = await fetch(
-      `${BUG_REPORTER_URL}/api/v1/public/bug-reports?reporter_email=${encodeURIComponent(email)}`,
+      `${BUG_REPORTER_URL}/api/v1/public/bug-reports?${params.toString()}`,
       {
         headers: {
           'X-API-Key': API_KEY,
@@ -69,8 +74,12 @@ export async function getUserBugs(email: string): Promise<BugReport[]> {
  */
 export async function getAllBugs(): Promise<BugReport[]> {
   try {
+    const params = new URLSearchParams({
+      application: APPLICATION_NAME,
+      limit: '1000',
+    })
     const response = await fetch(
-      `${BUG_REPORTER_URL}/api/v1/public/bug-reports?limit=1000`,
+      `${BUG_REPORTER_URL}/api/v1/public/bug-reports?${params.toString()}`,
       {
         headers: {
           'X-API-Key': API_KEY,
