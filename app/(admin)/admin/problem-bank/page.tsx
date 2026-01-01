@@ -177,11 +177,8 @@ export default function ProblemBankPage() {
   });
   const [quickSubmitting, setQuickSubmitting] = useState(false);
 
-  // Realtime subscription
-  const [realtimeConnected, setRealtimeConnected] = useState(false);
-  const [realtimeStatus, setRealtimeStatus] = useState<string>('INITIALIZING');
+  // Manual sync state
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
 
   const fetchProblems = useCallback(async () => {
     setLoading(true);
@@ -531,63 +528,6 @@ export default function ProblemBankPage() {
     setCyclesPage(1);
   }, [activeTab, search]);
 
-  // Realtime subscription for live stats updates
-  useEffect(() => {
-    const supabase = createClient();
-
-    // Create a channel for problem bank realtime updates
-    const channel = supabase
-      .channel('problem-bank-stats')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cycles',
-        },
-        () => {
-          // Refetch data when cycles table changes
-          setLastUpdate(new Date());
-          fetchCycles();
-          fetchProblems();
-          // Reset analytics cache so it refetches
-          setAnalyticsData(null);
-          setLeaderboard(null);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'problem_bank',
-        },
-        () => {
-          // Refetch data when problem_bank table changes
-          setLastUpdate(new Date());
-          fetchCycles();
-          fetchProblems();
-          // Reset analytics cache so it refetches
-          setAnalyticsData(null);
-          setLeaderboard(null);
-        }
-      )
-      .subscribe((status: string, err?: Error) => {
-        console.log('[Realtime] Subscription status:', status, err ? `Error: ${err.message}` : '');
-        setRealtimeStatus(status);
-        setRealtimeConnected(status === 'SUBSCRIBED');
-      });
-
-    channelRef.current = channel;
-
-    // Cleanup on unmount
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
-    };
-  }, [fetchCycles, fetchProblems]);
-
   // Manual refresh function
   const handleManualRefresh = async () => {
     setLastUpdate(new Date());
@@ -610,26 +550,10 @@ export default function ProblemBankPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Realtime status indicator */}
-          <div className="flex items-center gap-2 text-xs">
-            <div className={`w-2 h-2 rounded-full ${
-              realtimeConnected
-                ? 'bg-green-500 animate-pulse'
-                : realtimeStatus === 'CHANNEL_ERROR' || realtimeStatus === 'TIMED_OUT'
-                  ? 'bg-amber-500'
-                  : 'bg-stone-500'
-            }`} />
-            <span className={realtimeStatus === 'CHANNEL_ERROR' || realtimeStatus === 'TIMED_OUT' ? 'text-amber-500' : 'text-stone-500'}>
-              {realtimeConnected
-                ? 'Live'
-                : realtimeStatus === 'CHANNEL_ERROR'
-                  ? 'Error'
-                  : realtimeStatus === 'TIMED_OUT'
-                    ? 'Timeout'
-                    : 'Connecting...'}
-            </span>
+          {/* Sync status indicator */}
+          <div className="flex items-center gap-2 text-xs text-stone-500">
             {lastUpdate && (
-              <span className="text-stone-600">
+              <span>
                 Updated {lastUpdate.toLocaleTimeString()}
               </span>
             )}

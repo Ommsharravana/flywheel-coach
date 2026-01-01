@@ -40,12 +40,20 @@ export interface GeminiOAuthCredentials {
   expiry?: string;
 }
 
+export interface ClaudeOAuthCredentials {
+  access_token: string;
+  refresh_token: string | null;
+  token_type: string;
+  expires_at?: number; // Unix timestamp
+  scope?: string;
+}
+
 export interface StoredCredentials {
   id: string;
   user_id: string;
   provider: 'claude' | 'gemini';
   credentials_encrypted: string;
-  credential_type: 'token' | 'oauth_json';
+  credential_type: 'token' | 'oauth_json' | 'api_key';
   is_valid: boolean;
   last_validated_at: string | null;
   expires_at: string | null;
