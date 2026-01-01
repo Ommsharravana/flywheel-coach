@@ -15,7 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Shield, Database } from 'lucide-react'
+import { Shield, Database, Bug, Trophy } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import { LanguageToggle } from '@/components/shared/LanguageToggle'
 
@@ -164,6 +164,19 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
                       <Link href="/settings">{t('nav.settings')}</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-stone-800" />
+                    <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
+                      <Link href="/my-bugs" className="flex items-center gap-2">
+                        <Bug className="h-4 w-4 text-blue-400" />
+                        <span>My Bug Reports</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
+                      <Link href="/bug-leaderboard" className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-amber-400" />
+                        <span>Bug Leaderboard</span>
+                      </Link>
                     </DropdownMenuItem>
                     {(role === 'superadmin' || role === 'institution_admin' || role === 'event_admin' || isEventAdmin) && (
                       <>
