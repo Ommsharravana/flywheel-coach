@@ -188,25 +188,41 @@ export class GeminiProvider implements Provider {
     }
   }
 
-  async validateCredentials(): Promise<boolean> {
+  async validateCredentials(): Promise<{ valid: boolean; error?: string }> {
     try {
       // Test with a simple request
       await this.query('Say "OK" and nothing else.', {
         model: 'gemini-2.0-flash',
         maxTokens: 10,
       });
-      return true;
+      return { valid: true };
     } catch (error) {
-      console.error('Gemini credential validation failed:', error);
-      return false;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Gemini credential validation failed:', errorMessage);
+
+      // Parse specific error types for better user feedback
+      if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
+        return {
+          valid: false,
+          error: 'Quota exhausted. Wait a minute or check your usage at ai.google.dev/usage'
+        };
+      }
+      if (errorMessage.includes('401') || errorMessage.includes('API_KEY_INVALID')) {
+        return { valid: false, error: 'Invalid API key. Please check and try again.' };
+      }
+      if (errorMessage.includes('403') || errorMessage.includes('PERMISSION_DENIED')) {
+        return { valid: false, error: 'API key lacks permission. Enable the Generative Language API in Google Cloud Console.' };
+      }
+
+      return { valid: false, error: 'Could not validate API key. Please try again.' };
     }
   }
 
   async getStatus(): Promise<ProviderStatus> {
-    const isValid = await this.validateCredentials();
+    const result = await this.validateCredentials();
     return {
       isConfigured: true,
-      isValid,
+      isValid: result.valid,
       lastValidated: new Date(),
       provider: this.name,
     };

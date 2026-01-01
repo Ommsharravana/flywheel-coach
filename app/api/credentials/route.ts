@@ -116,11 +116,12 @@ export async function POST(request: NextRequest) {
 
         // Test the credentials
         const geminiProvider = new GeminiProvider(geminiCreds);
-        isValid = await geminiProvider.validateCredentials();
+        const validationResult = await geminiProvider.validateCredentials();
+        isValid = validationResult.valid;
 
         if (!isValid) {
           return NextResponse.json(
-            { error: 'Invalid Gemini API key. Please check and try again.' },
+            { error: validationResult.error || 'Invalid Gemini API key. Please check and try again.' },
             { status: 400 }
           );
         }

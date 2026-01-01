@@ -223,24 +223,33 @@ export class ClaudeProvider implements Provider {
     }
   }
 
-  async validateCredentials(): Promise<boolean> {
+  async validateCredentials(): Promise<{ valid: boolean; error?: string }> {
     try {
       await this.query('Say "OK" and nothing else.', {
         model: 'claude-3-5-haiku-20241022',
         maxTokens: 10,
       });
-      return true;
+      return { valid: true };
     } catch (error) {
-      console.error('Claude credential validation failed:', error);
-      return false;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Claude credential validation failed:', errorMessage);
+
+      if (errorMessage.includes('401') || errorMessage.includes('invalid')) {
+        return { valid: false, error: 'Invalid or expired Claude credentials. Please reconnect.' };
+      }
+      if (errorMessage.includes('429') || errorMessage.includes('rate')) {
+        return { valid: false, error: 'Rate limited. Please try again in a moment.' };
+      }
+
+      return { valid: false, error: 'Could not validate Claude credentials.' };
     }
   }
 
   async getStatus(): Promise<ProviderStatus> {
-    const isValid = await this.validateCredentials();
+    const result = await this.validateCredentials();
     return {
       isConfigured: true,
-      isValid,
+      isValid: result.valid,
       lastValidated: new Date(),
       expiresAt: this.credentials.expires_at
         ? new Date(this.credentials.expires_at * 1000)

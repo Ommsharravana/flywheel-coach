@@ -20,11 +20,16 @@ export interface ProviderStatus {
   provider: string;
 }
 
+export interface ValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
 export interface Provider {
   readonly name: string;
   query(prompt: string, options?: QueryOptions): Promise<ProviderResponse>;
   queryStream?(prompt: string, options?: QueryOptions): AsyncGenerator<string, void, unknown>;
-  validateCredentials(): Promise<boolean>;
+  validateCredentials(): Promise<ValidationResult>;
   getStatus(): Promise<ProviderStatus>;
   getAvailableModels(): string[];
 }
