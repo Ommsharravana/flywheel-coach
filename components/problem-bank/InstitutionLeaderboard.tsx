@@ -122,7 +122,7 @@ export function InstitutionLeaderboard({ eventSlug = 'appathon-2' }: Institution
               <div className="flex items-center gap-3 text-sm">
                 <div className="text-right">
                   <span className="font-bold text-blue-400">{entry.participant_count}</span>
-                  <span className="text-stone-500 ml-1 hidden sm:inline">learners</span>
+                  <span className="text-stone-500 ml-1 hidden sm:inline">participants</span>
                 </div>
                 <div className="text-right">
                   <span className="font-bold text-amber-400">{entry.problems_identified}</span>
@@ -146,7 +146,7 @@ export function InstitutionLeaderboard({ eventSlug = 'appathon-2' }: Institution
             </div>
             <div>
               <div className="text-lg font-bold text-blue-400">{data.totals.total_participants}</div>
-              <div className="text-xs text-stone-500">Learners</div>
+              <div className="text-xs text-stone-500">Participants</div>
             </div>
             <div>
               <div className="text-lg font-bold text-amber-400">{data.totals.problems_identified}</div>
