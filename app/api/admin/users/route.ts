@@ -12,6 +12,7 @@ async function isSuperAdmin(supabase: Awaited<ReturnType<typeof createClient>>) 
 }
 
 // GET /api/admin/users - List all users
+// Uses batch fetching to overcome Supabase's 1000 row default limit
 export async function GET() {
   const supabase = await createClient();
 
@@ -21,21 +22,52 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  // Use RPC to get all users (handles auth check internally, bypasses RLS)
+  const BATCH_SIZE = 1000;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: users, error } = await (supabase as any).rpc('get_all_users_admin', {
-    caller_user_id: user.id
-  });
+  let allUsers: any[] = [];
+  let offset = 0;
+  let totalCount = 0;
+  let hasMore = true;
 
-  if (error) {
-    // Handle unauthorized error from RPC
-    if (error.message?.includes('Unauthorized') || error.message?.includes('superadmin')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  // Fetch users in batches to overcome the 1000 row limit
+  while (hasMore) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: batch, error } = await (supabase as any).rpc('get_all_users_admin', {
+      caller_user_id: user.id,
+      page_offset: offset,
+      page_limit: BATCH_SIZE
+    });
+
+    if (error) {
+      // Handle unauthorized error from RPC
+      if (error.message?.includes('Unauthorized') || error.message?.includes('superadmin')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+
+    if (!batch || batch.length === 0) {
+      hasMore = false;
+    } else {
+      // Get total count from first row (all rows have same total_count)
+      if (offset === 0 && batch[0]?.total_count) {
+        totalCount = Number(batch[0].total_count);
+      }
+
+      allUsers = [...allUsers, ...batch];
+      offset += BATCH_SIZE;
+
+      // Stop if we've fetched all users
+      if (batch.length < BATCH_SIZE || allUsers.length >= totalCount) {
+        hasMore = false;
+      }
+    }
   }
 
-  return NextResponse.json({ users });
+  // Remove total_count from individual rows (it was just for pagination)
+  const users = allUsers.map(({ total_count, ...user }) => user);
+
+  return NextResponse.json({ users, totalCount });
 }
 
 // POST /api/admin/users - Create new user
