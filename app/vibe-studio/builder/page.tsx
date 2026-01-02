@@ -129,10 +129,15 @@ export default function VibeStudioBuilder() {
 
   // Handle deploy button
   const handleDeploy = async () => {
-    const { byos } = useBuilderStore.getState();
+    const { byos, files, projectName } = useBuilderStore.getState();
 
     if (!byos.github.connected || !byos.vercel.connected) {
       alert('Please connect GitHub and Vercel in BYOS settings first.');
+      return;
+    }
+
+    if (files.length === 0) {
+      alert('No files to deploy. Generate some code first!');
       return;
     }
 
@@ -140,20 +145,71 @@ export default function VibeStudioBuilder() {
     setDeploymentStatus('pushing');
 
     try {
-      // TODO: Implement actual deployment
-      // 1. Push files to GitHub
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // 1. Push files to GitHub and create Vercel project
+      const deployResponse = await fetch('/api/vibe-studio/deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectName,
+          files: files.map(f => ({ path: f.path, content: f.content })),
+          createNew: true,
+        }),
+      });
+
+      if (!deployResponse.ok) {
+        const error = await deployResponse.json();
+        throw new Error(error.error || 'Deployment failed');
+      }
+
+      const deployResult = await deployResponse.json();
       setDeploymentStatus('building');
 
-      // 2. Wait for Vercel to build
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setDeploymentStatus('ready');
+      // 2. Poll for deployment status
+      if (deployResult.vercel?.projectId) {
+        let attempts = 0;
+        const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds max
 
-      // 3. Set preview URL
-      useBuilderStore.getState().setPreviewUrl('https://your-app.vercel.app');
+        while (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+
+          const statusResponse = await fetch(
+            `/api/vibe-studio/deploy?projectId=${deployResult.vercel.projectId}`
+          );
+
+          if (statusResponse.ok) {
+            const status = await statusResponse.json();
+
+            if (status.status === 'ready') {
+              setDeploymentStatus('ready');
+              useBuilderStore.getState().setPreviewUrl(status.url);
+              break;
+            } else if (status.status === 'error') {
+              throw new Error('Deployment failed');
+            }
+          }
+
+          attempts++;
+        }
+
+        if (attempts >= maxAttempts) {
+          // Timeout but might still be building
+          if (deployResult.vercel.deploymentUrl) {
+            useBuilderStore.getState().setPreviewUrl(deployResult.vercel.deploymentUrl);
+            setDeploymentStatus('ready');
+          } else {
+            setDeploymentStatus('error');
+          }
+        }
+      } else if (deployResult.repo?.url) {
+        // No Vercel project ID but we have the repo
+        // The deployment will happen automatically via GitHub integration
+        setDeploymentStatus('ready');
+        useBuilderStore.getState().setPreviewUrl(deployResult.repo.url);
+      }
     } catch (error) {
       console.error('Deployment error:', error);
       setDeploymentStatus('error');
+      alert(error instanceof Error ? error.message : 'Deployment failed');
     } finally {
       setIsDeploying(false);
     }

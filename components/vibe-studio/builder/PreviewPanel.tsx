@@ -1,12 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { ExternalLink, RefreshCw, Smartphone, Monitor, Loader2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ExternalLink, RefreshCw, Smartphone, Monitor, Loader2, Rocket, Code2 } from 'lucide-react';
 import { useBuilderStore } from '@/lib/stores/vibeBuilderStore';
 
 export function PreviewPanel() {
-  const { previewUrl, deploymentStatus, isDeploying } = useBuilderStore();
+  const { previewUrl, deploymentStatus, isDeploying, files, byos } = useBuilderStore();
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [iframeKey, setIframeKey] = useState(0);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const refreshPreview = () => {
+    setIframeKey(prev => prev + 1);
+  };
+
+  const hasFiles = files.length > 0;
+  const isConnected = byos.github.connected && byos.vercel.connected;
 
   const getStatusColor = () => {
     switch (deploymentStatus) {
@@ -97,15 +106,56 @@ export function PreviewPanel() {
 
       {/* Preview iframe or placeholder */}
       <div className="flex-1 flex items-center justify-center bg-[#111] p-4">
-        {previewUrl ? (
+        {isDeploying ? (
+          // Deploying state
+          <div className="text-center">
+            <div className="w-24 h-24 mx-auto mb-4 border-2 border-orange-500/30 rounded-xl flex items-center justify-center bg-orange-500/5">
+              <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
+            </div>
+            <p className="text-orange-500 font-mono text-sm mb-2">
+              {deploymentStatus === 'pushing' ? 'Pushing to GitHub...' : 'Building on Vercel...'}
+            </p>
+            <p className="text-gray-600 text-xs">
+              Your preview will appear automatically
+            </p>
+          </div>
+        ) : previewUrl ? (
           <div className={`bg-white rounded-lg overflow-hidden shadow-2xl transition-all ${
             viewMode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'
           }`}>
             <iframe
+              key={iframeKey}
+              ref={iframeRef}
               src={previewUrl}
               className="w-full h-full border-0"
               title="App Preview"
             />
+          </div>
+        ) : hasFiles && isConnected ? (
+          // Files exist, connected, but not deployed
+          <div className="text-center">
+            <div className="w-24 h-24 mx-auto mb-4 border-2 border-dashed border-orange-500/30 rounded-xl flex items-center justify-center">
+              <Rocket className="w-8 h-8 text-orange-500" />
+            </div>
+            <p className="text-white font-mono text-sm mb-2">
+              Ready to deploy!
+            </p>
+            <p className="text-gray-500 text-xs mb-4">
+              Click the Deploy button to see your app live
+            </p>
+          </div>
+        ) : hasFiles && !isConnected ? (
+          // Files exist but not connected
+          <div className="text-center">
+            <div className="w-24 h-24 mx-auto mb-4 border-2 border-dashed border-yellow-500/30 rounded-xl flex items-center justify-center">
+              <Code2 className="w-8 h-8 text-yellow-500" />
+            </div>
+            <p className="text-yellow-500 font-mono text-sm mb-2">
+              Connect to deploy
+            </p>
+            <p className="text-gray-500 text-xs">
+              Link GitHub & Vercel in BYOS settings
+            </p>
           </div>
         ) : (
           <div className="text-center">
@@ -116,7 +166,7 @@ export function PreviewPanel() {
               No preview available
             </p>
             <p className="text-gray-600 text-xs">
-              Connect GitHub & Vercel to enable live preview
+              Generate code to get started
             </p>
           </div>
         )}
@@ -125,7 +175,11 @@ export function PreviewPanel() {
       {/* URL bar */}
       {previewUrl && (
         <div className="px-4 py-2 border-t border-[#333] flex items-center gap-2">
-          <button className="p-1 text-gray-500 hover:text-white">
+          <button
+            onClick={refreshPreview}
+            className="p-1 text-gray-500 hover:text-white transition-colors"
+            title="Refresh preview"
+          >
             <RefreshCw className="w-3 h-3" />
           </button>
           <div className="flex-1 bg-[#1a1a1a] rounded px-3 py-1 text-xs font-mono text-gray-400 truncate">
