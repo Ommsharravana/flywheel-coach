@@ -11,10 +11,6 @@ import { CycleActions } from './CycleActions';
 import { CycleHeader } from './CycleHeader';
 import { NIFApplicationButton } from '@/components/nif/NIFApplicationButton';
 
-interface UserProfileRow {
-  active_event_id: string | null;
-}
-
 interface CyclePageProps {
   params: Promise<{ id: string }>;
 }
@@ -30,14 +26,6 @@ export default async function CyclePage({ params }: CyclePageProps) {
     redirect('/login');
   }
 
-  // Fetch user profile to check for active event (Appathon)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profileData } = await (supabase as any)
-    .rpc('get_user_profile', { p_user_id: effectiveUserId });
-
-  const userProfile = (profileData as UserProfileRow[] | null)?.[0] ?? null;
-  const hasActiveEvent = userProfile?.active_event_id !== null;
-
   // Fetch the cycle using effective user ID
   const { data: rawCycleData, error } = await supabase
     .from('cycles')
@@ -46,12 +34,23 @@ export default async function CyclePage({ params }: CyclePageProps) {
     .eq('user_id', effectiveUserId)
     .single();
 
+  // Check if cycle's event is active (for Submit to Appathon button)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cycleData = rawCycleData as any;
+  let hasActiveEvent = false;
+  if (cycleData?.event_id) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: eventData } = await (supabase as any)
+      .from('events')
+      .select('is_active')
+      .eq('id', cycleData.event_id)
+      .single();
+    hasActiveEvent = eventData?.is_active === true;
+  }
+
   if (error || !rawCycleData) {
     redirect('/dashboard');
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cycleData = rawCycleData as any;
 
   // Transform to Cycle type
   const cycle: Cycle = {
