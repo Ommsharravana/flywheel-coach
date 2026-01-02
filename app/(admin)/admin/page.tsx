@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { StatsCard } from '@/components/admin/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Repeat, Activity } from 'lucide-react';
+import { Users, Repeat, Activity, Rocket } from 'lucide-react';
 import Link from 'next/link';
 import { getAdminEvents } from '@/lib/methodologies/helpers';
 import { getEffectiveUser } from '@/lib/supabase/effective-user';
@@ -296,7 +296,7 @@ export default async function AdminDashboardPage() {
           <CardTitle className="text-lg text-stone-100">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <Link
               href="/admin/users"
               className="flex items-center gap-3 p-4 rounded-lg bg-stone-800/50 hover:bg-stone-800 transition-colors"
@@ -315,6 +315,16 @@ export default async function AdminDashboardPage() {
               <div>
                 <p className="font-medium text-stone-100">View Cycles</p>
                 <p className="text-xs text-stone-500">Monitor all flywheel cycles</p>
+              </div>
+            </Link>
+            <Link
+              href="/admin/nif-incubation"
+              className="flex items-center gap-3 p-4 rounded-lg bg-stone-800/50 hover:bg-stone-800 transition-colors"
+            >
+              <Rocket className="w-5 h-5 text-orange-400" />
+              <div>
+                <p className="font-medium text-stone-100">NIF Incubation</p>
+                <p className="text-xs text-stone-500">Pipeline & applications</p>
               </div>
             </Link>
             <Link

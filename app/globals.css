@@ -285,3 +285,217 @@ div[style*="position: fixed"][style*="right"] > button {
     font-size: 16px !important;
   }
 }
+
+/* ============================================
+   VIBE STUDIO - Terminal UI Styles
+   vibed.inc clone for JKKN Appathon 2.0
+   ============================================ */
+
+/* Vibe Studio CSS Variables */
+:root {
+  --vibe-bg: #0a0a0a;
+  --vibe-terminal-bg: #1a1a1a;
+  --vibe-terminal-border: #333;
+  --vibe-accent-orange: #f97316;
+  --vibe-accent-yellow: #fbbf24;
+  --vibe-accent-green: #22c55e;
+  --vibe-accent-red: #ef4444;
+  --vibe-grid-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Dotted grid background */
+.vibe-grid-background {
+  background-color: var(--vibe-bg);
+  background-image:
+    radial-gradient(circle, var(--vibe-grid-color) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Corner brackets decoration */
+.vibe-corner-brackets {
+  position: relative;
+}
+
+.vibe-corner-brackets::before,
+.vibe-corner-brackets::after {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-color: var(--vibe-accent-orange);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.vibe-corner-brackets::before {
+  top: 20px;
+  left: 20px;
+  border-width: 2px 0 0 2px;
+}
+
+.vibe-corner-brackets::after {
+  top: 20px;
+  right: 20px;
+  border-width: 2px 2px 0 0;
+}
+
+.vibe-corner-brackets-bottom::before,
+.vibe-corner-brackets-bottom::after {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-color: var(--vibe-accent-orange);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.vibe-corner-brackets-bottom::before {
+  bottom: 20px;
+  left: 20px;
+  border-width: 0 0 2px 2px;
+}
+
+.vibe-corner-brackets-bottom::after {
+  bottom: 20px;
+  right: 20px;
+  border-width: 0 2px 2px 0;
+}
+
+/* Gradient button */
+.vibe-btn-gradient {
+  background: linear-gradient(135deg, var(--vibe-accent-orange), var(--vibe-accent-yellow));
+  transition: all 0.2s ease;
+}
+
+.vibe-btn-gradient:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+}
+
+/* Terminal input styling */
+.vibe-terminal-input {
+  background: transparent;
+  border: 1px solid var(--vibe-terminal-border);
+  transition: border-color 0.2s ease;
+}
+
+.vibe-terminal-input:focus {
+  border-color: var(--vibe-accent-orange);
+  outline: none;
+}
+
+/* Progress bar segments */
+.vibe-progress-segment {
+  transition: background-color 0.3s ease;
+}
+
+.vibe-progress-segment.active {
+  background: var(--vibe-accent-yellow);
+}
+
+.vibe-progress-segment.inactive {
+  background: var(--vibe-terminal-border);
+}
+
+/* Selection button */
+.vibe-selection-btn {
+  border: 1px solid var(--vibe-terminal-border);
+  transition: all 0.2s ease;
+}
+
+.vibe-selection-btn:hover {
+  border-color: var(--vibe-accent-orange);
+}
+
+.vibe-selection-btn.selected {
+  border-color: var(--vibe-accent-orange);
+  background: rgba(249, 115, 22, 0.1);
+}
+
+/* Checkbox styling */
+.vibe-terminal-checkbox {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--vibe-terminal-border);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vibe-terminal-checkbox:checked {
+  background: var(--vibe-accent-orange);
+  border-color: var(--vibe-accent-orange);
+}
+
+/* Slider styling */
+.vibe-terminal-slider {
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--vibe-terminal-border);
+  border-radius: 2px;
+}
+
+.vibe-terminal-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--vibe-accent-orange);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.vibe-terminal-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--vibe-accent-orange);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+/* Live indicator pulse */
+@keyframes vibe-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.vibe-live-indicator {
+  animation: vibe-pulse 2s ease-in-out infinite;
+}
+
+/* Dashed border box for uploads */
+.vibe-dashed-box {
+  border: 2px dashed var(--vibe-terminal-border);
+  transition: border-color 0.2s ease;
+}
+
+.vibe-dashed-box:hover {
+  border-color: var(--vibe-accent-orange);
+}
+
+/* Terminal window styling */
+.vibe-terminal-window {
+  background: var(--vibe-terminal-bg);
+  border: 1px solid var(--vibe-terminal-border);
+  border-radius: 8px;
+}
+
+/* Feature card styling */
+.vibe-feature-card {
+  background: rgba(26, 26, 26, 0.5);
+  border: 1px solid var(--vibe-terminal-border);
+  transition: all 0.2s ease;
+}
+
+.vibe-feature-card:hover {
+  border-color: var(--vibe-accent-orange);
+  background: rgba(249, 115, 22, 0.05);
+}
+
+.vibe-feature-card.selected {
+  border-color: var(--vibe-accent-orange);
+  background: rgba(249, 115, 22, 0.1);
+}
