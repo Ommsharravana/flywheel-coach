@@ -192,14 +192,24 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
         return;
       }
 
+      // Fetch current cycle's event_id to inherit for the new cycle
+      // (event_id is required by database constraint)
+      const { data: currentCycleData } = await supabase
+        .from('cycles')
+        .select('event_id')
+        .eq('id', cycle.id)
+        .single();
+
       // DB uses 'name' not 'title', and doesn't have 'step_statuses' column
       const newCycleId = crypto.randomUUID();
-      const { error: cycleError } = await supabase.from('cycles').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: cycleError } = await (supabase.from('cycles') as any).insert({
         id: newCycleId,
         user_id: user.id,
         name: 'New Cycle',
         status: 'active',
         current_step: 1,
+        event_id: (currentCycleData as { event_id: string } | null)?.event_id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
