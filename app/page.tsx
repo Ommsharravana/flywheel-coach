@@ -210,7 +210,7 @@ export default function Home() {
             <p className="mt-4 text-stone-400">
               {t('landing.ctaSubtitle')}
             </p>
-            <div className="mt-10">
+            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button
                 size="lg"
                 asChild
@@ -218,23 +218,38 @@ export default function Home() {
               >
                 <Link href="/signup">{t('landing.ctaButton')}</Link>
               </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="border-stone-700 text-stone-300 hover:bg-stone-800/50 hover:text-stone-100 text-lg px-8 py-6"
+              >
+                <Link href="/showcase">View Showcase →</Link>
+              </Button>
             </div>
           </div>
         </section>
 
         {/* Footer */}
         <footer className="border-t border-stone-800 py-8 px-4">
-          <div className="mx-auto max-w-6xl flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <FlywheelLogo size="sm" />
-              <span className="text-sm text-stone-500">
-                {t('landing.poweredBy')}
-              </span>
-            </div>
-            <div className="flex gap-6 text-sm text-stone-500">
-              <Link href="/about" className="hover:text-stone-300">{t('landing.about')}</Link>
-              <Link href="/privacy" className="hover:text-stone-300">{t('landing.privacy')}</Link>
-              <Link href="/terms" className="hover:text-stone-300">{t('landing.terms')}</Link>
+          <div className="mx-auto max-w-6xl">
+            {/* Main footer links */}
+            <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
+              <div className="flex items-center gap-2">
+                <FlywheelLogo size="sm" />
+                <span className="text-sm text-stone-500">
+                  {t('landing.poweredBy')}
+                </span>
+              </div>
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-stone-500">
+                <Link href="/showcase" className="hover:text-amber-400 font-medium">Showcase</Link>
+                <Link href="/metrics" className="hover:text-amber-400 font-medium">Platform Metrics</Link>
+                <Link href="/february-challenge" className="hover:text-amber-400 font-medium">February Challenge</Link>
+                <span className="text-stone-700">|</span>
+                <Link href="/about" className="hover:text-stone-300">{t('landing.about')}</Link>
+                <Link href="/privacy" className="hover:text-stone-300">{t('landing.privacy')}</Link>
+                <Link href="/terms" className="hover:text-stone-300">{t('landing.terms')}</Link>
+              </div>
             </div>
           </div>
         </footer>
