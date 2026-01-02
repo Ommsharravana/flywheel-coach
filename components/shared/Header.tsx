@@ -94,7 +94,7 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
             </span>
           </Link>
 
-          {/* Navigation */}
+          {/* Navigation - Logged In Users */}
           {user && !isAuthPage && (
             <nav className="hidden md:flex items-center gap-1">
               <NavLink href="/dashboard" active={pathname === '/dashboard'}>
@@ -120,6 +120,24 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
                   </span>
                 </NavLink>
               )}
+            </nav>
+          )}
+
+          {/* Navigation - Public (Not Logged In) */}
+          {!user && !isAuthPage && (
+            <nav className="hidden md:flex items-center gap-1">
+              <NavLink href="/showcase" active={pathname === '/showcase'}>
+                <span className="flex items-center gap-1.5">
+                  <Trophy className="h-3.5 w-3.5" />
+                  Showcase
+                </span>
+              </NavLink>
+              <NavLink href="/metrics" active={pathname === '/metrics'}>
+                Metrics
+              </NavLink>
+              <NavLink href="/february-challenge" active={pathname === '/february-challenge'}>
+                February Challenge
+              </NavLink>
             </nav>
           )}
 
