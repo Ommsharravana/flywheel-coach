@@ -2,22 +2,27 @@
 
 import { useSwipeable } from 'react-swipeable';
 import { useRouter } from 'next/navigation';
-import { Cycle, FLYWHEEL_STEPS, canAccessStep, getStepStatus } from '@/lib/types/cycle';
+import { Cycle, getFlywheelSteps, canAccessStep, getStepStatus } from '@/lib/types/cycle';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 
 interface MobileStepNavigationProps {
   cycle: Cycle;
   currentStep: number;
   children: ReactNode;
+  isAppathonMode?: boolean;
 }
 
-export function MobileStepNavigation({ cycle, currentStep, children }: MobileStepNavigationProps) {
+export function MobileStepNavigation({ cycle, currentStep, children, isAppathonMode = true }: MobileStepNavigationProps) {
   const router = useRouter();
 
+  // Get steps based on whether we're in Appathon mode (includes step 9)
+  const steps = useMemo(() => getFlywheelSteps(isAppathonMode), [isAppathonMode]);
+  const maxStep = steps.length;
+
   const canGoBack = currentStep > 1 && canAccessStep(cycle, currentStep - 1);
-  const canGoForward = currentStep < 8 && canAccessStep(cycle, currentStep + 1);
+  const canGoForward = currentStep < maxStep && canAccessStep(cycle, currentStep + 1);
 
   const goToPrevStep = () => {
     if (canGoBack) {
@@ -46,7 +51,7 @@ export function MobileStepNavigation({ cycle, currentStep, children }: MobileSte
     preventScrollOnSwipe: false,
   });
 
-  const currentStepInfo = FLYWHEEL_STEPS[currentStep - 1];
+  const currentStepInfo = steps[currentStep - 1];
 
   return (
     <div className="md:hidden">
@@ -93,7 +98,7 @@ export function MobileStepNavigation({ cycle, currentStep, children }: MobileSte
 
         {/* Progress dots */}
         <div className="flex items-center justify-center gap-2">
-          {FLYWHEEL_STEPS.map((step) => {
+          {steps.map((step) => {
             const status = getStepStatus(cycle, step.id);
             const isActive = step.id === currentStep;
             const isAccessible = canAccessStep(cycle, step.id);
@@ -148,7 +153,7 @@ export function MobileStepNavigation({ cycle, currentStep, children }: MobileSte
           </button>
 
           <div className="flex items-center gap-1.5">
-            {FLYWHEEL_STEPS.map((step) => {
+            {steps.map((step) => {
               const status = getStepStatus(cycle, step.id);
               const isActive = step.id === currentStep;
 

@@ -346,7 +346,6 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
       }
 
       toast.success('Draft saved!');
-      router.refresh();
       return submissionId;
     } catch (error: unknown) {
       const supabaseError = error as { message?: string; code?: string; details?: string; hint?: string };
