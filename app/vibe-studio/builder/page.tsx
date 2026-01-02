@@ -32,6 +32,15 @@ export default function VibeStudioBuilder() {
     }
   }, [appName, appIdea, features, platform, setProject]);
 
+  // Build conversation history from messages
+  const getConversationHistory = () => {
+    const { messages } = useBuilderStore.getState();
+    return messages.map(m => ({
+      role: m.role,
+      content: m.content,
+    }));
+  };
+
   // Handle sending a message to Claude
   const handleSendMessage = async (message: string) => {
     // Add user message
@@ -40,9 +49,72 @@ export default function VibeStudioBuilder() {
     setStreamingContent('');
 
     try {
-      // TODO: Replace with actual Claude API call
-      // For now, simulate AI response with code generation
-      await simulateAIResponse(message);
+      const { projectName, projectDescription } = useBuilderStore.getState();
+      const conversationHistory = getConversationHistory();
+
+      // Call the streaming API
+      const response = await fetch('/api/vibe-studio/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: message,
+          conversationHistory: conversationHistory.slice(0, -1), // Exclude the message we just added
+          projectName,
+          projectDescription,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate code');
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      const decoder = new TextDecoder();
+      let fullContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'text') {
+                fullContent += data.content;
+                useBuilderStore.getState().appendStreamingContent(data.content);
+              } else if (data.type === 'files') {
+                // Add generated files to the store
+                for (const file of data.files) {
+                  addFile({
+                    path: file.path,
+                    content: file.content,
+                    language: file.language,
+                  });
+                }
+              } else if (data.type === 'error') {
+                throw new Error(data.message);
+              }
+            } catch (parseError) {
+              // Ignore JSON parse errors for incomplete chunks
+              if (line.slice(6).trim()) {
+                console.warn('Parse error:', parseError);
+              }
+            }
+          }
+        }
+      }
+
+      // Add the complete assistant message
+      addMessage({ role: 'assistant', content: fullContent });
     } catch (error) {
       console.error('Error generating code:', error);
       addMessage({
@@ -52,93 +124,6 @@ export default function VibeStudioBuilder() {
     } finally {
       setIsGenerating(false);
       setStreamingContent('');
-    }
-  };
-
-  // Simulate AI response (to be replaced with actual Claude API)
-  const simulateAIResponse = async (userMessage: string) => {
-    const { projectName } = useBuilderStore.getState();
-
-    // Simulate streaming response
-    const response = `I'll help you build "${projectName}". Based on your request: "${userMessage}"
-
-I'm generating the following files:
-
-1. **app/page.tsx** - Main landing page
-2. **components/Header.tsx** - Navigation header
-3. **lib/utils.ts** - Utility functions
-
-Let me create these files for you...`;
-
-    // Stream the response character by character
-    for (const char of response) {
-      useBuilderStore.getState().appendStreamingContent(char);
-      await new Promise(resolve => setTimeout(resolve, 10));
-    }
-
-    // Add the final message
-    addMessage({ role: 'assistant', content: response });
-
-    // Add sample generated files
-    const sampleFiles = [
-      {
-        path: 'app/page.tsx',
-        language: 'typescript',
-        content: `import { Header } from '@/components/Header'
-
-export default function Home() {
-  return (
-    <main className="min-h-screen bg-gray-900 text-white">
-      <Header />
-      <div className="container mx-auto px-4 py-16">
-        <h1 className="text-4xl font-bold mb-4">${projectName}</h1>
-        <p className="text-gray-400">Your app is ready to customize!</p>
-      </div>
-    </main>
-  )
-}`,
-      },
-      {
-        path: 'components/Header.tsx',
-        language: 'typescript',
-        content: `'use client'
-
-export function Header() {
-  return (
-    <header className="border-b border-gray-800 py-4">
-      <div className="container mx-auto px-4 flex justify-between items-center">
-        <span className="font-bold text-xl">${projectName}</span>
-        <nav className="flex gap-6">
-          <a href="#" className="hover:text-orange-500">Home</a>
-          <a href="#" className="hover:text-orange-500">Features</a>
-          <a href="#" className="hover:text-orange-500">About</a>
-        </nav>
-      </div>
-    </header>
-  )
-}`,
-      },
-      {
-        path: 'lib/utils.ts',
-        language: 'typescript',
-        content: `export function cn(...classes: (string | undefined | null | false)[]) {
-  return classes.filter(Boolean).join(' ')
-}
-
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(date)
-}`,
-      },
-    ];
-
-    // Add files with a delay to simulate generation
-    for (const file of sampleFiles) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      addFile(file);
     }
   };
 
