@@ -14,7 +14,7 @@ interface LeaderboardEntry {
   problems_saved: number;
   problems_solved: number;
   problems_validated: number;
-  participant_count: number;
+  builder_count: number;
 }
 
 interface LeaderboardData {
@@ -29,7 +29,7 @@ interface LeaderboardData {
     completed_cycles: number;
     problems_identified: number;
     problems_saved: number;
-    total_participants: number;
+    total_builders: number;
     institutions: number;
   };
 }
@@ -121,8 +121,8 @@ export function InstitutionLeaderboard({ eventSlug = 'appathon-2' }: Institution
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <div className="text-right">
-                  <span className="font-bold text-blue-400">{entry.participant_count}</span>
-                  <span className="text-stone-500 ml-1 hidden sm:inline">participants</span>
+                  <span className="font-bold text-blue-400">{entry.builder_count}</span>
+                  <span className="text-stone-500 ml-1 hidden sm:inline">builders</span>
                 </div>
                 <div className="text-right">
                   <span className="font-bold text-amber-400">{entry.problems_identified}</span>
@@ -145,8 +145,8 @@ export function InstitutionLeaderboard({ eventSlug = 'appathon-2' }: Institution
               <div className="text-xs text-stone-500">Institutions</div>
             </div>
             <div>
-              <div className="text-lg font-bold text-blue-400">{data.totals.total_participants}</div>
-              <div className="text-xs text-stone-500">Participants</div>
+              <div className="text-lg font-bold text-blue-400">{data.totals.total_builders}</div>
+              <div className="text-xs text-stone-500">Builders</div>
             </div>
             <div>
               <div className="text-lg font-bold text-amber-400">{data.totals.problems_identified}</div>

@@ -34,7 +34,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
   const [savedToBankId, setSavedToBankId] = useState<string | null>(null);
 
   // Problem Bank is now available to ALL users (not just superadmin)
-  // This captures problems from all participants during Appathon
+  // This captures problems from all builders during Appathon
 
   const hasMinimumData = usersReached > 0 || timeSavedMinutes > 0;
 

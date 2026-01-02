@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import type { Event, EventWithParticipantCount } from '@/lib/events/types';
+import type { Event, EventWithBuilderCount } from '@/lib/events/types';
 
 // Helper to check if user is superadmin
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,7 +17,7 @@ async function isSuperAdmin(supabase: any): Promise<boolean> {
   return (profile as { role: string } | null)?.role === 'superadmin';
 }
 
-// GET /api/events - List all active events with participant counts
+// GET /api/events - List all active events with builder counts
 // Optional query param: ?slug=xxx to get a single event
 export async function GET(request: NextRequest) {
   try {
@@ -54,28 +54,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
     }
 
-    // Fetch participant counts using RPC function (bypasses RLS)
+    // Fetch builder counts using RPC function (bypasses RLS)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: countsData, error: countsError } = await (supabase as any)
-      .rpc('get_all_event_participant_counts');
+      .rpc('get_all_event_builder_counts');
 
     if (countsError) {
-      console.error('Error fetching participant counts:', countsError);
+      console.error('Error fetching builder counts:', countsError);
       // Continue without counts if RPC fails
     }
 
-    // Create a map of event_id -> participant_count
+    // Create a map of event_id -> builder_count
     const countsMap = new Map<string, number>();
     if (countsData) {
-      for (const item of countsData as { event_id: string; participant_count: number }[]) {
-        countsMap.set(item.event_id, item.participant_count);
+      for (const item of countsData as { event_id: string; builder_count: number }[]) {
+        countsMap.set(item.event_id, item.builder_count);
       }
     }
 
     // Merge events with counts
-    const eventsWithCounts: EventWithParticipantCount[] = ((events as Event[]) || []).map((event) => ({
+    const eventsWithCounts: EventWithBuilderCount[] = ((events as Event[]) || []).map((event) => ({
       ...event,
-      participant_count: countsMap.get(event.id) || 0,
+      builder_count: countsMap.get(event.id) || 0,
     }));
 
     return NextResponse.json(eventsWithCounts);

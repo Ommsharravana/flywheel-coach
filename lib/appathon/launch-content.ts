@@ -161,7 +161,7 @@ export const ELIGIBILITY = {
     'No prior coding experience required',
   ],
   notEligible: [
-    'External participants (non-JKKN)',
+    'External builders (non-JKKN)',
     'Incomplete team registration',
     'Using platforms other than Lovable',
   ],
@@ -249,7 +249,7 @@ export const PRIZE_STRUCTURE_DETAILED = {
     { category: 'Best Community Tool', amount: 3000, criteria: 'Most helpful to other learners' },
   ],
   totalPool: 60000,
-  forAllParticipants: [
+  forAllBuilders: [
     'Certificate of Participation',
     'LinkedIn recommendation from JKKN',
     'Portfolio addition with verified project link',
@@ -465,8 +465,8 @@ export const APPATHON_FAQ = {
       answer: 'Yes! A team could win First Prize AND Best Healthcare Solution if they excel in both.',
     },
     {
-      question: "Is there any recognition for participants who don't win?",
-      answer: 'Yes! All participants get: Certificate of Participation, LinkedIn recommendation, Portfolio addition.',
+      question: "Is there any recognition for builders who don't win?",
+      answer: 'Yes! All builders get: Certificate of Participation, LinkedIn recommendation, Portfolio addition.',
     },
   ],
 } as const;

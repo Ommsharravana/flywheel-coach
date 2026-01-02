@@ -111,7 +111,7 @@ export default async function CurateProblemPage({ params }: CurateProblemPagePro
           <CardContent className="pt-6 h-full flex items-center">
             <p className="text-sm text-stone-400">
               <span className="text-amber-400 font-medium">Recommended</span> problems are highlighted
-              for participants, but they can choose any curated problem.
+              for builders, but they can choose any curated problem.
             </p>
           </CardContent>
         </Card>

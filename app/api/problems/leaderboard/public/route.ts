@@ -23,16 +23,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    // Get participant counts per institution using RPC
+    // Get builder counts per institution using RPC
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: institutionStats } = await (supabase as any)
       .rpc('get_event_institution_stats', { target_event_id: event.id });
 
-    // Create a map of institution_id -> participant_count
-    const participantCounts: Record<string, number> = {};
+    // Create a map of institution_id -> builder_count
+    const builderCounts: Record<string, number> = {};
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (institutionStats || []).forEach((stat: any) => {
-      participantCounts[stat.institution_id] = stat.participant_count || 0;
+      builderCounts[stat.institution_id] = stat.builder_count || 0;
     });
 
     // Get cycles for this event, grouped by institution
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
         problems_saved: number;
         problems_solved: number;
         problems_validated: number;
-        participant_count: number;
+        builder_count: number;
       }
     > = {};
 
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
           problems_saved: 0,
           problems_solved: 0,
           problems_validated: 0,
-          participant_count: participantCounts[instId] || 0,
+          builder_count: builderCounts[instId] || 0,
         };
       }
 
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
       completed_cycles: leaderboard.reduce((sum, i) => sum + i.completed_cycles, 0),
       problems_identified: leaderboard.reduce((sum, i) => sum + i.problems_identified, 0),
       problems_saved: leaderboard.reduce((sum, i) => sum + i.problems_saved, 0),
-      total_participants: leaderboard.reduce((sum, i) => sum + i.participant_count, 0),
+      total_builders: leaderboard.reduce((sum, i) => sum + i.builder_count, 0),
       institutions: leaderboard.length,
     };
 

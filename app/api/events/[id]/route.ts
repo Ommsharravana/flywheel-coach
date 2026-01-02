@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    // Get participant count (using type assertion)
+    // Get builder count (using type assertion)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { count } = await (supabase as any)
       .from('users')
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({
       ...(event as Event),
-      participant_count: count || 0,
+      builder_count: count || 0,
     });
   } catch (error) {
     console.error('Error in GET /api/events/[id]:', error);

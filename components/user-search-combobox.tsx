@@ -23,7 +23,7 @@ interface UserSearchComboboxProps {
   roleFilter?: string;
   /** Filter by category ('learner' or 'senior_learner') */
   categoryFilter?: 'learner' | 'senior_learner';
-  /** Event ID to scope search to event participants */
+  /** Event ID to scope search to event builders */
   eventId?: string;
   /** Currently selected user */
   value?: UserResult | null;
@@ -272,7 +272,7 @@ interface UserMultiSelectProps {
   roleFilter?: string;
   /** Filter by category ('learner' or 'senior_learner') */
   categoryFilter?: 'learner' | 'senior_learner';
-  /** Event ID to scope search to event participants */
+  /** Event ID to scope search to event builders */
   eventId?: string;
   /** Currently selected users */
   value: UserResult[];

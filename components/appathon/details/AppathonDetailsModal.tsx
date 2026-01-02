@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { X, Zap, ExternalLink, Calendar, Users, Loader2 } from 'lucide-react';
-import type { EventWithParticipantCount } from '@/lib/events/types';
+import type { EventWithBuilderCount } from '@/lib/events/types';
 import { getBannerColorClasses, isEventLive, getDaysRemaining, getDaysUntilStart } from '@/lib/events/types';
 import { APPATHON_THEMES } from '@/lib/appathon/content';
 import { TWO_PHASE_FORMAT } from '@/lib/appathon/launch-content';
@@ -13,7 +13,7 @@ import { MyJKKNTrackHighlight } from './MyJKKNTrackHighlight';
 import { PrizeSummary } from './PrizeSummary';
 
 interface AppathonDetailsModalProps {
-  event: EventWithParticipantCount;
+  event: EventWithBuilderCount;
   isActive: boolean;
   onJoinAndStart: () => void;
   onLeave: () => void;
@@ -78,7 +78,7 @@ export function AppathonDetailsModal({
             <div className="flex items-center gap-4 text-white/80 text-sm">
               <div className="flex items-center gap-1.5">
                 <Users className="h-4 w-4" />
-                <span>{event.participant_count} participants</span>
+                <span>{event.builder_count} builders</span>
               </div>
               <div className="px-2 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold">
                 {isLive ? `${daysRemaining} days left` : `Starts in ${daysRemaining} days`}
@@ -195,7 +195,7 @@ export function AppathonDetailsModal({
  * Helper function to detect if an event is an appathon event
  * Based on event name or type field
  */
-export function isAppathonEvent(event: EventWithParticipantCount): boolean {
+export function isAppathonEvent(event: EventWithBuilderCount): boolean {
   const name = event.name.toLowerCase();
   return name.includes('appathon') || name.includes('app-a-thon');
 }

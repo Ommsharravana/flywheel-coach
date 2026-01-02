@@ -279,7 +279,7 @@ export default function EventSettingsPage() {
             <div>
               <div className="font-medium text-stone-100">Active Status</div>
               <div className="text-sm text-stone-500">
-                Inactive events are hidden from participants
+                Inactive events are hidden from builders
               </div>
             </div>
             <Switch checked={isActive} onCheckedChange={setIsActive} />

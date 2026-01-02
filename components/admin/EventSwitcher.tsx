@@ -18,7 +18,7 @@ interface AdminEvent {
   start_date: string | null;
   end_date: string | null;
   is_active: boolean;
-  participant_count: number;
+  builder_count: number;
 }
 
 interface EventSwitcherProps {
@@ -85,7 +85,7 @@ export function EventSwitcher({ userId, userRole, currentEventId, onEventChange 
           <span className="text-sm font-medium text-stone-100">{event.name}</span>
           <span className="text-xs text-stone-400 flex items-center gap-1">
             <Users className="h-3 w-3" />
-            {event.participant_count} participants
+            {event.builder_count} builders
           </span>
         </div>
       </div>
@@ -111,7 +111,7 @@ export function EventSwitcher({ userId, userRole, currentEventId, onEventChange 
             <div className="flex items-center justify-between gap-2">
               <span>{event.name}</span>
               <span className="text-xs text-stone-400">
-                {event.participant_count} users
+                {event.builder_count} builders
               </span>
             </div>
           </SelectItem>

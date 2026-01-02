@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * - q: Search query (name or email, partial match)
  * - role: Optional role filter for permission levels (e.g., 'admin', 'builder')
  * - category: Optional category filter ('learner' or 'senior_learner')
- * - event_id: Optional event ID to scope search to event participants
+ * - event_id: Optional event ID to scope search to event builders
  * - limit: Max results (default 20)
  */
 export async function GET(request: NextRequest) {

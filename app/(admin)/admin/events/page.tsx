@@ -22,7 +22,7 @@ import {
   LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { EventWithParticipantCount, EventBannerColor } from '@/lib/events/types';
+import type { EventWithBuilderCount, EventBannerColor } from '@/lib/events/types';
 
 const bannerColors: { value: EventBannerColor; label: string; class: string }[] = [
   { value: 'amber', label: 'Amber', class: 'bg-amber-500' },
@@ -33,7 +33,7 @@ const bannerColors: { value: EventBannerColor; label: string; class: string }[] 
 ];
 
 export default function AdminEventsPage() {
-  const [events, setEvents] = useState<EventWithParticipantCount[]>([]);
+  const [events, setEvents] = useState<EventWithBuilderCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -127,7 +127,7 @@ export default function AdminEventsPage() {
     setTimeout(() => setCopiedSlug(null), 2000);
   }
 
-  function getEventStatus(event: EventWithParticipantCount) {
+  function getEventStatus(event: EventWithBuilderCount) {
     const now = new Date();
     const start = new Date(event.start_date);
     const end = new Date(event.end_date);
@@ -343,7 +343,7 @@ export default function AdminEventsPage() {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Users className="w-4 h-4" />
-                          <span>{event.participant_count} participants</span>
+                          <span>{event.builder_count} builders</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <LinkIcon className="w-4 h-4" />

@@ -4,15 +4,15 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Users, Clock, Zap, ChevronRight, Trophy, Sparkles, X, Loader2 } from 'lucide-react';
 import { useActiveEvent } from '@/lib/context/EventContext';
-import type { EventWithParticipantCount } from '@/lib/events/types';
+import type { EventWithBuilderCount } from '@/lib/events/types';
 import { getBannerColorClasses, isEventLive, isEventUpcoming, getDaysRemaining, getDaysUntilStart } from '@/lib/events/types';
 import { AppathonDetailsModal, isAppathonEvent } from '@/components/appathon/details/AppathonDetailsModal';
 
 export function EventSelector() {
   const { activeEvent, joinAndStart, leaveEvent, isJoining } = useActiveEvent();
-  const [events, setEvents] = useState<EventWithParticipantCount[]>([]);
+  const [events, setEvents] = useState<EventWithBuilderCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEvent, setSelectedEvent] = useState<EventWithParticipantCount | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventWithBuilderCount | null>(null);
 
   // Fetch events on mount
   useEffect(() => {
@@ -121,7 +121,7 @@ export function EventSelector() {
 }
 
 interface EventCardProps {
-  event: EventWithParticipantCount;
+  event: EventWithBuilderCount;
   isActive: boolean;
   onJoinAndStart: () => void;
   onLeave: () => void;
@@ -213,7 +213,7 @@ function EventCard({ event, isActive, onJoinAndStart, onLeave, onViewDetails, is
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center gap-1.5 text-stone-400">
               <Users className="h-4 w-4" />
-              <span className="text-sm">{event.participant_count} joined</span>
+              <span className="text-sm">{event.builder_count} builders</span>
             </div>
             <div className="flex items-center gap-1.5 text-stone-400">
               <Calendar className="h-4 w-4" />
@@ -278,7 +278,7 @@ function EventCard({ event, isActive, onJoinAndStart, onLeave, onViewDetails, is
 }
 
 interface EventDetailsModalProps {
-  event: EventWithParticipantCount;
+  event: EventWithBuilderCount;
   isActive: boolean;
   onJoinAndStart: () => void;
   onLeave: () => void;

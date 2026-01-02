@@ -87,12 +87,12 @@ export default async function EventPage({ params }: EventPageProps) {
     .rpc('get_event_stats', { target_event_slug: slug });
 
   const stats = (statsData as {
-    total_participants: number;
+    total_builders: number;
     total_cycles: number;
     total_problems: number;
   }[])?.[0];
 
-  const participantCount = stats?.total_participants || 0;
+  const builderCount = stats?.total_builders || 0;
   const cycleCount = stats?.total_cycles || 0;
   const problemCount = stats?.total_problems || 0;
 
@@ -174,8 +174,8 @@ export default async function EventPage({ params }: EventPageProps) {
                   <Users className="h-6 w-6 text-amber-400" />
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-stone-100">{participantCount || 0}</div>
-                  <p className="text-sm text-stone-500">Participants</p>
+                  <div className="text-3xl font-bold text-stone-100">{builderCount || 0}</div>
+                  <p className="text-sm text-stone-500">Builders</p>
                 </div>
               </div>
             </CardContent>
@@ -327,7 +327,7 @@ export default async function EventPage({ params }: EventPageProps) {
           <CardContent className="py-8 text-center">
             <h2 className="text-2xl font-bold text-stone-100 mb-2">Ready to make an impact?</h2>
             <p className="text-stone-400 mb-6">
-              Join {participantCount || 0}+ participants solving real problems
+              Join {builderCount || 0}+ builders solving real problems
             </p>
             <div className="flex items-center justify-center gap-4">
               <Link href="/signup">

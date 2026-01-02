@@ -68,7 +68,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
   const methodology = getMethodologyForEvent(event.config);
 
   // Get statistics
-  const { count: participantCount } = await supabase
+  const { count: builderCount } = await supabase
     .from('users')
     .select('*', { count: 'exact', head: true })
     .eq('active_event_id', event.id);
@@ -121,14 +121,14 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
       } | null;
     }> | null };
 
-  // Get participant breakdown by institution
+  // Get builder breakdown by institution
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: institutionBreakdown } = await (supabase as any)
     .rpc('get_event_institution_stats', { target_event_id: event.id }) as {
     data: Array<{
       institution_id: string;
       institution_name: string;
-      participant_count: number;
+      builder_count: number;
       cycle_count: number;
     }> | null
   };
@@ -205,8 +205,8 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
                 <Users className="h-6 w-6 text-blue-400" />
               </div>
               <div>
-                <div className="text-3xl font-bold text-stone-100">{participantCount || 0}</div>
-                <p className="text-sm text-stone-500">Participants</p>
+                <div className="text-3xl font-bold text-stone-100">{builderCount || 0}</div>
+                <p className="text-sm text-stone-500">Builders</p>
               </div>
             </div>
           </CardContent>
@@ -272,7 +272,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
           <Card className="bg-stone-900/50 border-stone-800">
             <CardHeader>
               <CardTitle className="text-lg text-stone-100">Recent Cycle Activity</CardTitle>
-              <CardDescription>Latest updates from participants</CardDescription>
+              <CardDescription>Latest updates from builders</CardDescription>
             </CardHeader>
             <CardContent>
               {recentCycles && recentCycles.length > 0 ? (
@@ -329,7 +329,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
           <Card className="bg-stone-900/50 border-stone-800">
             <CardHeader>
               <CardTitle className="text-lg text-stone-100">Institution Breakdown</CardTitle>
-              <CardDescription>Participation by institution</CardDescription>
+              <CardDescription>Builders by institution</CardDescription>
             </CardHeader>
             <CardContent>
               {institutionBreakdown && institutionBreakdown.length > 0 ? (
@@ -347,8 +347,8 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
                       </div>
                       <div className="flex items-center gap-4 text-sm">
                         <div className="text-right">
-                          <span className="font-bold text-stone-100">{inst.participant_count}</span>
-                          <span className="text-stone-500 ml-1">participants</span>
+                          <span className="font-bold text-stone-100">{inst.builder_count}</span>
+                          <span className="text-stone-500 ml-1">builders</span>
                         </div>
                         <div className="text-right">
                           <span className="font-bold text-amber-400">{inst.cycle_count}</span>
@@ -385,13 +385,13 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
           </Card>
         </Link>
 
-        <Link href={`/admin/events/${slug}/participants`}>
+        <Link href={`/admin/events/${slug}/builders`}>
           <Card className="bg-stone-900/50 border-stone-800 hover:border-stone-700 transition-colors cursor-pointer">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-blue-400" />
                 <div>
-                  <div className="font-medium text-stone-100">Participants</div>
+                  <div className="font-medium text-stone-100">Builders</div>
                   <div className="text-sm text-stone-500">Manage users</div>
                 </div>
               </div>

@@ -1,233 +1,252 @@
 {
   "project": "JKKN Solution Studio",
-  "version": "1.0.0",
-  "target": "MVP in 14 days",
+  "version": "2.0.0",
+  "phase": "Post-Appathon Enhancements",
+  "demo_day": "2026-01-07",
+  "completed_mvp": [
+    {"id": "F00", "name": "Project Setup", "status": "complete"},
+    {"id": "F01", "name": "Authentication", "status": "complete"},
+    {"id": "F02", "name": "Dashboard", "status": "complete"},
+    {"id": "F03", "name": "Flywheel Navigator", "status": "complete"},
+    {"id": "F04", "name": "Problem Discovery", "status": "complete"},
+    {"id": "F05", "name": "Context Discovery", "status": "complete"},
+    {"id": "F06", "name": "Value Discovery", "status": "complete"},
+    {"id": "F07", "name": "Workflow Classifier", "status": "complete"},
+    {"id": "F08", "name": "Prompt Generator", "status": "complete"},
+    {"id": "F09", "name": "Build Tracker", "status": "complete"},
+    {"id": "F10", "name": "Impact Dashboard", "status": "complete"},
+    {"id": "F11", "name": "AI Coach", "status": "complete"},
+    {"id": "F12", "name": "Portfolio", "status": "complete"},
+    {"id": "F13", "name": "Super Admin Dashboard", "status": "complete"}
+  ],
   "features": [
     {
-      "id": "F00",
-      "name": "Project Setup",
-      "description": "Initialize Next.js, Supabase, and base structure",
+      "id": "P01",
+      "name": "Public Portfolio Showcase",
+      "description": "Public page showing completed Appathon projects with team, problem, live URL, and impact metrics. Accessible without login.",
       "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Create Next.js 14 project with App Router",
-        "Configure Tailwind CSS",
-        "Install and configure shadcn/ui",
-        "Set up Supabase client",
-        "Create database schema (run migrations)",
-        "Configure environment variables",
-        "Set up basic layout components"
-      ]
+      "deadline": "2026-01-07",
+      "status": "not-started",
+      "test_steps": [
+        "Navigate to /portfolio as unauthenticated user - page loads without login",
+        "Verify Appathon projects display with: project name, team members, problem statement, live URL",
+        "Verify cards are polished and professional with JKKN branding",
+        "Verify external sharing works (copy link)",
+        "Test on mobile viewport - responsive design works"
+      ],
+      "dependencies": []
     },
     {
-      "id": "F01",
-      "name": "Authentication",
-      "description": "User signup, login, and profile",
+      "id": "P02",
+      "name": "NIF Pipeline Entry",
+      "description": "Validated projects can apply for tiered incubation. Tier 1: light support (mentor + resources + connections). Admin approves and suggests 3 mentors, team picks 1.",
       "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Supabase Auth setup",
-        "Login page",
-        "Signup page",
-        "Protected routes middleware",
-        "User profile page",
-        "Session management"
-      ]
+      "deadline": "2026-01-07",
+      "status": "not-started",
+      "test_steps": [
+        "Complete a cycle to Step 8 with validation",
+        "See 'Apply for NIF Incubation' button on cycle page",
+        "Submit application with required fields",
+        "Admin receives notification and can view application",
+        "Admin can approve and assign 3 mentor suggestions",
+        "Applicant sees 3 mentor options and can pick 1"
+      ],
+      "dependencies": []
     },
     {
-      "id": "F02",
-      "name": "Dashboard",
-      "description": "User's main view with cycles list",
+      "id": "P03",
+      "name": "February Challenge Signup",
+      "description": "Next monthly challenge announced with registration open, countdown timer to Feb 1.",
       "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Dashboard layout",
-        "Cycles list view",
-        "New cycle button",
-        "Empty state",
-        "Quick stats"
-      ]
+      "deadline": "2026-01-07",
+      "status": "not-started",
+      "test_steps": [
+        "February challenge banner visible on dashboard",
+        "Countdown timer shows days/hours until Feb 1",
+        "One-click registration works",
+        "User sees confirmation after registering",
+        "Admin can configure challenge details (name, dates, description)"
+      ],
+      "dependencies": []
     },
     {
-      "id": "F03",
-      "name": "Flywheel Navigator",
-      "description": "Visual 8-step progress component",
+      "id": "P04",
+      "name": "Public Metrics Dashboard",
+      "description": "Live counters on homepage: startups incubated, learner earnings, active builders, problems solved. Real-time from database.",
       "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Navigator component",
-        "Step states (not-started, in-progress, complete)",
-        "Click to navigate between steps",
-        "Progress persistence"
-      ]
+      "deadline": "2026-01-07",
+      "status": "not-started",
+      "test_steps": [
+        "Metrics visible on public homepage without login",
+        "Counters show: startups incubated, learner earnings (₹), active builders, problems solved",
+        "Data pulls from actual database (not hardcoded)",
+        "Design is prominent and celebratory",
+        "Works on mobile"
+      ],
+      "dependencies": []
     },
     {
-      "id": "F04",
-      "name": "Problem Discovery",
-      "description": "Step 1: 5 questions and problem statement",
-      "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "5 questions form",
-        "Answer cards UI",
-        "Problem selection",
-        "Refinement textarea",
-        "Pain level slider",
-        "Frequency selector",
-        "Save to database"
-      ]
-    },
-    {
-      "id": "F05",
-      "name": "Context Discovery",
-      "description": "Step 2: Context template and interviews",
-      "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Context template form",
-        "Interview logger",
-        "Interview script generator",
-        "Referrals tracker",
-        "Save to database"
-      ]
-    },
-    {
-      "id": "F06",
-      "name": "Value Discovery",
-      "description": "Step 3: Desperate User Test",
-      "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Desperate User Test checklist",
-        "Evidence inputs for each",
-        "Score calculation",
-        "Priority matrix visualization",
-        "Decision display",
-        "Save to database"
-      ]
-    },
-    {
-      "id": "F07",
-      "name": "Workflow Classifier",
-      "description": "Step 4: Interactive decision tree",
-      "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Decision tree UI",
-        "10 workflow type cards",
-        "Selection confirmation",
-        "Save to database"
-      ]
-    },
-    {
-      "id": "F08",
-      "name": "Prompt Generator",
-      "description": "Step 5: Generate Lovable prompt",
-      "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Prompt template system",
-        "Pre-fill from cycle data",
-        "Editable prompt textarea",
-        "Copy to clipboard button",
-        "Save to database"
-      ]
-    },
-    {
-      "id": "F09",
-      "name": "Build Tracker",
-      "description": "Step 6: Lovable integration",
-      "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Open Lovable link",
-        "Project URL input",
-        "Screenshot upload",
-        "Mark complete button"
-      ]
-    },
-    {
-      "id": "F10",
-      "name": "Impact Dashboard",
-      "description": "Steps 7-8: Deployment and Impact measurement",
-      "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Deployment tracker (Step 7)",
-        "Live URL input",
-        "Metrics input forms (Step 8)",
-        "Impact score calculation",
-        "Score visualization",
-        "New problems input",
-        "Complete cycle"
-      ]
-    },
-    {
-      "id": "F11",
-      "name": "AI Coach",
-      "description": "Conversational guidance",
-      "priority": "P0",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Chat interface component",
-        "API route for Claude API",
-        "Step-specific system prompts",
-        "Suggested questions",
-        "Integrate into each step page"
-      ]
-    },
-    {
-      "id": "F12",
-      "name": "Portfolio",
-      "description": "Completed cycles showcase",
+      "id": "P05",
+      "name": "Cycle Retrospective",
+      "description": "Self-report questionnaire + data inference + mismatch detection for completed/abandoned cycles. Routes to next action.",
       "priority": "P1",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Portfolio list view",
-        "Portfolio entry card",
-        "Filter by workflow type",
-        "Impact score display"
-      ]
+      "deadline": "2026-01-13",
+      "status": "not-started",
+      "test_steps": [
+        "Prompt appears when cycle completes or is abandoned",
+        "Self-report questionnaire captures: what blocked, what worked, learnings",
+        "System calculates metrics: interviews done, users reached, retention",
+        "Mismatch detection flags contradictions",
+        "Suggests next action based on diagnosis"
+      ],
+      "dependencies": []
     },
     {
-      "id": "F13",
-      "name": "Super Admin Dashboard",
-      "description": "Comprehensive admin panel for superadmins with full user and cycle management",
+      "id": "P06",
+      "name": "Senior Learner Accountability",
+      "description": "Track that every Senior Learner mentors 5+ teams with dashboard visibility for department heads.",
       "priority": "P1",
-      "status": "complete",
-      "tested": true,
-      "subtasks": [
-        "Database migration for superadmin role and admin tables",
-        "Admin types file (lib/types/admin.ts)",
-        "Admin layout with sidebar navigation",
-        "Admin dashboard with stats overview",
-        "User management (list, create, edit, delete)",
-        "Cycle management (list, detail view)",
-        "User impersonation with session cookies",
-        "Impersonation banner UI",
-        "User export to CSV",
-        "Cycle notes (add, view, delete)",
-        "Cycle review status tracking",
-        "Activity logs API and page",
-        "Analytics page with charts",
-        "Step funnel chart component",
-        "Workflow distribution pie chart",
-        "User growth bar chart",
-        "Header link for superadmin users"
-      ]
+      "deadline": "2026-01-13",
+      "status": "not-started",
+      "test_steps": [
+        "Senior Learner dashboard shows: teams mentored count",
+        "Warning appears if below 5 teams",
+        "Department heads can view their Senior Learners' activity",
+        "Mentorship relationship tracked in database",
+        "Admin can see all Senior Learner stats"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "P07",
+      "name": "Multi-Source Problem Bank",
+      "description": "Problems from learners (direct), departments (admin submit), and industry (partner submit with admin approval).",
+      "priority": "P1",
+      "deadline": "2026-01-13",
+      "status": "not-started",
+      "test_steps": [
+        "Learners can submit problems directly (existing)",
+        "Department admins can submit problems for their department",
+        "Industry partners can submit (requires admin approval)",
+        "Problems tagged with source type",
+        "Admin review queue for external submissions",
+        "Teams can claim problems to work on"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "P08",
+      "name": "Industry Projects & Revenue",
+      "description": "Paid industry problems with 60% learner / 40% institution revenue split, payment upon delivery.",
+      "priority": "P2",
+      "deadline": "2026-01-20",
+      "status": "not-started",
+      "test_steps": [
+        "Industry problems marked with budget amount",
+        "Teams see potential earnings when claiming",
+        "Delivery submission triggers review",
+        "Revenue split calculated: 60% learners, 40% institution",
+        "Earnings tracked per learner",
+        "Total platform earnings visible in admin"
+      ],
+      "dependencies": ["P07"]
+    },
+    {
+      "id": "P09",
+      "name": "Mentor Matching System",
+      "description": "Hybrid matching: platform suggests 3 mentors based on domain, team picks 1. Mentor pool: Senior Learners + Industry + NIF staff.",
+      "priority": "P2",
+      "deadline": "2026-01-20",
+      "status": "not-started",
+      "test_steps": [
+        "Mentor profiles exist for: Senior Learners, Industry, NIF staff",
+        "When team needs mentor, system suggests 3 based on domain match",
+        "Team can view mentor profiles and pick",
+        "Mentor receives notification of assignment",
+        "Mentor load tracking prevents overload"
+      ],
+      "dependencies": ["P02"]
+    },
+    {
+      "id": "P10",
+      "name": "Cross-Institution Team Formation",
+      "description": "Platform suggests cross-institution pairings. Bioconvergence-tagged problems require teams from 2+ institutions.",
+      "priority": "P2",
+      "deadline": "2026-01-20",
+      "status": "not-started",
+      "test_steps": [
+        "Problems can be tagged as bioconvergence-required",
+        "Tagged problems require team members from 2+ institutions",
+        "Platform suggests available builders from other institutions",
+        "Cross-institution team formation workflow",
+        "Filter builders by institution and skill"
+      ],
+      "dependencies": ["P07"]
+    },
+    {
+      "id": "P11",
+      "name": "Parallel Events Support",
+      "description": "Run multiple events simultaneously with cross-event analytics. Learners can participate in multiple events.",
+      "priority": "P2",
+      "deadline": "2026-01-27",
+      "status": "not-started",
+      "test_steps": [
+        "Admin can create multiple active events",
+        "Learners can participate in multiple events simultaneously",
+        "Problems can belong to multiple events",
+        "Event-specific leaderboards and analytics",
+        "Admin can filter all views by event"
+      ],
+      "dependencies": ["P03"]
+    },
+    {
+      "id": "P12",
+      "name": "Academic Integration",
+      "description": "Connect cycles to academic credits, grades, and curriculum. Exportable transcript.",
+      "priority": "P3",
+      "deadline": "2026-02-15",
+      "status": "not-started",
+      "test_steps": [
+        "Completed cycles map to academic credits (configurable)",
+        "Activity translates to course grades",
+        "Problems can be tagged to courses/subjects",
+        "Exportable transcript for academic records",
+        "Department can configure credit mapping"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "P13",
+      "name": "Gamification Layer",
+      "description": "Points, badges, and leaderboards. Points for cycles, interviews, users. Badges for milestones.",
+      "priority": "P3",
+      "deadline": "2026-02-15",
+      "status": "not-started",
+      "test_steps": [
+        "Points awarded for: cycles completed, interviews, users acquired",
+        "Badges for: First validation, 100 users, first paid project",
+        "Leaderboards: by institution, overall, by domain",
+        "Points/badges visible on profile",
+        "Weekly leaderboard updates"
+      ],
+      "dependencies": []
     }
-  ]
+  ],
+  "success_metrics": {
+    "jan_targets": {
+      "active_builders_weekly": 100,
+      "problems_in_bank": 50,
+      "validated_solutions": 15,
+      "nif_pipeline_entries": 10,
+      "learner_earnings_inr": 0
+    },
+    "march_targets": {
+      "active_builders_weekly": 300,
+      "problems_in_bank": 200,
+      "validated_solutions": 50,
+      "nif_pipeline_entries": 30,
+      "learner_earnings_inr": 100000,
+      "startups_incubated": 10
+    }
+  }
 }

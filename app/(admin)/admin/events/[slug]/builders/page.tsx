@@ -26,12 +26,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-interface ParticipantsPageProps {
+interface BuildersPageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ search?: string; page?: string }>;
 }
 
-export default async function EventParticipantsPage({ params, searchParams }: ParticipantsPageProps) {
+export default async function EventBuildersPage({ params, searchParams }: BuildersPageProps) {
   const { slug } = await params;
   const { search = '', page = '1' } = await searchParams;
   const currentPage = parseInt(page, 10);
@@ -61,7 +61,7 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
     redirect('/admin/events');
   }
 
-  // Build query for participants
+  // Build query for builders
   let query = supabase
     .from('users')
     .select(`
@@ -86,7 +86,7 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
   const to = from + perPage - 1;
   query = query.range(from, to);
 
-  const { data: participants, count } = await query as {
+  const { data: builders, count } = await query as {
     data: Array<{
       id: string;
       name: string;
@@ -103,7 +103,7 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
   const totalPages = count ? Math.ceil(count / perPage) : 1;
 
   // Calculate stats
-  const participantStats = (participants || []).reduce(
+  const builderStats = (builders || []).reduce(
     (acc, p) => {
       const eventCycles = p.cycles.filter(c => c.event_id === event.id);
       acc.totalCycles += eventCycles.length;
@@ -125,9 +125,9 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to {event.name}
           </Link>
-          <h1 className="text-2xl font-bold text-stone-100">Participants</h1>
+          <h1 className="text-2xl font-bold text-stone-100">Builders</h1>
           <p className="text-stone-400">
-            {count || 0} participants registered for {event.name}
+            {count || 0} builders registered for {event.name}
           </p>
         </div>
         <Button variant="outline" className="border-stone-700">
@@ -144,7 +144,7 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
               <Users className="h-5 w-5 text-blue-400" />
               <div>
                 <div className="text-2xl font-bold text-stone-100">{count || 0}</div>
-                <p className="text-sm text-stone-500">Total Participants</p>
+                <p className="text-sm text-stone-500">Total Builders</p>
               </div>
             </div>
           </CardContent>
@@ -154,7 +154,7 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
             <div className="flex items-center gap-3">
               <Target className="h-5 w-5 text-amber-400" />
               <div>
-                <div className="text-2xl font-bold text-stone-100">{participantStats.totalCycles}</div>
+                <div className="text-2xl font-bold text-stone-100">{builderStats.totalCycles}</div>
                 <p className="text-sm text-stone-500">Total Cycles</p>
               </div>
             </div>
@@ -165,7 +165,7 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
             <div className="flex items-center gap-3">
               <Target className="h-5 w-5 text-green-400" />
               <div>
-                <div className="text-2xl font-bold text-stone-100">{participantStats.completedCycles}</div>
+                <div className="text-2xl font-bold text-stone-100">{builderStats.completedCycles}</div>
                 <p className="text-sm text-stone-500">Completed Cycles</p>
               </div>
             </div>
@@ -193,10 +193,10 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
         </CardContent>
       </Card>
 
-      {/* Participants Table */}
+      {/* Builders Table */}
       <Card className="bg-stone-900/50 border-stone-800">
         <CardHeader>
-          <CardTitle className="text-lg text-stone-100">All Participants</CardTitle>
+          <CardTitle className="text-lg text-stone-100">All Builders</CardTitle>
           <CardDescription>Showing page {currentPage} of {totalPages}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -211,27 +211,27 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
               </TableRow>
             </TableHeader>
             <TableBody>
-              {participants && participants.length > 0 ? (
-                participants.map((participant) => {
-                  const eventCycles = participant.cycles.filter(c => c.event_id === event.id);
+              {builders && builders.length > 0 ? (
+                builders.map((builder) => {
+                  const eventCycles = builder.cycles.filter(c => c.event_id === event.id);
                   const completedCount = eventCycles.filter(c => c.current_step >= 7).length;
 
                   return (
-                    <TableRow key={participant.id} className="border-stone-700">
+                    <TableRow key={builder.id} className="border-stone-700">
                       <TableCell>
                         <div>
-                          <div className="font-medium text-stone-100">{participant.name}</div>
+                          <div className="font-medium text-stone-100">{builder.name}</div>
                           <div className="text-xs text-stone-500 flex items-center gap-1">
                             <Mail className="h-3 w-3" />
-                            {participant.email}
+                            {builder.email}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        {participant.institutions ? (
+                        {builder.institutions ? (
                           <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4 text-stone-500" />
-                            <span className="text-stone-300">{participant.institutions.short_name}</span>
+                            <span className="text-stone-300">{builder.institutions.short_name}</span>
                           </div>
                         ) : (
                           <span className="text-stone-500">—</span>
@@ -250,10 +250,10 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
                         </div>
                       </TableCell>
                       <TableCell className="text-stone-400">
-                        {new Date(participant.created_at).toLocaleDateString()}
+                        {new Date(builder.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link href={`/admin/users/${participant.id}`}>
+                        <Link href={`/admin/users/${builder.id}`}>
                           <Button variant="ghost" size="sm" className="text-stone-400">
                             <ExternalLink className="h-4 w-4" />
                           </Button>
@@ -265,7 +265,7 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-stone-500">
-                    {search ? 'No participants match your search' : 'No participants yet'}
+                    {search ? 'No builders match your search' : 'No builders yet'}
                   </TableCell>
                 </TableRow>
               )}
@@ -280,14 +280,14 @@ export default async function EventParticipantsPage({ params, searchParams }: Pa
               </p>
               <div className="flex gap-2">
                 {currentPage > 1 && (
-                  <Link href={`/admin/events/${slug}/participants?page=${currentPage - 1}${search ? `&search=${search}` : ''}`}>
+                  <Link href={`/admin/events/${slug}/builders?page=${currentPage - 1}${search ? `&search=${search}` : ''}`}>
                     <Button variant="outline" size="sm" className="border-stone-700">
                       Previous
                     </Button>
                   </Link>
                 )}
                 {currentPage < totalPages && (
-                  <Link href={`/admin/events/${slug}/participants?page=${currentPage + 1}${search ? `&search=${search}` : ''}`}>
+                  <Link href={`/admin/events/${slug}/builders?page=${currentPage + 1}${search ? `&search=${search}` : ''}`}>
                     <Button variant="outline" size="sm" className="border-stone-700">
                       Next
                     </Button>

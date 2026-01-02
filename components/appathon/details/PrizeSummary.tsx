@@ -134,11 +134,11 @@ export function PrizeSummary({ showAll = false, onViewAll }: PrizeSummaryProps) 
         </div>
       </div>
 
-      {/* For all participants */}
+      {/* For all builders */}
       <div className="p-3 rounded-lg bg-stone-800/30 border border-stone-700/30">
-        <h4 className="text-xs font-semibold text-stone-400 mb-2">For All Participants</h4>
+        <h4 className="text-xs font-semibold text-stone-400 mb-2">For All Builders</h4>
         <ul className="space-y-1">
-          {prizes.forAllParticipants.slice(0, 3).map((item, index) => (
+          {prizes.forAllBuilders.slice(0, 3).map((item, index) => (
             <li key={index} className="flex items-center gap-2 text-xs text-stone-500">
               <div className="w-1 h-1 rounded-full bg-emerald-400" />
               {item}

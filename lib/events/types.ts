@@ -54,9 +54,12 @@ export interface Event {
   updated_at: string;
 }
 
-export interface EventWithParticipantCount extends Event {
-  participant_count: number;
+export interface EventWithBuilderCount extends Event {
+  builder_count: number;
 }
+
+// Backward compatibility alias (deprecated - use EventWithBuilderCount)
+export type EventWithParticipantCount = EventWithBuilderCount;
 
 // Helper to check if event is currently running
 export function isEventLive(event: Event): boolean {
