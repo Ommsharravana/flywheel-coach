@@ -129,38 +129,45 @@ export default function ShowcasePage() {
         ]) || []
       );
 
-      // Enrich cycles with related data
+      // Batch fetch all related data upfront (instead of N+1 queries)
+      const cycleIds = cyclesData?.map((c: { id: string }) => c.id) || [];
+
+      // Parallel fetch all related tables
+      const [problemsResult, buildsResult, impactsResult, workflowsResult] = await Promise.all([
+        supabase.from('problems').select('cycle_id, selected_question, refined_statement').in('cycle_id', cycleIds),
+        supabase.from('builds').select('cycle_id, lovable_project_url, deployed_url').in('cycle_id', cycleIds),
+        supabase.from('impact_assessments').select('cycle_id, total_users, nps_score, impact_score').in('cycle_id', cycleIds),
+        supabase.from('workflow_classifications').select('cycle_id, workflow_type').in('cycle_id', cycleIds),
+      ]);
+
+      // Create lookup maps for O(1) access
+      type ProblemRow = { cycle_id: string; selected_question: string; refined_statement: string | null };
+      type BuildRow = { cycle_id: string; lovable_project_url: string | null; deployed_url: string | null };
+      type ImpactRow = { cycle_id: string; total_users: number; nps_score: number; impact_score: number };
+      type WorkflowRow = { cycle_id: string; workflow_type: string };
+
+      const problemsMap = new Map<string, ProblemRow>(
+        problemsResult.data?.map((p: ProblemRow) => [p.cycle_id, p]) || []
+      );
+      const buildsMap = new Map<string, BuildRow>(
+        buildsResult.data?.map((b: BuildRow) => [b.cycle_id, b]) || []
+      );
+      const impactsMap = new Map<string, ImpactRow>(
+        impactsResult.data?.map((i: ImpactRow) => [i.cycle_id, i]) || []
+      );
+      const workflowsMap = new Map<string, WorkflowRow>(
+        workflowsResult.data?.map((w: WorkflowRow) => [w.cycle_id, w]) || []
+      );
+
+      // Enrich cycles with related data (now O(n) instead of O(n*4) API calls)
       const enrichedProjects: ShowcaseProject[] = [];
       let totalUsers = 0;
 
       for (const cycle of cyclesData || []) {
-        // Get problem
-        const { data: problem } = await supabase
-          .from('problems')
-          .select('selected_question, refined_statement')
-          .eq('cycle_id', cycle.id)
-          .single();
-
-        // Get build
-        const { data: build } = await supabase
-          .from('builds')
-          .select('lovable_project_url, deployed_url')
-          .eq('cycle_id', cycle.id)
-          .single();
-
-        // Get impact
-        const { data: impact } = await supabase
-          .from('impact_assessments')
-          .select('total_users, nps_score, impact_score')
-          .eq('cycle_id', cycle.id)
-          .single();
-
-        // Get workflow
-        const { data: workflow } = await supabase
-          .from('workflow_classifications')
-          .select('workflow_type')
-          .eq('cycle_id', cycle.id)
-          .single();
+        const problem = problemsMap.get(cycle.id);
+        const build = buildsMap.get(cycle.id);
+        const impact = impactsMap.get(cycle.id);
+        const workflow = workflowsMap.get(cycle.id);
 
         if (impact) {
           totalUsers += impact.total_users || 0;
