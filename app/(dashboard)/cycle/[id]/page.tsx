@@ -9,6 +9,7 @@ import { ArrowRight, CheckCircle, Clock, Home, RotateCcw, Target, Trophy, Send }
 import { Cycle } from '@/lib/types/cycle';
 import { CycleActions } from './CycleActions';
 import { CycleHeader } from './CycleHeader';
+import { NIFApplicationButton } from '@/components/nif/NIFApplicationButton';
 
 interface UserProfileRow {
   active_event_id: string | null;
@@ -189,6 +190,10 @@ export default async function CyclePage({ params }: CyclePageProps) {
                         </Button>
                       </Link>
                     )}
+                    {/* NIF Application Button */}
+                    <div className="flex justify-center">
+                      <NIFApplicationButton cycleId={cycle.id} cycleName={cycle.name} />
+                    </div>
                     <Link href={`/cycle/${id}/step/8`}>
                       <Button variant="outline" className="w-full">
                         View Impact Results

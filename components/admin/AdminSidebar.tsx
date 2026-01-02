@@ -57,6 +57,11 @@ const navItems = [
     icon: Rocket,
   },
   {
+    label: 'NIF Applications',
+    href: '/admin/nif-applications',
+    icon: Rocket,
+  },
+  {
     label: 'Change Requests',
     href: '/admin/change-requests',
     icon: FileQuestion,
