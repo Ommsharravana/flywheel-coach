@@ -201,8 +201,8 @@ export default function ShowcasePage() {
                 lovable_url: build.lovable_project_url,
               }
             : null,
-          impact: impact,
-          workflow: workflow,
+          impact: impact ?? null,
+          workflow: workflow ?? null,
         });
       }
 
