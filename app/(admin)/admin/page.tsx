@@ -52,17 +52,40 @@ export default async function AdminDashboardPage() {
   const eventIds = isSuperadmin ? null : adminEvents.map(e => e.id);
 
   // Fetch cycles (filtered by event for non-superadmin)
+  // Use batch fetching to overcome Supabase's 1000 row limit
+  const CYCLES_BATCH_SIZE = 1000;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let cyclesQuery = (supabase as any)
-    .from('cycles')
-    .select('id, status, current_step, user_id');
+  let allCyclesData: any[] = [];
+  let cyclesOffset = 0;
+  let hasMoreCycles = true;
 
-  if (eventIds) {
-    cyclesQuery = cyclesQuery.in('event_id', eventIds);
+  while (hasMoreCycles) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let cyclesQuery = (supabase as any)
+      .from('cycles')
+      .select('id, status, current_step, user_id')
+      .range(cyclesOffset, cyclesOffset + CYCLES_BATCH_SIZE - 1);
+
+    if (eventIds) {
+      cyclesQuery = cyclesQuery.in('event_id', eventIds);
+    }
+
+    const { data: cyclesBatch } = await cyclesQuery;
+
+    if (!cyclesBatch || cyclesBatch.length === 0) {
+      hasMoreCycles = false;
+    } else {
+      allCyclesData = [...allCyclesData, ...cyclesBatch];
+      cyclesOffset += CYCLES_BATCH_SIZE;
+
+      // Stop if we've fetched less than batch size (last batch)
+      if (cyclesBatch.length < CYCLES_BATCH_SIZE) {
+        hasMoreCycles = false;
+      }
+    }
   }
 
-  const { data: cyclesData } = await cyclesQuery;
-  const cycles = (cyclesData || []) as unknown as CycleRow[];
+  const cycles = allCyclesData as CycleRow[];
 
   // Fetch users using RPC to bypass RLS
   // Use batch fetching to overcome Supabase's 1000 row limit
