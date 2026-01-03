@@ -230,6 +230,7 @@ export async function getOrCreateScore(submissionId: string): Promise<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: createdScore, error: createError } = await (supabase as any)
     .from('judge_scores')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .insert(newScore as any)
     .select()
     .single()
@@ -391,7 +392,13 @@ export async function getSubmissionForScoring(submissionId: string): Promise<{
   }
 
   // Use admin client to bypass RLS and get submission details
-  const adminClient = createAdminClient()
+  let adminClient
+  try {
+    adminClient = createAdminClient()
+  } catch (e) {
+    console.error('Error creating admin client:', e)
+    return { submission: null, error: 'Admin client configuration error' }
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (adminClient as any)
@@ -410,7 +417,7 @@ export async function getSubmissionForScoring(submissionId: string): Promise<{
 
   if (error) {
     console.error('Error fetching submission:', error)
-    return { submission: null, error: 'Failed to load submission' }
+    return { submission: null, error: `Failed to load submission: ${error.message || error.code || 'Unknown error'}` }
   }
 
   return { submission: data }
