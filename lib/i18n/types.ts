@@ -94,6 +94,8 @@ export interface Dictionary {
     untitledCycle: string;
     completed: string;
     currentStep: string;
+    noActiveCycle: string;
+    joinEventToStart: string;
   };
   steps: {
     problem: { name: string; description: string };

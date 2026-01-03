@@ -90,6 +90,8 @@ export const en: Dictionary = {
     untitledCycle: 'Untitled Cycle',
     completed: 'Completed',
     currentStep: 'Current Step',
+    noActiveCycle: 'No Active Cycle',
+    joinEventToStart: 'Join an event above to start a new flywheel cycle',
   },
   steps: {
     problem: {

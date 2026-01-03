@@ -126,10 +126,10 @@ export default async function DashboardPage() {
         <div className="glass-card rounded-2xl p-6 sm:p-8 text-center">
           <div className="mx-auto max-w-md">
             <h2 className="font-display text-xl font-semibold text-stone-100">
-              {t('dashboard.noActiveCycle') || 'No Active Cycle'}
+              {t('dashboard.noActiveCycle')}
             </h2>
             <p className="mt-2 text-stone-400">
-              {t('dashboard.joinEventToStart') || 'Join an event above to start a new flywheel cycle'}
+              {t('dashboard.joinEventToStart')}
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
               <Button

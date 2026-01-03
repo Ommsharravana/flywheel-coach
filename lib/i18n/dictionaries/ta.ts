@@ -90,6 +90,8 @@ export const ta: Dictionary = {
     untitledCycle: 'பெயரிடப்படாத சுழற்சி',
     completed: 'முடிக்கப்பட்டது',
     currentStep: 'தற்போதைய படி',
+    noActiveCycle: 'செயலில் சுழற்சி இல்லை',
+    joinEventToStart: 'புதிய flywheel சுழற்சியைத் தொடங்க மேலே உள்ள நிகழ்வில் சேரவும்',
   },
   steps: {
     problem: {
