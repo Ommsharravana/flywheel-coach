@@ -245,20 +245,29 @@ export async function getOrCreateScore(submissionId: string): Promise<{
 
 /**
  * Update a judge's score for a submission (auto-save)
+ * Uses admin client to bypass RLS after verifying user is authenticated
  */
 export async function updateScore(
   submissionId: string,
   updates: JudgeScoreUpdate
 ): Promise<{ success: boolean; score?: JudgeScore; error?: string }> {
-  const supabase = await createClient()
   const effectiveUser = await getEffectiveUser()
 
   if (!effectiveUser) {
     return { success: false, error: 'Not authenticated' }
   }
 
+  // Use admin client to bypass RLS
+  let adminClient
+  try {
+    adminClient = createAdminClient()
+  } catch (e) {
+    console.error('Error creating admin client:', e)
+    return { success: false, error: 'Admin client configuration error' }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await (adminClient as any)
     .from('judge_scores')
     .update(updates)
     .eq('submission_id', submissionId)
@@ -276,6 +285,7 @@ export async function updateScore(
 
 /**
  * Submit a score (mark as finalized)
+ * Uses admin client to bypass RLS after verifying user owns the score
  */
 export async function submitScore(submissionId: string): Promise<{
   success: boolean
@@ -289,7 +299,7 @@ export async function submitScore(submissionId: string): Promise<{
     return { success: false, error: 'Not authenticated' }
   }
 
-  // Verify all required fields are filled
+  // Verify all required fields are filled using regular client first
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: score, error: fetchError } = await (supabase as any)
     .from('judge_scores')
@@ -320,9 +330,18 @@ export async function submitScore(submissionId: string): Promise<{
     }
   }
 
-  // Mark as submitted
+  // Use admin client to bypass RLS for the update
+  let adminClient
+  try {
+    adminClient = createAdminClient()
+  } catch (e) {
+    console.error('Error creating admin client:', e)
+    return { success: false, error: 'Admin client configuration error' }
+  }
+
+  // Mark as submitted using admin client
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: updatedScore, error: updateError } = await (supabase as any)
+  const { data: updatedScore, error: updateError } = await (adminClient as any)
     .from('judge_scores')
     .update({ submitted_at: new Date().toISOString() })
     .eq('submission_id', submissionId)
