@@ -20,9 +20,27 @@ const PANEL_REVEAL_TIME = new Date('2026-01-07T09:30:00+05:30')
 export interface JudgeAccessResult {
   isJudge: boolean
   isPanelRevealed: boolean
+  isTrialMode: boolean
   revealTime: string
   trackData: JudgeTrackWithSubmissions | null
   error?: string
+}
+
+/**
+ * Check if trial mode is enabled for the event
+ */
+async function checkTrialMode(supabase: Awaited<ReturnType<typeof createClient>>): Promise<boolean> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('get_judging_trial_mode', {
+    p_event_id: APPATHON_EVENT_ID,
+  })
+
+  if (error) {
+    console.error('Error checking trial mode:', error)
+    return false
+  }
+
+  return data === true
 }
 
 /**
@@ -36,11 +54,15 @@ export async function getJudgeAccess(): Promise<JudgeAccessResult> {
     return {
       isJudge: false,
       isPanelRevealed: false,
+      isTrialMode: false,
       revealTime: PANEL_REVEAL_TIME.toISOString(),
       trackData: null,
       error: 'Not authenticated',
     }
   }
+
+  // Check trial mode first
+  const isTrialMode = await checkTrialMode(supabase)
 
   // Check if user is assigned as a judge in any track
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,6 +96,7 @@ export async function getJudgeAccess(): Promise<JudgeAccessResult> {
     return {
       isJudge: false,
       isPanelRevealed: false,
+      isTrialMode,
       revealTime: PANEL_REVEAL_TIME.toISOString(),
       trackData: null,
       error: 'Failed to check judge assignment',
@@ -84,19 +107,21 @@ export async function getJudgeAccess(): Promise<JudgeAccessResult> {
     return {
       isJudge: false,
       isPanelRevealed: false,
+      isTrialMode,
       revealTime: PANEL_REVEAL_TIME.toISOString(),
       trackData: null,
     }
   }
 
-  // Check if panel is revealed (after 9:30 AM on Jan 7)
+  // Check if panel is revealed (after 9:30 AM on Jan 7 OR trial mode enabled)
   const now = new Date()
-  const isPanelRevealed = now >= PANEL_REVEAL_TIME
+  const isPanelRevealed = now >= PANEL_REVEAL_TIME || isTrialMode
 
   if (!isPanelRevealed) {
     return {
       isJudge: true,
       isPanelRevealed: false,
+      isTrialMode,
       revealTime: PANEL_REVEAL_TIME.toISOString(),
       trackData: null,
     }
@@ -115,6 +140,7 @@ export async function getJudgeAccess(): Promise<JudgeAccessResult> {
     return {
       isJudge: true,
       isPanelRevealed: true,
+      isTrialMode,
       revealTime: PANEL_REVEAL_TIME.toISOString(),
       trackData: null,
       error: 'Failed to load submissions',
@@ -127,6 +153,7 @@ export async function getJudgeAccess(): Promise<JudgeAccessResult> {
   return {
     isJudge: true,
     isPanelRevealed: true,
+    isTrialMode,
     revealTime: PANEL_REVEAL_TIME.toISOString(),
     trackData: {
       track: trackData,
