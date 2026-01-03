@@ -50,6 +50,18 @@ export interface VotingWindowStatus {
   reason: string;
 }
 
+export interface DetailedVotingWindow {
+  isOpen: boolean;
+  status: 'not_assigned' | 'pending' | 'presenting' | 'completed' | 'skipped' | 'expired' | 'unknown';
+  windowStartedAt: string | null;
+  windowEndsAt: string | null;
+  secondsRemaining: number | null;
+  totalWindowSeconds: number;
+  percentageRemaining: number | null;
+  urgencyLevel: 'calm' | 'warning' | 'urgent' | 'critical';
+  reason: string;
+}
+
 export const REACTIONS: { id: Reaction; emoji: string; label: string }[] = [
   { id: 'love', emoji: '💖', label: 'Love it!' },
   { id: 'innovative', emoji: '💡', label: 'Innovative' },

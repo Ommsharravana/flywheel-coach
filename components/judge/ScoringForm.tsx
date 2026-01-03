@@ -28,6 +28,10 @@ import {
 } from 'lucide-react'
 import { useSubmissionScore } from '@/lib/judge/hooks'
 import { JUDGING_CRITERIA, BONUS_CRITERIA } from '@/lib/appathon/content'
+import { InlineHelpTooltip } from '@/components/shared/HelpTooltip'
+import { Walkthrough } from '@/components/shared/Walkthrough'
+import { JUDGE_SCORING_WALKTHROUGH } from '@/lib/help/walkthroughs'
+import { HELP_CONTENT } from '@/lib/help/content'
 
 interface ScoringFormProps {
   submissionId: string
@@ -117,9 +121,13 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
   )
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+    <>
+      {/* Walkthrough Guide */}
+      <Walkthrough id="judge-scoring" steps={JUDGE_SCORING_WALKTHROUGH} />
+
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <Button
           variant="ghost"
           onClick={onBack}
@@ -144,7 +152,7 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
       </div>
 
       {/* Submission Info */}
-      <Card className="glass-card border-amber-500/30">
+      <Card className="glass-card border-amber-500/30" data-walkthrough="submission-info">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-stone-100">
             <Target className="w-5 h-5 text-amber-400" />
@@ -211,24 +219,30 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
       </Card>
 
       {/* Scoring Criteria */}
-      <Card className="glass-card border-stone-700">
+      <Card className="glass-card border-stone-700" data-walkthrough="criteria-section">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-stone-100">
             <Star className="w-5 h-5 text-amber-400" />
             Scoring Criteria
           </CardTitle>
           <p className="text-sm text-stone-500">
-            Rate each criterion from 1 (lowest) to 10 (highest)
+            Rate each criterion from 1 (lowest) to 10 (highest). Hover over <InlineHelpTooltip content="These help icons provide detailed explanations for each criterion" /> for help.
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
-          {judgeableCriteria.map((criterion) => {
+          {judgeableCriteria.map((criterion, index) => {
             const Icon = CRITERIA_ICONS[criterion.name] || Target
             const fieldName = CRITERIA_FIELDS[criterion.name]
             const value = score[fieldName as keyof typeof score] as number | null
+            const helpKey = fieldName as keyof typeof HELP_CONTENT.criteria
+            const helpContent = HELP_CONTENT.criteria[helpKey]
 
             return (
-              <div key={criterion.name} className="space-y-3">
+              <div
+                key={criterion.name}
+                className="space-y-3"
+                data-walkthrough={index === 0 ? 'first-criterion' : undefined}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Icon className="w-4 h-4 text-amber-400" />
@@ -241,6 +255,12 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
                     >
                       {criterion.weight}%
                     </Badge>
+                    {helpContent && (
+                      <InlineHelpTooltip
+                        title={helpContent.title}
+                        content={helpContent.description}
+                      />
+                    )}
                   </div>
                   <span className="text-2xl font-bold text-amber-400 w-12 text-right font-display">
                     {value ?? '-'}
@@ -269,7 +289,7 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
       </Card>
 
       {/* Bonus Criteria */}
-      <Card className="glass-card border-stone-700">
+      <Card className="glass-card border-stone-700" data-walkthrough="bonus-section">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-stone-100">
             <Star className="w-5 h-5 text-emerald-400" />
@@ -283,6 +303,8 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
           {BONUS_CRITERIA.map((bonus) => {
             const fieldName = BONUS_FIELDS[bonus.name]
             const checked = score[fieldName as keyof typeof score] as boolean
+            const bonusKey = fieldName.replace('bonus_', '') as keyof typeof HELP_CONTENT.bonus
+            const helpContent = HELP_CONTENT.bonus[bonusKey]
 
             return (
               <div
@@ -306,6 +328,12 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
                     >
                       <span className="text-lg">{bonus.icon}</span>
                       {bonus.name}
+                      {helpContent && (
+                        <InlineHelpTooltip
+                          title={helpContent.title}
+                          content={helpContent.description}
+                        />
+                      )}
                     </Label>
                     <p className="text-xs text-stone-500">{bonus.description}</p>
                   </div>
@@ -323,7 +351,7 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
       </Card>
 
       {/* Notes */}
-      <Card className="glass-card border-stone-700">
+      <Card className="glass-card border-stone-700" data-walkthrough="notes-section">
         <CardHeader>
           <CardTitle className="text-stone-100">Judge Notes</CardTitle>
         </CardHeader>
@@ -374,7 +402,7 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
       </Card>
 
       {/* Calculated Score Preview */}
-      <Card className="glass-card border-amber-500/30">
+      <Card className="glass-card border-amber-500/30" data-walkthrough="submit-section">
         <CardContent className="py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
@@ -421,6 +449,7 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   )
 }

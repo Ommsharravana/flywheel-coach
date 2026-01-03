@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LayoutGrid, Trophy } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, Trophy, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import {
   TrackCard,
@@ -251,7 +251,16 @@ export default function DemoDayPage() {
         <h1 className="text-2xl font-display font-bold text-stone-100">
           Demo Day Command Center
         </h1>
-        <div className="w-32" /> {/* Spacer for alignment */}
+        <Link href="/admin/demo-day/content-generator">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-amber-600/50 text-amber-400 hover:bg-amber-600/20"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI Content
+          </Button>
+        </Link>
       </div>
 
       {/* Global Controls & Stats */}

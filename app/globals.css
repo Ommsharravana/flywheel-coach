@@ -126,6 +126,14 @@
   .glass-card {
     @apply bg-gradient-to-br from-stone-900/90 to-stone-950/90 backdrop-blur-xl border border-stone-800/50 shadow-xl;
   }
+
+  .animate-accordion-down {
+    animation: accordion-down 0.2s ease-out;
+  }
+
+  .animate-accordion-up {
+    animation: accordion-up 0.2s ease-out;
+  }
 }
 
 @keyframes float {
@@ -145,6 +153,24 @@
   50% {
     opacity: 1;
     transform: scale(1.05);
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
   }
 }
 

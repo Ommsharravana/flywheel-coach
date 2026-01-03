@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import type { PresentingSubmission, UserTrackInfo, AudienceVote, Reaction, VotingWindowStatus } from './types';
+import type { PresentingSubmission, UserTrackInfo, AudienceVote, Reaction, VotingWindowStatus, DetailedVotingWindow } from './types';
 
 // ============================================
 // AUDIENCE VOTING SERVICES
@@ -198,6 +198,46 @@ export async function getVotingWindowStatus(submissionId: string): Promise<Votin
     is_open: result?.is_open ?? false,
     window_started_at: result?.window_started_at ?? null,
     seconds_remaining: result?.seconds_remaining ?? null,
+    reason: result?.reason ?? 'Unknown',
+  };
+}
+
+/**
+ * Get detailed voting window status with urgency levels for dramatic UI
+ */
+export async function getDetailedVotingWindow(submissionId: string): Promise<DetailedVotingWindow> {
+  const supabase = createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('get_voting_window_details', {
+    p_submission_id: submissionId,
+  });
+
+  if (error) {
+    console.error('Error checking detailed voting window:', error);
+    return {
+      isOpen: false,
+      status: 'unknown',
+      windowStartedAt: null,
+      windowEndsAt: null,
+      secondsRemaining: null,
+      totalWindowSeconds: 300,
+      percentageRemaining: null,
+      urgencyLevel: 'calm',
+      reason: 'Failed to check voting status',
+    };
+  }
+
+  const result = data?.[0];
+  return {
+    isOpen: result?.is_open ?? false,
+    status: result?.status ?? 'unknown',
+    windowStartedAt: result?.window_started_at ?? null,
+    windowEndsAt: result?.window_ends_at ?? null,
+    secondsRemaining: result?.seconds_remaining ?? null,
+    totalWindowSeconds: result?.total_window_seconds ?? 300,
+    percentageRemaining: result?.percentage_remaining ?? null,
+    urgencyLevel: result?.urgency_level ?? 'calm',
     reason: result?.reason ?? 'Unknown',
   };
 }

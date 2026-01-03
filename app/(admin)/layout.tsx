@@ -1,8 +1,10 @@
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminCoachWrapper } from '@/components/admin/coach';
+import { EventSidebar } from './admin/events/[slug]/_components/EventSidebar';
 
 interface ProfileRow {
   name: string | null;
@@ -59,9 +61,37 @@ export default async function AdminLayout({
     institution_id: userRole?.institution_id || null,
   };
 
+  // Check if we're on an event-specific route (e.g., /admin/events/appathon-2)
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '';
+
+  // Match pattern: /admin/events/[slug] where slug is NOT empty
+  // /admin/events should show AdminSidebar
+  // /admin/events/appathon-2 should show EventSidebar
+  const eventRouteMatch = pathname.match(/^\/admin\/events\/([^/]+)/);
+  const isEventRoute = eventRouteMatch && eventRouteMatch[1] !== '';
+  const eventSlug = eventRouteMatch?.[1] || '';
+
+  // Get event name and type if on event route
+  let eventName = 'Event';
+  let eventType = 'appathon';
+  if (isEventRoute && eventSlug) {
+    const { data: event } = (await supabase
+      .from('events')
+      .select('name, config')
+      .eq('slug', eventSlug)
+      .single()) as { data: { name: string; config: { type?: string } | null } | null };
+    eventName = event?.name || 'Event';
+    eventType = event?.config?.type || 'appathon';
+  }
+
   return (
     <div className="min-h-screen bg-stone-950 flex">
-      <AdminSidebar />
+      {isEventRoute ? (
+        <EventSidebar slug={eventSlug} eventName={eventName} eventType={eventType} />
+      ) : (
+        <AdminSidebar />
+      )}
       <div className="flex-1 flex flex-col">
         <AdminHeader
           user={user}

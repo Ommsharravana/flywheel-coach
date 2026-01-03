@@ -10,6 +10,9 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
+  // Add pathname header for layout to detect route
+  supabaseResponse.headers.set('x-pathname', request.nextUrl.pathname)
+
   const supabase = createServerClient(
     supabaseUrl,
     supabaseAnonKey,
@@ -23,6 +26,8 @@ export async function updateSession(request: NextRequest) {
           supabaseResponse = NextResponse.next({
             request,
           })
+          // Re-add pathname header after reassignment
+          supabaseResponse.headers.set('x-pathname', request.nextUrl.pathname)
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )

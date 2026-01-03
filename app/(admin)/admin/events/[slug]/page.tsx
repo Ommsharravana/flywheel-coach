@@ -20,6 +20,7 @@ import {
   Clock,
   AlertCircle,
   FileText,
+  Presentation,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -370,7 +371,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
       </Tabs>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
         <Link href={`/admin/events/${slug}/submissions`}>
           <Card className="bg-stone-900/50 border-stone-800 hover:border-stone-700 transition-colors cursor-pointer">
             <CardContent className="pt-6">
@@ -379,6 +380,20 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
                 <div>
                   <div className="font-medium text-stone-100">Submissions</div>
                   <div className="text-sm text-stone-500">Review and score</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href={`/admin/events/${slug}/demo-day`}>
+          <Card className="bg-stone-900/50 border-stone-800 hover:border-amber-500/50 transition-colors cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <Presentation className="h-5 w-5 text-amber-400" />
+                <div>
+                  <div className="font-medium text-stone-100">Demo Day</div>
+                  <div className="text-sm text-stone-500">Command center</div>
                 </div>
               </div>
             </CardContent>

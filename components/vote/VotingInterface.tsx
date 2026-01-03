@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Loader2, AlertCircle, Clock, Lock } from 'lucide-react';
+import { Check, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StarRating, StarDisplay } from './StarRating';
 import { ReactionSelector } from './ReactionSelector';
 import { PresentingTeamCard } from './PresentingTeamCard';
-import { submitVote, getVotingWindowStatus } from '@/lib/vote/services';
-import type { PresentingSubmission, AudienceVote, Reaction, VotingWindowStatus } from '@/lib/vote/types';
+import { VotingCountdown } from './VotingCountdown';
+import { submitVote } from '@/lib/vote/services';
+import { useVotingWindow } from '@/lib/vote/hooks';
+import type { PresentingSubmission, AudienceVote, Reaction } from '@/lib/vote/types';
 
 interface VotingInterfaceProps {
   submission: PresentingSubmission;
@@ -30,44 +32,19 @@ export function VotingInterface({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(existingVote !== null);
   const [error, setError] = useState<string | null>(null);
-  const [votingWindow, setVotingWindow] = useState<VotingWindowStatus | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
-  // Fetch voting window status
-  useEffect(() => {
-    const fetchStatus = async () => {
-      const status = await getVotingWindowStatus(submission.id);
-      setVotingWindow(status);
-      if (status.seconds_remaining !== null) {
-        setSecondsLeft(status.seconds_remaining);
-      }
-    };
-    fetchStatus();
-    // Poll every 5 seconds
-    const interval = setInterval(fetchStatus, 5000);
-    return () => clearInterval(interval);
-  }, [submission.id]);
+  // Use the new voting window hook with real-time updates
+  const {
+    secondsLeft,
+    percentageRemaining,
+    urgencyLevel,
+    isOpen,
+    isPending,
+    isExpired,
+    reason,
+  } = useVotingWindow(submission.id);
 
-  // Countdown timer
-  useEffect(() => {
-    if (secondsLeft === null || secondsLeft <= 0) return;
-    const timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev === null || prev <= 0) return 0;
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [secondsLeft]);
-
-  // Format time remaining
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const isVotingClosed = votingWindow !== null && !votingWindow.is_open && !hasSubmitted;
+  const isVotingClosed = (isExpired || !isOpen) && !hasSubmitted && !isPending;
 
   const handleSubmit = useCallback(async () => {
     if (rating === 0 || isOwnSubmission) return;
@@ -110,57 +87,21 @@ export function VotingInterface({
           transition={{ delay: 0.2 }}
           className="glass-card rounded-2xl p-6 space-y-6"
         >
-          {/* Voting Timer */}
-          {secondsLeft !== null && secondsLeft > 0 && !hasSubmitted && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className={`flex items-center justify-center gap-3 p-4 rounded-xl ${
-                secondsLeft <= 60
-                  ? 'bg-red-500/20 border border-red-500/30'
-                  : secondsLeft <= 120
-                  ? 'bg-orange-500/20 border border-orange-500/30'
-                  : 'bg-amber-500/20 border border-amber-500/30'
-              }`}
-            >
-              <Clock className={`w-5 h-5 ${secondsLeft <= 60 ? 'text-red-400 animate-pulse' : 'text-amber-400'}`} />
-              <div className="text-center">
-                <div className={`text-2xl font-bold font-mono ${secondsLeft <= 60 ? 'text-red-400' : 'text-amber-400'}`}>
-                  {formatTime(secondsLeft)}
-                </div>
-                <div className="text-xs text-stone-400">
-                  {secondsLeft <= 60 ? 'Hurry! Vote before time runs out' : 'Time remaining to vote'}
-                </div>
-              </div>
-            </motion.div>
+          {/* Voting Timer - Dramatic Countdown */}
+          {!hasSubmitted && (
+            <VotingCountdown
+              secondsLeft={secondsLeft}
+              urgencyLevel={urgencyLevel}
+              percentageRemaining={percentageRemaining}
+              isPending={isPending}
+              isExpired={isExpired}
+              reason={reason}
+            />
           )}
 
           <AnimatePresence mode="wait">
-            {/* Voting Closed State */}
-            {isVotingClosed ? (
-              <motion.div
-                key="closed"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="text-center py-8 space-y-4"
-              >
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 10 }}
-                  className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-stone-500/20 border-2 border-stone-500"
-                >
-                  <Lock className="w-8 h-8 text-stone-400" />
-                </motion.div>
-                <h3 className="font-display text-xl font-bold text-stone-300">
-                  Voting Window Closed
-                </h3>
-                <p className="text-stone-400">
-                  {votingWindow?.reason || 'The voting window for this presentation has ended.'}
-                </p>
-              </motion.div>
-            ) : hasSubmitted ? (
+            {/* Show voting form when open, success when submitted */}
+            {hasSubmitted ? (
               <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -203,7 +144,7 @@ export function VotingInterface({
                   <StarRating
                     value={rating}
                     onChange={setRating}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isVotingClosed || isPending}
                   />
                   {rating > 0 && (
                     <motion.p
@@ -228,7 +169,7 @@ export function VotingInterface({
                   <ReactionSelector
                     selected={reaction}
                     onChange={setReaction}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isVotingClosed || isPending}
                   />
                 </div>
 
@@ -248,27 +189,29 @@ export function VotingInterface({
                   )}
                 </AnimatePresence>
 
-                {/* Submit button */}
-                <Button
-                  onClick={handleSubmit}
-                  disabled={rating === 0 || isSubmitting}
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-600
-                             hover:from-amber-400 hover:to-orange-500
-                             text-stone-950 font-semibold text-lg py-6
-                             disabled:opacity-50 disabled:cursor-not-allowed
-                             shadow-lg shadow-orange-500/25
-                             transition-all duration-200"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>Submit Vote</>
-                  )}
-                </Button>
+                {/* Submit button - only show when voting is open */}
+                {isOpen && !isPending && (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={rating === 0 || isSubmitting || isVotingClosed}
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-600
+                               hover:from-amber-400 hover:to-orange-500
+                               text-stone-950 font-semibold text-lg py-6
+                               disabled:opacity-50 disabled:cursor-not-allowed
+                               shadow-lg shadow-orange-500/25
+                               transition-all duration-200"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>Submit Vote</>
+                    )}
+                  </Button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

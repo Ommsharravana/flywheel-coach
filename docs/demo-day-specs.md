@@ -30,16 +30,186 @@
 - **Zero compromise** on: learner validation, system smoothness, energy/spectacle, external credibility
 
 ### Critical Gaps Identified
-- [ ] Paper backup scoring sheets (PDF) - **CRITICAL: biggest fear is tech failure**
+- [x] Paper backup scoring sheets (PDF) - ✅ BUILT at `/admin/events/appathon-2/demo-day/backup-sheets`
 - [ ] Submissions not assigned to tracks yet
-- [ ] Audience voting time-lock not built
-- [ ] Grand finale reveal page not built
+- [x] Audience voting time-lock - ✅ BUILT with 5-min window
+- [x] Grand finale reveal page - ✅ BUILT at `/results`
 - [ ] Judges not briefed (need trial run + materials + sessions)
+- [x] **MIGRATION COMPLETE**: Demo-day pages now at `/admin/events/appathon-2/demo-day/`
+- [ ] **EVENT SIDEBAR**: Need event-specific sidebar with Demo Day, Judge Panel, Results links
+
+### Implementation Status (Updated 2026-01-03)
+
+| Feature | Location | Status |
+|---------|----------|--------|
+| Command Center | `/admin/events/appathon-2/demo-day` | ✅ Migrated |
+| Track Assignment | `/admin/events/appathon-2/demo-day/track-assignment` | ⚠️ Pending |
+| Backup Sheets | `/admin/events/appathon-2/demo-day/backup-sheets` | ✅ Migrated |
+| Content Generator | `/admin/events/appathon-2/demo-day/content-generator` | ✅ Migrated |
+| Grand Finale Reveal | `/results` | ✅ Public page |
+| Judge Panel | `/judge` | ✅ Public page |
+| Audience Voting | `/vote` | ✅ Public page |
+| **Event Sidebar** | `/admin/events/[slug]/layout.tsx` | ⚠️ **NEW - Pending** |
+
+**Base URL:** `https://jkkn-solution-studio.vercel.app`
 
 ### Post-Event Needs
 - Full score breakdown per team
-- Judge feedback (strengths/improvements) visible to teams
+- Judge feedback (strengths/improvements) visible to teams - **Immediate unlock after results reveal**
 - Analytics dashboard with aggregate stats
+
+---
+
+## AI-Powered Admin Features (Interview 2026-01-03)
+
+> **Interview conducted to understand how AI can help event admins manage 500+ submissions in 4 days**
+
+### ⚠️ Architecture Note: Appathon-Specific Features
+
+> **IMPORTANT:** All features below are specific to the Appathon event, NOT platform-wide features.
+> They MUST be located within the event detail page at `/admin/events/appathon-2`, NOT as platform-wide routes.
+
+#### Correct Route Structure
+```
+/app/(admin)/admin/events/[slug]/
+├── page.tsx                    # Event overview (existing)
+├── settings/page.tsx           # Event settings (existing)
+├── builders/page.tsx           # Builder management (existing)
+├── curate/page.tsx             # Curation (existing)
+├── submissions/page.tsx        # Submissions list (existing)
+└── demo-day/                   # NEW: Demo Day features
+    ├── page.tsx                # Command Center dashboard
+    ├── track-assignment/page.tsx
+    ├── reveal/page.tsx
+    ├── backup-sheets/page.tsx
+    ├── help/page.tsx
+    └── content-generator/page.tsx
+```
+
+| Feature | Route Location | Slug-Based URL |
+|---------|----------------|----------------|
+| Command Center | `/admin/events/[slug]/demo-day` | `/admin/events/appathon-2/demo-day` |
+| Track Assignment | `/admin/events/[slug]/demo-day/track-assignment` | `/admin/events/appathon-2/demo-day/track-assignment` |
+| Grand Finale Reveal | `/admin/events/[slug]/demo-day/reveal` | `/admin/events/appathon-2/demo-day/reveal` |
+| Paper Backup PDFs | `/admin/events/[slug]/demo-day/backup-sheets` | `/admin/events/appathon-2/demo-day/backup-sheets` |
+| Help Guides | `/admin/events/[slug]/demo-day/help` | `/admin/events/appathon-2/demo-day/help` |
+| Content Generator | `/admin/events/[slug]/demo-day/content-generator` | `/admin/events/appathon-2/demo-day/content-generator` |
+
+**Event ID:** `003089a3-8b28-4844-9714-b94f9b838462` (for database queries)
+**Event Slug:** `appathon-2` (for URL routing)
+
+**Existing Files:**
+- Event detail page: `/app/(admin)/admin/events/[slug]/page.tsx`
+- Admin sidebar: `/components/admin/AdminSidebar.tsx`
+
+### Event-Specific Sidebar (NEW)
+
+> **Requirement:** When viewing an event's admin pages, show a contextual sidebar with event-specific navigation instead of the platform-wide admin sidebar.
+
+#### Why Event-Specific Sidebar?
+- Events have unique features (Appathon has Demo Day, judging, voting)
+- Reduces clutter - only show relevant navigation
+- Better UX - admins stay focused on event management
+- Scalable - future events can have different sidebar items
+
+#### Appathon 2.0 Sidebar Items
+
+| Section | Item | Icon | Route |
+|---------|------|------|-------|
+| **Overview** | Event Dashboard | `LayoutDashboard` | `/admin/events/appathon-2` |
+| **Management** | Submissions | `FileText` | `/admin/events/appathon-2/submissions` |
+| | Builders | `Users` | `/admin/events/appathon-2/builders` |
+| | Curate Problems | `Target` | `/admin/events/appathon-2/curate` |
+| | Settings | `Settings` | `/admin/events/appathon-2/settings` |
+| **Demo Day** | Command Center | `Presentation` | `/admin/events/appathon-2/demo-day` |
+| | Track Assignment | `GitBranch` | `/admin/events/appathon-2/demo-day/track-assignment` |
+| | Backup Sheets | `Printer` | `/admin/events/appathon-2/demo-day/backup-sheets` |
+| | AI Content | `Sparkles` | `/admin/events/appathon-2/demo-day/content-generator` |
+| **Public Pages** | Judge Panel | `Scale` | `/judge` (external link) |
+| | Audience Voting | `Vote` | `/vote` (external link) |
+| | Results | `Trophy` | `/results` (external link) |
+
+#### Implementation Approach
+
+```
+/app/(admin)/admin/events/[slug]/
+├── layout.tsx              # NEW: Event-specific layout with sidebar
+└── _components/
+    └── EventSidebar.tsx    # NEW: Event sidebar component
+```
+
+**Layout Strategy:**
+1. Create `layout.tsx` in `/admin/events/[slug]/` that wraps all event pages
+2. This layout replaces the default admin sidebar with `EventSidebar`
+3. `EventSidebar` receives the slug and renders event-specific navigation
+4. Include "← Back to Events" link at top to return to platform admin
+
+**Sidebar Configuration (per event type):**
+```typescript
+const EVENT_SIDEBAR_CONFIG = {
+  'appathon-2': {
+    sections: [
+      { title: 'Overview', items: [...] },
+      { title: 'Management', items: [...] },
+      { title: 'Demo Day', items: [...] },
+      { title: 'Public Pages', items: [...] },
+    ]
+  },
+  // Future events can have different configurations
+}
+```
+
+### Priority 1: AI Track Assignment Tool
+| Aspect | Decision |
+|--------|----------|
+| **Problem** | 500 apps need categorization, many self-categorized wrong |
+| **Solution** | AI reads each submission's problem statement, auto-assigns to 6 tracks |
+| **Auto-split** | If track has >50 apps, create panels (Healthcare-A, Healthcare-B) |
+| **Trust level** | 80%+ confidence → auto-assign; low-confidence → flag for review |
+| **Data available** | Structured category field exists, but learners often chose wrong |
+
+### Priority 2: Admin Command Center (Day-of Operations)
+| Feature | Description |
+|---------|-------------|
+| **Progress tracking** | Dashboard showing: 23/50 demos complete, Track B running 15 min behind |
+| **Judge monitoring** | Alert if judge hasn't scored in 20 minutes (might be stuck) |
+| **Score anomaly detection** | Flag if judge gives all 10s or all 1s (misunderstanding criteria) |
+| **Real-time status** | Live view of all tracks, current presenters, completion rates |
+
+### Priority 3: Grand Finale Reveal
+| Aspect | Decision |
+|--------|----------|
+| **Style** | Track-by-track reveal (Healthcare → Education → ... → Overall) |
+| **Control** | Presenter button (not auto-timer) |
+| **Pacing** | Single presenter with "Reveal Next Track" button |
+| **Post-reveal** | Immediate unlock of all scores + judge feedback |
+
+### Priority 4: In-App Guides (Judges + Participants)
+| Component | Description |
+|-----------|-------------|
+| **Help page** | Full page explaining everything - read once before starting |
+| **Contextual tooltips** | Hover over '?' icons next to each field for explanation |
+| **Interactive walkthrough** | First-time user gets step-by-step guided tour |
+
+### Priority 5: Paper Backup PDFs
+| Format | Purpose |
+|--------|---------|
+| **Individual score sheet** | One page per submission: criteria, bonus checkboxes, notes space |
+| **Master summary grid** | One sheet per track listing all apps with compact scoring grid |
+
+### Priority 6: Audience Voting Time-Lock
+| Aspect | Decision |
+|--------|----------|
+| **Trigger** | Auto-opens when judge starts scoring (not manual) |
+| **Window** | 5 minutes from trigger, then auto-closes |
+| **Who can vote** | Only logged-in JKKN Solution Studio users |
+
+### Priority 7: AI-Generated Content
+| Content Type | Status |
+|--------------|--------|
+| **Judge briefing text** | AI generates, admin reviews |
+| **Participant email templates** | AI drafts communication |
+| **Track summaries** | Based on apps assigned to each track |
 
 ---
 
@@ -652,4 +822,4 @@ interface JudgeSubmission {
 ---
 
 *Last Updated: 2026-01-03*
-*Document Version: 1.0*
+*Document Version: 1.2 - Added event-specific sidebar spec*
