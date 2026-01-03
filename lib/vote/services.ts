@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import type { PresentingSubmission, UserTrackInfo, AudienceVote, Reaction } from './types';
+import type { PresentingSubmission, UserTrackInfo, AudienceVote, Reaction, VotingWindowStatus } from './types';
 
 // ============================================
 // AUDIENCE VOTING SERVICES
@@ -173,6 +173,36 @@ export async function getUserVote(submissionId: string, voterId: string): Promis
 }
 
 /**
+ * Check if voting window is open for a submission
+ */
+export async function getVotingWindowStatus(submissionId: string): Promise<VotingWindowStatus> {
+  const supabase = createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('is_voting_open', {
+    p_submission_id: submissionId,
+  });
+
+  if (error) {
+    console.error('Error checking voting window:', error);
+    return {
+      is_open: false,
+      window_started_at: null,
+      seconds_remaining: null,
+      reason: 'Failed to check voting status',
+    };
+  }
+
+  const result = data?.[0];
+  return {
+    is_open: result?.is_open ?? false,
+    window_started_at: result?.window_started_at ?? null,
+    seconds_remaining: result?.seconds_remaining ?? null,
+    reason: result?.reason ?? 'Unknown',
+  };
+}
+
+/**
  * Submit a vote for a submission
  */
 export async function submitVote(
@@ -182,6 +212,15 @@ export async function submitVote(
   reaction?: Reaction
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient();
+
+  // First check if voting window is open
+  const windowStatus = await getVotingWindowStatus(submissionId);
+  if (!windowStatus.is_open) {
+    return {
+      success: false,
+      error: windowStatus.reason || 'Voting window is closed',
+    };
+  }
 
   // Get device type
   const deviceType = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent)

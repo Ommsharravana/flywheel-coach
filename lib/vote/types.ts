@@ -43,6 +43,13 @@ export interface VoteStats {
   reactions: Record<Reaction, number>;
 }
 
+export interface VotingWindowStatus {
+  is_open: boolean;
+  window_started_at: string | null;
+  seconds_remaining: number | null;
+  reason: string;
+}
+
 export const REACTIONS: { id: Reaction; emoji: string; label: string }[] = [
   { id: 'love', emoji: '💖', label: 'Love it!' },
   { id: 'innovative', emoji: '💡', label: 'Innovative' },

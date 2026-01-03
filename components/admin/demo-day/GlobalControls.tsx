@@ -37,6 +37,9 @@ import {
   getJudgingTracks,
   assignJudge,
   removeJudge,
+  getResultsRevealStatus,
+  revealResults,
+  hideResults,
   type JudgeInfo,
   type TrackInfo,
 } from '@/lib/judge/admin-actions';
@@ -69,17 +72,23 @@ export function GlobalControls({
   const [judgeActionLoading, setJudgeActionLoading] = useState(false);
   const [judgeMessage, setJudgeMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Fetch trial mode status and judges on mount
+  // Results reveal state
+  const [isResultsRevealed, setIsResultsRevealed] = useState(false);
+  const [revealLoading, setRevealLoading] = useState(false);
+
+  // Fetch trial mode status, judges, and reveal status on mount
   useEffect(() => {
     async function fetchData() {
-      const [trialResult, judgesResult, tracksResult] = await Promise.all([
+      const [trialResult, judgesResult, tracksResult, revealResult] = await Promise.all([
         getTrialModeStatus(),
         getEventJudges(),
         getJudgingTracks(),
+        getResultsRevealStatus(),
       ]);
       setIsTrialMode(trialResult.isTrialMode);
       setJudges(judgesResult.judges);
       setTracks(tracksResult.tracks);
+      setIsResultsRevealed(revealResult.isRevealed);
       if (tracksResult.tracks.length > 0 && !newJudgeTrack) {
         setNewJudgeTrack(tracksResult.tracks[0].theme);
       }
@@ -142,6 +151,33 @@ export function GlobalControls({
     } finally {
       setActionLoading(false);
       setConfirmDialog(null);
+    }
+  };
+
+  const handleRevealResults = async () => {
+    setRevealLoading(true);
+    try {
+      const result = await revealResults();
+      if (result.success) {
+        setIsResultsRevealed(true);
+        onRefresh();
+      }
+    } finally {
+      setRevealLoading(false);
+      setConfirmDialog(null);
+    }
+  };
+
+  const handleHideResults = async () => {
+    setRevealLoading(true);
+    try {
+      const result = await hideResults();
+      if (result.success) {
+        setIsResultsRevealed(false);
+        onRefresh();
+      }
+    } finally {
+      setRevealLoading(false);
     }
   };
 
@@ -256,17 +292,31 @@ export function GlobalControls({
                 <span>Close All Tracks</span>
               </div>
             </Button>
-            <Button
-              variant="outline"
-              className="border-amber-500/30 text-amber-400 hover:bg-amber-500/20 h-auto py-4"
-              onClick={() => setConfirmDialog('reveal')}
-              disabled={state.is_live || state.results_revealed}
-            >
-              <div className="flex flex-col items-center gap-2">
-                <Trophy className="w-5 h-5" />
-                <span>Reveal Results</span>
-              </div>
-            </Button>
+            {isResultsRevealed ? (
+              <Button
+                variant="outline"
+                className="border-stone-500/30 text-stone-400 hover:bg-stone-500/20 h-auto py-4"
+                onClick={handleHideResults}
+                disabled={revealLoading}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  {revealLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
+                  <span>Hide Results</span>
+                </div>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="border-amber-500/30 text-amber-400 hover:bg-amber-500/20 h-auto py-4"
+                onClick={() => setConfirmDialog('reveal')}
+                disabled={state.is_live || revealLoading}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Trophy className="w-5 h-5" />
+                  <span>Reveal Results</span>
+                </div>
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -408,14 +458,21 @@ export function GlobalControls({
           <AlertDialogHeader>
             <AlertDialogTitle className="text-stone-100">Reveal Results?</AlertDialogTitle>
             <AlertDialogDescription className="text-stone-400">
-              This will make all scores and rankings publicly visible. Make sure all judging is complete.
+              This will make all scores and rankings publicly visible at /results. Make sure all judging is complete.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-stone-800 border-stone-700 text-stone-100">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction className="bg-amber-600 hover:bg-amber-700">
+            <AlertDialogAction
+              className="bg-amber-600 hover:bg-amber-700"
+              onClick={handleRevealResults}
+              disabled={revealLoading}
+            >
+              {revealLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
               Reveal Results
             </AlertDialogAction>
           </AlertDialogFooter>

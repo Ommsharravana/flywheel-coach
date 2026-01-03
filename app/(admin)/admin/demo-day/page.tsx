@@ -11,6 +11,7 @@ import {
   LeaderboardView,
   GlobalControls,
   DemoDayStats,
+  AIAssistant,
 } from '@/components/admin/demo-day';
 import type {
   DemoDayState,
@@ -262,6 +263,7 @@ export default function DemoDayPage() {
             onRefresh={handleRefresh}
             isRefreshing={isRefreshing}
           />
+          <AIAssistant state={state} onRefresh={handleRefresh} />
           <DemoDayStats state={state} />
         </>
       )}

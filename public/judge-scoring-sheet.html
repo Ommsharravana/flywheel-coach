@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Appathon 2.0 - Judge Scoring Sheet</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      padding: 0.5in;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+      .no-print {
+        display: none;
+      }
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #0b6d41;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+
+    .logo-section h1 {
+      color: #0b6d41;
+      font-size: 18pt;
+      margin-bottom: 3px;
+    }
+
+    .logo-section h2 {
+      font-size: 12pt;
+      font-weight: normal;
+      color: #666;
+    }
+
+    .date-section {
+      text-align: right;
+      font-size: 10pt;
+      color: #666;
+    }
+
+    .submission-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+    }
+
+    .info-field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-field label {
+      font-size: 9pt;
+      color: #666;
+      margin-bottom: 2px;
+    }
+
+    .info-field .value {
+      border-bottom: 1px solid #333;
+      min-height: 20px;
+      padding: 2px 0;
+    }
+
+    .judge-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #fff8e6;
+      border: 1px solid #ffde59;
+    }
+
+    .section {
+      margin-bottom: 15px;
+    }
+
+    .section-title {
+      font-size: 11pt;
+      font-weight: bold;
+      color: #0b6d41;
+      margin-bottom: 8px;
+      padding-bottom: 3px;
+      border-bottom: 1px solid #0b6d41;
+    }
+
+    .criteria-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10pt;
+    }
+
+    .criteria-table th,
+    .criteria-table td {
+      border: 1px solid #333;
+      padding: 6px 8px;
+      text-align: left;
+    }
+
+    .criteria-table th {
+      background: #0b6d41;
+      color: white;
+      font-weight: bold;
+    }
+
+    .criteria-table .weight {
+      width: 50px;
+      text-align: center;
+      font-weight: bold;
+      color: #666;
+    }
+
+    .criteria-table .score {
+      width: 80px;
+      text-align: center;
+    }
+
+    .criteria-table .score-box {
+      display: inline-flex;
+      gap: 3px;
+    }
+
+    .criteria-table .score-num {
+      width: 18px;
+      height: 18px;
+      border: 1px solid #999;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8pt;
+    }
+
+    .bonus-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10pt;
+    }
+
+    .bonus-table th,
+    .bonus-table td {
+      border: 1px solid #333;
+      padding: 6px 8px;
+    }
+
+    .bonus-table th {
+      background: #ffde59;
+      color: #333;
+      font-weight: bold;
+    }
+
+    .bonus-table .checkbox {
+      width: 50px;
+      text-align: center;
+    }
+
+    .bonus-table .checkbox-box {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #333;
+      display: inline-block;
+    }
+
+    .bonus-table .points {
+      width: 60px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .notes-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .notes-box {
+      border: 1px solid #333;
+      padding: 5px;
+    }
+
+    .notes-box label {
+      font-size: 9pt;
+      font-weight: bold;
+      color: #666;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .notes-box .lines {
+      min-height: 60px;
+      border-top: 1px dotted #ccc;
+    }
+
+    .total-section {
+      display: flex;
+      justify-content: flex-end;
+      gap: 20px;
+      margin-top: 15px;
+      padding: 10px;
+      background: #e6f7ed;
+      border: 2px solid #0b6d41;
+    }
+
+    .total-box {
+      text-align: center;
+    }
+
+    .total-box label {
+      font-size: 9pt;
+      color: #666;
+      display: block;
+    }
+
+    .total-box .value {
+      font-size: 16pt;
+      font-weight: bold;
+      color: #0b6d41;
+      border-bottom: 2px solid #0b6d41;
+      min-width: 80px;
+      display: inline-block;
+    }
+
+    .signature-section {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .signature-box {
+      width: 200px;
+    }
+
+    .signature-box label {
+      font-size: 9pt;
+      color: #666;
+    }
+
+    .signature-box .line {
+      border-bottom: 1px solid #333;
+      height: 30px;
+      margin-top: 20px;
+    }
+
+    .instructions {
+      margin-top: 20px;
+      padding: 10px;
+      background: #fff3f3;
+      border: 1px solid #ff9999;
+      font-size: 9pt;
+    }
+
+    .instructions h4 {
+      color: #cc0000;
+      margin-bottom: 5px;
+    }
+
+    .instructions ul {
+      margin-left: 15px;
+    }
+
+    .print-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background: #0b6d41;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14pt;
+    }
+
+    .print-btn:hover {
+      background: #095432;
+    }
+  </style>
+</head>
+<body>
+  <button class="print-btn no-print" onclick="window.print()">Print / Save as PDF</button>
+
+  <div class="header">
+    <div class="logo-section">
+      <h1>JKKN Institutions</h1>
+      <h2>Appathon 2.0 - Demo Day Judge Scoring Sheet</h2>
+    </div>
+    <div class="date-section">
+      <div>January 7, 2026</div>
+      <div>BACKUP SCORING FORM</div>
+    </div>
+  </div>
+
+  <div class="submission-info">
+    <div class="info-field">
+      <label>Submission #</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>App Name</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>Track / Theme</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>Team Name</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>Demo Slot #</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>Demo Time</label>
+      <div class="value"></div>
+    </div>
+  </div>
+
+  <div class="judge-info">
+    <div class="info-field">
+      <label>Judge Name</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>Panel / Room</label>
+      <div class="value"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">SCORING CRITERIA (Circle score 1-10)</div>
+    <table class="criteria-table">
+      <thead>
+        <tr>
+          <th>Criterion</th>
+          <th class="weight">Weight</th>
+          <th>Description</th>
+          <th class="score">Score (1-10)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Problem Impact</strong></td>
+          <td class="weight">20%</td>
+          <td>How significant is the problem? Who benefits?</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Solution Innovation</strong></td>
+          <td class="weight">20%</td>
+          <td>Is the approach creative and novel?</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Working Prototype</strong></td>
+          <td class="weight">20%</td>
+          <td>Does the app work? Is it polished?</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>User Validation</strong></td>
+          <td class="weight">15%</td>
+          <td>Tested with real users? What feedback?</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Presentation Quality</strong></td>
+          <td class="weight">5%</td>
+          <td>Clear communication, engaging demo</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Bioconvergence Alignment</strong></td>
+          <td class="weight">5%</td>
+          <td>Connection to JKKN's mission</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-title">BONUS CRITERIA (Check if applicable)</div>
+    <table class="bonus-table">
+      <thead>
+        <tr>
+          <th class="checkbox">Check</th>
+          <th>Bonus</th>
+          <th>Requirement</th>
+          <th class="points">Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="checkbox"><span class="checkbox-box"></span></td>
+          <td><strong>Cross-disciplinary Team</strong></td>
+          <td>Members from 2+ departments</td>
+          <td class="points">+5%</td>
+        </tr>
+        <tr>
+          <td class="checkbox"><span class="checkbox-box"></span></td>
+          <td><strong>Cross-institutional Team</strong></td>
+          <td>Members from 2+ JKKN institutions</td>
+          <td class="points">+5%</td>
+        </tr>
+        <tr>
+          <td class="checkbox"><span class="checkbox-box"></span></td>
+          <td><strong>First-year Participation</strong></td>
+          <td>At least one first-year member</td>
+          <td class="points">+3%</td>
+        </tr>
+        <tr>
+          <td class="checkbox"><span class="checkbox-box"></span></td>
+          <td><strong>User Testimonials</strong></td>
+          <td>Real users vouching for the app</td>
+          <td class="points">+2%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-title">FEEDBACK NOTES</div>
+    <div class="notes-section">
+      <div class="notes-box">
+        <label>Strengths (What they did well)</label>
+        <div class="lines"></div>
+      </div>
+      <div class="notes-box">
+        <label>Areas for Improvement</label>
+        <div class="lines"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="total-section">
+    <div class="total-box">
+      <label>Base Score (sum/6)</label>
+      <div class="value">&nbsp;</div>
+    </div>
+    <div class="total-box">
+      <label>Bonus %</label>
+      <div class="value">&nbsp;</div>
+    </div>
+    <div class="total-box">
+      <label>FINAL SCORE</label>
+      <div class="value">&nbsp;</div>
+    </div>
+  </div>
+
+  <div class="signature-section">
+    <div class="signature-box">
+      <label>Judge Signature</label>
+      <div class="line"></div>
+    </div>
+    <div class="signature-box">
+      <label>Time Completed</label>
+      <div class="line"></div>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <h4>BACKUP FORM INSTRUCTIONS</h4>
+    <ul>
+      <li>Use this form ONLY if the digital system fails</li>
+      <li>Circle ONE number (1-10) for each criterion</li>
+      <li>Check the checkbox for any bonus that applies</li>
+      <li>Submit completed forms to the Panel Lead immediately</li>
+      <li>Data entry team will input scores into the system post-event</li>
+    </ul>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- Second copy for printing multiple sheets -->
+  <div class="header">
+    <div class="logo-section">
+      <h1>JKKN Institutions</h1>
+      <h2>Appathon 2.0 - Demo Day Judge Scoring Sheet</h2>
+    </div>
+    <div class="date-section">
+      <div>January 7, 2026</div>
+      <div>BACKUP SCORING FORM</div>
+    </div>
+  </div>
+
+  <div class="submission-info">
+    <div class="info-field">
+      <label>Submission #</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>App Name</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>Track / Theme</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>Team Name</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>Demo Slot #</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>Demo Time</label>
+      <div class="value"></div>
+    </div>
+  </div>
+
+  <div class="judge-info">
+    <div class="info-field">
+      <label>Judge Name</label>
+      <div class="value"></div>
+    </div>
+    <div class="info-field">
+      <label>Panel / Room</label>
+      <div class="value"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">SCORING CRITERIA (Circle score 1-10)</div>
+    <table class="criteria-table">
+      <thead>
+        <tr>
+          <th>Criterion</th>
+          <th class="weight">Weight</th>
+          <th>Description</th>
+          <th class="score">Score (1-10)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Problem Impact</strong></td>
+          <td class="weight">20%</td>
+          <td>How significant is the problem? Who benefits?</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Solution Innovation</strong></td>
+          <td class="weight">20%</td>
+          <td>Is the approach creative and novel?</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Working Prototype</strong></td>
+          <td class="weight">20%</td>
+          <td>Does the app work? Is it polished?</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>User Validation</strong></td>
+          <td class="weight">15%</td>
+          <td>Tested with real users? What feedback?</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Presentation Quality</strong></td>
+          <td class="weight">5%</td>
+          <td>Clear communication, engaging demo</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Bioconvergence Alignment</strong></td>
+          <td class="weight">5%</td>
+          <td>Connection to JKKN's mission</td>
+          <td class="score">
+            <span class="score-box">
+              <span class="score-num">1</span>
+              <span class="score-num">2</span>
+              <span class="score-num">3</span>
+              <span class="score-num">4</span>
+              <span class="score-num">5</span>
+              <span class="score-num">6</span>
+              <span class="score-num">7</span>
+              <span class="score-num">8</span>
+              <span class="score-num">9</span>
+              <span class="score-num">10</span>
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-title">BONUS CRITERIA (Check if applicable)</div>
+    <table class="bonus-table">
+      <thead>
+        <tr>
+          <th class="checkbox">Check</th>
+          <th>Bonus</th>
+          <th>Requirement</th>
+          <th class="points">Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="checkbox"><span class="checkbox-box"></span></td>
+          <td><strong>Cross-disciplinary Team</strong></td>
+          <td>Members from 2+ departments</td>
+          <td class="points">+5%</td>
+        </tr>
+        <tr>
+          <td class="checkbox"><span class="checkbox-box"></span></td>
+          <td><strong>Cross-institutional Team</strong></td>
+          <td>Members from 2+ JKKN institutions</td>
+          <td class="points">+5%</td>
+        </tr>
+        <tr>
+          <td class="checkbox"><span class="checkbox-box"></span></td>
+          <td><strong>First-year Participation</strong></td>
+          <td>At least one first-year member</td>
+          <td class="points">+3%</td>
+        </tr>
+        <tr>
+          <td class="checkbox"><span class="checkbox-box"></span></td>
+          <td><strong>User Testimonials</strong></td>
+          <td>Real users vouching for the app</td>
+          <td class="points">+2%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-title">FEEDBACK NOTES</div>
+    <div class="notes-section">
+      <div class="notes-box">
+        <label>Strengths (What they did well)</label>
+        <div class="lines"></div>
+      </div>
+      <div class="notes-box">
+        <label>Areas for Improvement</label>
+        <div class="lines"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="total-section">
+    <div class="total-box">
+      <label>Base Score (sum/6)</label>
+      <div class="value">&nbsp;</div>
+    </div>
+    <div class="total-box">
+      <label>Bonus %</label>
+      <div class="value">&nbsp;</div>
+    </div>
+    <div class="total-box">
+      <label>FINAL SCORE</label>
+      <div class="value">&nbsp;</div>
+    </div>
+  </div>
+
+  <div class="signature-section">
+    <div class="signature-box">
+      <label>Judge Signature</label>
+      <div class="line"></div>
+    </div>
+    <div class="signature-box">
+      <label>Time Completed</label>
+      <div class="line"></div>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <h4>BACKUP FORM INSTRUCTIONS</h4>
+    <ul>
+      <li>Use this form ONLY if the digital system fails</li>
+      <li>Circle ONE number (1-10) for each criterion</li>
+      <li>Check the checkbox for any bonus that applies</li>
+      <li>Submit completed forms to the Panel Lead immediately</li>
+      <li>Data entry team will input scores into the system post-event</li>
+    </ul>
+  </div>
+</body>
+</html>

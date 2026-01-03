@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getEffectiveUser } from '@/lib/supabase/effective-user'
 import type {
   JudgingTrack,
@@ -338,6 +339,7 @@ export async function submitScore(submissionId: string): Promise<{
 
 /**
  * Get submission details for scoring
+ * Uses admin client after verifying user is a judge assigned to this submission's track
  */
 export async function getSubmissionForScoring(submissionId: string): Promise<{
   submission: {
@@ -352,9 +354,47 @@ export async function getSubmissionForScoring(submissionId: string): Promise<{
   error?: string
 }> {
   const supabase = await createClient()
+  const effectiveUser = await getEffectiveUser()
+
+  if (!effectiveUser) {
+    return { submission: null, error: 'Not authenticated' }
+  }
+
+  // Verify user is a judge assigned to the track that has this submission
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: isAssigned, error: authError } = await (supabase as any)
+    .from('submission_track_assignments')
+    .select(`
+      id,
+      track:judging_tracks!inner (
+        id,
+        judges:track_judges!inner (
+          user_id
+        )
+      )
+    `)
+    .eq('submission_id', submissionId)
+    .eq('track.judges.user_id', effectiveUser.id)
+    .maybeSingle()
+
+  if (authError) {
+    console.error('Error verifying judge assignment:', authError)
+    return { submission: null, error: 'Failed to verify authorization' }
+  }
+
+  if (!isAssigned) {
+    // Also check if trial mode is enabled - if so, allow any judge
+    const isTrialMode = await checkTrialMode(supabase)
+    if (!isTrialMode) {
+      return { submission: null, error: 'Not authorized to score this submission' }
+    }
+  }
+
+  // Use admin client to bypass RLS and get submission details
+  const adminClient = createAdminClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await (adminClient as any)
     .from('appathon_submissions')
     .select(`
       id,
