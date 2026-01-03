@@ -54,8 +54,8 @@ export function useSubmissionScore(submissionId: string) {
     app_name: string
     category: string
     problem_statement: string | null
-    app_url: string | null
-    video_url: string | null
+    live_url: string | null
+    demo_video_url: string | null
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)

@@ -178,7 +178,7 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
             </div>
           )}
           <div className="flex flex-wrap gap-3">
-            {submission.app_url && (
+            {submission.live_url && (
               <Button
                 variant="outline"
                 size="sm"
@@ -186,7 +186,7 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
                 className="text-amber-400 border-amber-500/50 hover:bg-amber-500/10"
               >
                 <a
-                  href={submission.app_url}
+                  href={submission.live_url}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -196,7 +196,7 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
                 </a>
               </Button>
             )}
-            {submission.video_url && (
+            {submission.demo_video_url && (
               <Button
                 variant="outline"
                 size="sm"
@@ -204,7 +204,7 @@ export function ScoringForm({ submissionId, onBack }: ScoringFormProps) {
                 className="text-amber-400 border-amber-500/50 hover:bg-amber-500/10"
               >
                 <a
-                  href={submission.video_url}
+                  href={submission.demo_video_url}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

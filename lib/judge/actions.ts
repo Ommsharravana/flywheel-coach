@@ -349,8 +349,8 @@ export async function getSubmissionForScoring(submissionId: string): Promise<{
     app_name: string
     category: string
     problem_statement: string | null
-    app_url: string | null
-    video_url: string | null
+    live_url: string | null
+    demo_video_url: string | null
   } | null
   error?: string
 }> {
@@ -409,8 +409,8 @@ export async function getSubmissionForScoring(submissionId: string): Promise<{
       app_name,
       category,
       problem_statement,
-      app_url,
-      video_url
+      live_url,
+      demo_video_url
     `)
     .eq('id', submissionId)
     .single()
