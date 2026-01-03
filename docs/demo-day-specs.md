@@ -36,20 +36,20 @@
 - [x] Grand finale reveal page - ✅ BUILT at `/results`
 - [ ] Judges not briefed (need trial run + materials + sessions)
 - [x] **MIGRATION COMPLETE**: Demo-day pages now at `/admin/events/appathon-2/demo-day/`
-- [ ] **EVENT SIDEBAR**: Need event-specific sidebar with Demo Day, Judge Panel, Results links
+- [x] **EVENT SIDEBAR**: Configurable event-type sidebars ✅ BUILT
 
 ### Implementation Status (Updated 2026-01-03)
 
 | Feature | Location | Status |
 |---------|----------|--------|
-| Command Center | `/admin/events/appathon-2/demo-day` | ✅ Migrated |
-| Track Assignment | `/admin/events/appathon-2/demo-day/track-assignment` | ⚠️ Pending |
-| Backup Sheets | `/admin/events/appathon-2/demo-day/backup-sheets` | ✅ Migrated |
-| Content Generator | `/admin/events/appathon-2/demo-day/content-generator` | ✅ Migrated |
+| Command Center | `/admin/events/appathon-2/demo-day` | ✅ Complete |
+| Track Assignment | `/admin/events/appathon-2/demo-day/track-assignment` | ✅ Complete |
+| Backup Sheets | `/admin/events/appathon-2/demo-day/backup-sheets` | ✅ Complete |
+| Content Generator | `/admin/events/appathon-2/demo-day/content-generator` | ✅ Complete |
 | Grand Finale Reveal | `/results` | ✅ Public page |
 | Judge Panel | `/judge` | ✅ Public page |
 | Audience Voting | `/vote` | ✅ Public page |
-| **Event Sidebar** | `/admin/events/[slug]/layout.tsx` | ⚠️ **NEW - Pending** |
+| **Event Sidebar** | `/lib/admin/event-sidebar-config.ts` | ✅ Complete |
 
 **Base URL:** `https://jkkn-solution-studio.vercel.app`
 
@@ -129,33 +129,36 @@
 | | Audience Voting | `Vote` | `/vote` (external link) |
 | | Results | `Trophy` | `/results` (external link) |
 
-#### Implementation Approach
+#### Implementation ✅ COMPLETE
 
 ```
+/lib/admin/event-sidebar-config.ts    # Central configuration
 /app/(admin)/admin/events/[slug]/
-├── layout.tsx              # NEW: Event-specific layout with sidebar
+├── layout.tsx                        # Validates event exists
 └── _components/
-    └── EventSidebar.tsx    # NEW: Event sidebar component
+    └── EventSidebar.tsx              # Dynamic sidebar component
+/app/(admin)/layout.tsx               # Passes eventType to EventSidebar
 ```
 
-**Layout Strategy:**
-1. Create `layout.tsx` in `/admin/events/[slug]/` that wraps all event pages
-2. This layout replaces the default admin sidebar with `EventSidebar`
-3. `EventSidebar` receives the slug and renders event-specific navigation
-4. Include "← Back to Events" link at top to return to platform admin
+**How It Works:**
+1. Admin layout detects if URL matches `/admin/events/[slug]/*`
+2. Fetches `events.config.type` from database (defaults to `appathon`)
+3. Passes `eventType` to `EventSidebar` component
+4. `EventSidebar` calls `getEventSidebarConfig(slug, eventType)` for navigation
 
-**Sidebar Configuration (per event type):**
+**Supported Event Types:**
+| Type | Sidebar Sections |
+|------|------------------|
+| `appathon`/`hackathon` | Overview, Management, Demo Day, Public Pages |
+| `workshop` | Overview, Content (Sessions/Materials/Exercises), Participants |
+| `ideathon` | Overview, Ideas, Evaluation |
+| `competition` | Overview, Participants, Competition |
+| `generic` | Overview, Management |
+
+**Configuration File:** `/lib/admin/event-sidebar-config.ts`
 ```typescript
-const EVENT_SIDEBAR_CONFIG = {
-  'appathon-2': {
-    sections: [
-      { title: 'Overview', items: [...] },
-      { title: 'Management', items: [...] },
-      { title: 'Demo Day', items: [...] },
-      { title: 'Public Pages', items: [...] },
-    ]
-  },
-  // Future events can have different configurations
+export function getEventSidebarConfig(slug: string, eventType: string): NavSection[] {
+  return createSidebarConfig(slug, eventType.toLowerCase());
 }
 ```
 
@@ -822,4 +825,4 @@ interface JudgeSubmission {
 ---
 
 *Last Updated: 2026-01-03*
-*Document Version: 1.2 - Added event-specific sidebar spec*
+*Document Version: 1.3 - Event sidebar implementation complete*
