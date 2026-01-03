@@ -18,6 +18,7 @@ import {
   Rocket,
   UserCog,
   ClipboardList,
+  Presentation,
 } from 'lucide-react';
 
 const navItems = [
@@ -35,6 +36,11 @@ const navItems = [
     label: 'Events',
     href: '/admin/events',
     icon: Trophy,
+  },
+  {
+    label: 'Demo Day',
+    href: '/admin/demo-day',
+    icon: Presentation,
   },
   {
     label: 'Users',

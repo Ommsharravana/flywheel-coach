@@ -1928,6 +1928,109 @@ export type Database = {
           updated_at?: string
         }
       }
+
+      // ============================================
+      // JUDGE SCORES TABLE
+      // ============================================
+      judge_scores: {
+        Row: {
+          id: string
+          submission_id: string
+          judge_id: string
+          track_id: string | null
+          problem_impact: number | null
+          solution_innovation: number | null
+          working_prototype: number | null
+          user_validation: number | null
+          presentation_quality: number | null
+          bioconvergence_alignment: number | null
+          bonus_cross_disciplinary: boolean
+          bonus_cross_institutional: boolean
+          bonus_first_year: boolean
+          bonus_user_testimonials: boolean
+          weighted_score: number | null
+          bonus_percentage: number | null
+          total_score: number | null
+          notes: string | null
+          strengths: string | null
+          improvements: string | null
+          started_at: string | null
+          submitted_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          submission_id: string
+          judge_id: string
+          track_id?: string | null
+          problem_impact?: number | null
+          solution_innovation?: number | null
+          working_prototype?: number | null
+          user_validation?: number | null
+          presentation_quality?: number | null
+          bioconvergence_alignment?: number | null
+          bonus_cross_disciplinary?: boolean
+          bonus_cross_institutional?: boolean
+          bonus_first_year?: boolean
+          bonus_user_testimonials?: boolean
+          notes?: string | null
+          strengths?: string | null
+          improvements?: string | null
+          started_at?: string | null
+          submitted_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          problem_impact?: number | null
+          solution_innovation?: number | null
+          working_prototype?: number | null
+          user_validation?: number | null
+          presentation_quality?: number | null
+          bioconvergence_alignment?: number | null
+          bonus_cross_disciplinary?: boolean
+          bonus_cross_institutional?: boolean
+          bonus_first_year?: boolean
+          bonus_user_testimonials?: boolean
+          notes?: string | null
+          strengths?: string | null
+          improvements?: string | null
+          submitted_at?: string | null
+          updated_at?: string
+        }
+      }
+
+      // ============================================
+      // AUDIENCE VOTES TABLE
+      // ============================================
+      audience_votes: {
+        Row: {
+          id: string
+          submission_id: string
+          voter_id: string | null
+          voter_identifier: string | null
+          rating: number
+          reaction: 'love' | 'innovative' | 'useful' | 'polished' | 'impactful' | null
+          voted_at: string
+          device_type: string | null
+        }
+        Insert: {
+          id?: string
+          submission_id: string
+          voter_id?: string | null
+          voter_identifier?: string | null
+          rating: number
+          reaction?: 'love' | 'innovative' | 'useful' | 'polished' | 'impactful' | null
+          voted_at?: string
+          device_type?: string | null
+        }
+        Update: {
+          rating?: number
+          reaction?: 'love' | 'innovative' | 'useful' | 'polished' | 'impactful' | null
+          voted_at?: string
+        }
+      }
     }
     Views: {
       admin_pending_change_requests: {
@@ -2158,6 +2261,22 @@ export type Database = {
         Args: { user_id_param?: string | null }
         Returns: boolean
       }
+      get_judge_track: {
+        Args: { p_user_id: string; p_event_id: string }
+        Returns: string | null
+      }
+      get_judge_submissions: {
+        Args: { p_user_id: string; p_event_id: string }
+        Returns: {
+          submission_id: string
+          submission_number: string
+          app_name: string
+          category: string
+          demo_slot: number | null
+          scoring_status: string
+          my_score: number | null
+        }[]
+      }
     }
     Enums: {
       user_role: UserRole
@@ -2223,3 +2342,130 @@ export type Cycle = Tables<'cycles'>
 export type Institution = Tables<'institutions'>
 export type ProblemBank = Tables<'problem_bank'>
 export type AdminActivityLog = Tables<'admin_activity_logs'>
+
+// ============================================
+// JUDGING SYSTEM TYPES
+// ============================================
+
+export type JudgingTrackStatus = 'pending' | 'presenting' | 'completed' | 'skipped'
+export type ScoringStatus = 'pending' | 'in_progress' | 'completed'
+
+export interface JudgingTrack {
+  id: string
+  event_id: string
+  name: string
+  theme: string
+  description: string | null
+  room_location: string | null
+  demo_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface TrackJudge {
+  id: string
+  track_id: string
+  user_id: string
+  is_lead: boolean
+  assigned_at: string
+}
+
+export interface SubmissionTrackAssignment {
+  id: string
+  submission_id: string
+  track_id: string
+  demo_slot: number | null
+  demo_time: string | null
+  status: JudgingTrackStatus
+  created_at: string
+}
+
+export interface JudgeScore {
+  id: string
+  submission_id: string
+  judge_id: string
+  track_id: string | null
+  // Individual criterion scores (1-10 scale)
+  problem_impact: number | null
+  solution_innovation: number | null
+  working_prototype: number | null
+  user_validation: number | null
+  presentation_quality: number | null
+  bioconvergence_alignment: number | null
+  // Bonus criteria
+  bonus_cross_disciplinary: boolean
+  bonus_cross_institutional: boolean
+  bonus_first_year: boolean
+  bonus_user_testimonials: boolean
+  // Calculated fields
+  weighted_score: number | null
+  bonus_percentage: number | null
+  total_score: number | null
+  // Notes
+  notes: string | null
+  strengths: string | null
+  improvements: string | null
+  // Timestamps
+  started_at: string
+  submitted_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface JudgeScoreInsert {
+  submission_id: string
+  judge_id: string
+  track_id?: string | null
+  problem_impact?: number | null
+  solution_innovation?: number | null
+  working_prototype?: number | null
+  user_validation?: number | null
+  presentation_quality?: number | null
+  bioconvergence_alignment?: number | null
+  bonus_cross_disciplinary?: boolean
+  bonus_cross_institutional?: boolean
+  bonus_first_year?: boolean
+  bonus_user_testimonials?: boolean
+  notes?: string | null
+  strengths?: string | null
+  improvements?: string | null
+  submitted_at?: string | null
+}
+
+export interface JudgeScoreUpdate {
+  problem_impact?: number | null
+  solution_innovation?: number | null
+  working_prototype?: number | null
+  user_validation?: number | null
+  presentation_quality?: number | null
+  bioconvergence_alignment?: number | null
+  bonus_cross_disciplinary?: boolean
+  bonus_cross_institutional?: boolean
+  bonus_first_year?: boolean
+  bonus_user_testimonials?: boolean
+  notes?: string | null
+  strengths?: string | null
+  improvements?: string | null
+  submitted_at?: string | null
+}
+
+// Joined types for UI
+export interface JudgeSubmission {
+  submission_id: string
+  submission_number: string
+  app_name: string
+  category: string
+  demo_slot: number | null
+  scoring_status: ScoringStatus
+  my_score: number | null
+}
+
+export interface JudgeTrackWithSubmissions {
+  track: JudgingTrack
+  submissions: JudgeSubmission[]
+  judge_info: {
+    is_lead: boolean
+    assigned_at: string
+  }
+}
