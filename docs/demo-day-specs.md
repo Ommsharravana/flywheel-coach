@@ -47,6 +47,8 @@
 | Backup Sheets | `/admin/events/appathon-2/demo-day/backup-sheets` | ✅ Complete |
 | Content Generator | `/admin/events/appathon-2/demo-day/content-generator` | ✅ Complete |
 | Grand Finale Reveal | `/results` | ✅ Public page |
+| Live Reveal Experience | `/reveal` | ✅ Public page (animated reveal) |
+| Reveal Admin Controls | `/reveal/control` | ✅ Admin page |
 | Judge Panel | `/judge` | ✅ Public page |
 | Audience Voting | `/vote` | ✅ Public page |
 | **Event Sidebar** | `/lib/admin/event-sidebar-config.ts` | ✅ Complete |
@@ -128,6 +130,8 @@
 | **Public Pages** | Judge Panel | `Scale` | `/judge` (external link) |
 | | Audience Voting | `Vote` | `/vote` (external link) |
 | | Results | `Trophy` | `/results` (external link) |
+| | Live Reveal | `Sparkles` | `/reveal` (external link) |
+| | Reveal Control | `Settings` | `/reveal/control` (admin) |
 
 #### Implementation ✅ COMPLETE
 
@@ -662,11 +666,14 @@ total_score := weighted * (1 + bonus / 100);
 ### Final Score View Calculation
 
 ```sql
+-- As implemented in migration 085_grand_finale_reveal.sql
 final_score :=
-  avg_judge_score * 0.85 +      -- 85% from judges
-  audience_score * 0.15 +        -- 15% from audience
-  avg_bonus                      -- Bonus as percentage points
+  (avg_judge_score * 0.80 +      -- 80% from judges
+   audience_score * 0.20) *      -- 20% from audience
+  (1 + avg_bonus / 100)          -- Bonus as multiplier
 ```
+
+> **Note:** Original design was 85%/15% but implementation uses 80%/20% for better audience engagement.
 
 ---
 
@@ -744,11 +751,25 @@ interface JudgeSubmission {
 
 ## Migrations Applied
 
-| Migration | Description | Date Applied |
-|-----------|-------------|--------------|
-| `080_judging_system.sql` | Core schema: 5 tables, 2 views, RLS policies | 2026-01-03 |
-| `081_judging_trial_mode.sql` | Trial mode functions, judge assignment | 2026-01-03 |
-| `082_fix_judge_assignment_ambiguity.sql` | Fix column reference ambiguity bug | 2026-01-03 |
+| Migration | Description | Status |
+|-----------|-------------|--------|
+| `080_judging_system.sql` | Core schema: 5 tables, 2 views, RLS policies | ✅ Deployed |
+| `081_judging_trial_mode.sql` | Trial mode functions, judge assignment | ✅ Deployed |
+| `082_fix_judge_assignment_ambiguity.sql` | Fix column reference ambiguity bug | ✅ Deployed |
+| `083_audience_voting.sql` | `audience_votes` table with RLS policies | ⚠️ Not Deployed |
+| `084_time_locked_voting.sql` | `is_voting_open()` RPC, voting window logic | ⚠️ Not Deployed |
+| `085_grand_finale_reveal.sql` | Final scoring (80/20), results reveal functions | ⚠️ Not Deployed |
+| `086_judge_submission_rls.sql` | RLS fix for judge submission access | ⚠️ Not Deployed |
+| `087_demo_reveal_state.sql` | `demo_day_reveal_state` table | ⚠️ Not Deployed |
+| `20260103_track_leaderboard.sql` | `track_leaderboards` table with rankings | ⚠️ Not Deployed |
+
+> **⚠️ Production Gap**: Migrations 083-087 and 20260103 exist in codebase but are NOT deployed to production Supabase. These migrations are required for:
+> - Time-locked audience voting (5-min window)
+> - Grand finale results reveal
+> - Final score calculation (80% judge + 20% audience)
+> - Track leaderboards with rankings
+>
+> **To deploy:** Run migrations in order via Supabase Dashboard SQL Editor or CLI.
 
 ### Bug Fix Details (Migration 082)
 
