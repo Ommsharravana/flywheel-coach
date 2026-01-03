@@ -2,6 +2,7 @@
 
 import { createContext, useContext, ReactNode, useCallback, useState, useTransition, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import type { Event, EventConfig } from '@/lib/events/types';
 
 interface EventContextType {
@@ -86,7 +87,9 @@ export function EventProvider({ children, activeEvent: serverActiveEvent }: Even
     } catch (err) {
       // Revert optimistic update on any error
       setLocalActiveEvent(serverActiveEvent);
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : 'Failed to join event';
+      toast.error(errorMessage);
+      console.error('Join event error:', err);
     } finally {
       setIsJoining(false);
     }
@@ -116,6 +119,13 @@ export function EventProvider({ children, activeEvent: serverActiveEvent }: Even
 
       const data = await response.json();
 
+      // Show success message
+      if (data.cycleCreated) {
+        toast.success(`Joined ${data.event?.name || 'event'} - Let's build!`);
+      } else if (data.joined) {
+        toast.success(`Joined ${data.event?.name || 'event'}`);
+      }
+
       // Redirect to the new cycle (or dashboard if cycle creation failed)
       if (data.redirectUrl) {
         router.push(data.redirectUrl);
@@ -123,7 +133,9 @@ export function EventProvider({ children, activeEvent: serverActiveEvent }: Even
     } catch (err) {
       // Revert optimistic update on any error
       setLocalActiveEvent(serverActiveEvent);
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : 'Failed to join event';
+      toast.error(errorMessage);
+      console.error('Join and start error:', err);
     } finally {
       setIsJoining(false);
     }
@@ -156,7 +168,9 @@ export function EventProvider({ children, activeEvent: serverActiveEvent }: Even
     } catch (err) {
       // Revert optimistic update on any error
       setLocalActiveEvent(previousEvent);
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : 'Failed to leave event';
+      toast.error(errorMessage);
+      console.error('Leave event error:', err);
     } finally {
       setIsJoining(false);
     }
