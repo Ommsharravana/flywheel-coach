@@ -1,6 +1,50 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Current Session: 2026-01-04 - P04 Public Metrics Dashboard
+## Current Session: 2026-01-04 - BUG-127 Builder Count Fix
+
+### What Was Done
+
+**BUG-127: Builder count remains static on event page - FIXED ✅**
+
+**Problem:** Builder count showed 1337 instead of expected ~1500+. Users who switched events were no longer counted for their previous event because `active_event_id` only tracks the CURRENT event.
+
+**Root Cause Analysis:**
+- `get_event_builder_count()` function used `WHERE active_event_id = event_id`
+- When users switch events, they lose their count in the previous event
+- Need to count ALL users who ever registered (via cycles table)
+
+**Solution: UNION-based approach**
+Created new RPC functions that count:
+1. Users currently active on the event (`active_event_id`)
+2. Users who have cycles for the event (historical registrations)
+
+**Database Changes:**
+- Created `get_event_registered_builder_count(UUID)` - single event count
+- Created `get_all_event_registered_builder_counts()` - all events count
+- Both use UNION to combine active users + cycle users
+
+**Code Changes:**
+| File | Change |
+|------|--------|
+| `supabase/migrations/088_registered_builder_count.sql` | Initial migration |
+| `supabase/migrations/089_fix_registered_builder_count.sql` | UNION-based fix |
+| `app/(admin)/admin/events/[slug]/page.tsx` | Uses new RPC function |
+| `app/api/events/route.ts` | Uses `get_all_event_registered_builder_counts` |
+
+**Commits:**
+- `fbe4590` - fix(admin): Use UNION-based builder count for accuracy
+- `d7a166a` - fix(api): Use registered builder count in events API
+
+**Result Verified:**
+- Old count: **1337** (only active users)
+- New count: **1397** (active + historical via cycles)
+- 60 additional builders now correctly counted
+
+**Production:** https://jkkn-solution-studio.vercel.app - Builder count now shows 1397 ✅
+
+---
+
+## Previous Session: 2026-01-04 - P04 Public Metrics Dashboard
 
 ### What Was Done
 
