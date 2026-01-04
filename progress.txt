@@ -1,6 +1,33 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Current Session: 2026-01-02 - Vibe Studio Phase 1 Complete
+## Current Session: 2026-01-04 - Claude Code Setup & Shortcuts
+
+### What Was Done
+- **Fixed `claude` command not working in Obsidian terminal**
+  - Root cause: Bun path (`~/.bun/bin`) not in Obsidian's PATH
+  - Solution: Created wrapper script at `~/.local/bin/claude`
+  - Added `~/.local/bin` to PATH in `.zshrc`
+
+- **Added `cbwa` alias for browser automation**
+  - Starts Claude and auto-runs `/chrome-start`
+  - Fixed: `-p` is "print mode", not "prompt mode" - use positional arg instead
+  - Command: `bun --bun "$HOME/.bun/bin/claude" "/chrome-start"`
+
+- **Session setup completed**
+  - `/chrome-start` successfully connects to Claude-in-Chrome
+  - Browser automation ready for web testing
+
+### No Code Changes This Session
+- `app/showcase/page.tsx` modification is from previous session (uncommitted)
+- `.claude/memory/` is untracked local storage
+
+### Next Session
+- Continue with **Public Portfolio Showcase** feature (per features.json)
+- The showcase page has uncommitted changes to review
+
+---
+
+## Previous Session: 2026-01-02 - Vibe Studio Phase 1 Complete
 
 ### JKKN Vibe Studio - Phase 1 Complete ✅
 
