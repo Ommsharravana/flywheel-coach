@@ -104,7 +104,7 @@
         "name": "Deploy Missing Migrations",
         "description": "Deploy migrations 083-087 to production for audience voting, time-lock, final scoring, reveal state",
         "priority": "P0",
-        "status": "not-started",
+        "status": "self-verified",
         "test_steps": [
           "Run migration 083_audience_voting.sql in Supabase SQL Editor",
           "Run migration 084_time_locked_voting.sql",
@@ -120,7 +120,7 @@
         "name": "UI Component Library",
         "description": "Create reusable components: StatusLight, MetricCard, ProgressRing, LiveBadge, CountdownTimer",
         "priority": "P0",
-        "status": "not-started",
+        "status": "self-verified",
         "test_steps": [
           "StatusLight component renders green/amber/red states",
           "MetricCard displays icon + value + label with consistent styling",
@@ -134,7 +134,7 @@
         "name": "Event Admin Dashboard Redesign",
         "description": "NASA mission control style dashboard with key metrics strip, track status grid, activity feed, alert panel",
         "priority": "P0",
-        "status": "not-started",
+        "status": "self-verified",
         "test_steps": [
           "Event header shows name, status badge, quick actions",
           "Key metrics strip shows 6 stats horizontally",
@@ -149,7 +149,7 @@
         "name": "Demo Day Command Center Redesign",
         "description": "Real-time control room with global stats, track cards, judge monitoring, anomaly detection",
         "priority": "P0",
-        "status": "not-started",
+        "status": "self-verified",
         "test_steps": [
           "Global stats bar shows total/completed/in-progress demos",
           "Track control cards show progress rings and status lights",
@@ -164,7 +164,7 @@
         "name": "Judge Panel Redesign",
         "description": "Clean, focused scoring interface with better sliders, bonus section, score preview",
         "priority": "P0",
-        "status": "not-started",
+        "status": "self-verified",
         "test_steps": [
           "Submission info card shows app details and links",
           "Scoring sliders are large and touch-friendly",
@@ -179,7 +179,7 @@
         "name": "Audience Voting Redesign",
         "description": "Mobile-first voting with star rating, reactions, countdown timer, time-lock UI",
         "priority": "P0",
-        "status": "not-started",
+        "status": "self-verified",
         "test_steps": [
           "Current presenter card shows app name and team",
           "Star rating is large and touch-friendly (1-5 stars)",
@@ -194,7 +194,7 @@
         "name": "Results Reveal Redesign",
         "description": "Animated grand finale reveal with track tabs, leaderboard, winner cards",
         "priority": "P0",
-        "status": "not-started",
+        "status": "self-verified",
         "test_steps": [
           "Pre-reveal state shows countdown and anticipation",
           "Track-by-track reveal with animation",
