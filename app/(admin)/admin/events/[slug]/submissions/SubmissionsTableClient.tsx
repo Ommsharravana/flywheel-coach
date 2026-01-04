@@ -245,7 +245,8 @@ export function SubmissionsTableClient({
 
   return (
     <TooltipProvider>
-      <Table>
+      <div className="overflow-x-auto -mx-4 px-4">
+      <Table className="min-w-[900px]">
         <TableHeader>
           <TableRow className="border-stone-700">
             <TableHead className="text-stone-400">#</TableHead>
@@ -432,6 +433,7 @@ export function SubmissionsTableClient({
           })}
         </TableBody>
       </Table>
+      </div>
 
       {/* Status Change Confirmation Dialog */}
       <AlertDialog open={!!pendingStatusChange} onOpenChange={(open) => !open && cancelStatusChange()}>

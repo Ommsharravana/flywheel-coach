@@ -68,11 +68,15 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
   // Get methodology
   const methodology = getMethodologyForEvent(event.config);
 
-  // Get statistics
-  const { count: builderCount } = await supabase
-    .from('users')
-    .select('*', { count: 'exact', head: true })
-    .eq('active_event_id', event.id);
+  // Get statistics - count unique users who have cycles for this event
+  const { data: builderData } = await supabase
+    .from('cycles')
+    .select('user_id')
+    .eq('event_id', event.id) as { data: Array<{ user_id: string }> | null };
+
+  // Get unique builder count
+  const uniqueBuilders = builderData ? new Set(builderData.map(c => c.user_id)) : new Set();
+  const builderCount = uniqueBuilders.size;
 
   const { count: totalCycles } = await supabase
     .from('cycles')
