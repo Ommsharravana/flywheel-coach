@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n/LanguageContext';
+import { useAppathonMode } from '@/lib/context/AppathonContext';
 
 interface ImpactDiscoveryProps {
   cycle: Cycle;
@@ -23,6 +24,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
   const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
   const { t } = useTranslation();
+  const { isAppathonMode } = useAppathonMode();
 
   const [usersReached, setUsersReached] = useState(cycle.impact?.usersReached || 0);
   const [timeSavedMinutes, setTimeSavedMinutes] = useState(cycle.impact?.timeSavedMinutes || 0);
@@ -233,6 +235,39 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
       const errorMessage = error instanceof Error ? error.message :
         (error as { message?: string })?.message || 'Unknown error';
       toast.error(`Failed to start new cycle: ${errorMessage}`);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  // Proceed to Appathon Submission (Step 9)
+  const proceedToAppathon = async () => {
+    setIsPending(true);
+    try {
+      // First save the impact data
+      await saveImpact(false);
+
+      // Update current_step to 9 to allow access to Step 9
+      const { error: stepError } = await supabase
+        .from('cycles')
+        .update({
+          current_step: 9,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', cycle.id);
+
+      if (stepError) {
+        console.error('Error updating current_step:', stepError);
+        throw stepError;
+      }
+
+      toast.success('Proceeding to Appathon Submission');
+      router.push(`/cycle/${cycle.id}/step/9`);
+    } catch (error: unknown) {
+      console.error('Error proceeding to Appathon:', error);
+      const errorMessage = error instanceof Error ? error.message :
+        (error as { message?: string })?.message || 'Unknown error';
+      toast.error(`Failed to proceed: ${errorMessage}`);
     } finally {
       setIsPending(false);
     }
@@ -461,14 +496,28 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
               {t('stepUI.startNewCycle')}
             </Button>
           )}
-          <Button
-            onClick={() => saveImpact(true)}
-            disabled={!hasMinimumData || isPending}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white"
-          >
-            {isPending ? t('common.saving') : t('stepUI.completeCycle')}
-            <ChevronRight className="ml-1 w-4 h-4" />
-          </Button>
+          {/* Appathon Submission button - only visible in Appathon mode */}
+          {isAppathonMode && (
+            <Button
+              onClick={proceedToAppathon}
+              disabled={!hasMinimumData || isPending}
+              className="bg-amber-500 hover:bg-amber-600 text-stone-900"
+            >
+              <Trophy className="mr-2 w-4 h-4" />
+              {isPending ? 'Processing...' : 'Submit to Appathon'}
+              <ChevronRight className="ml-1 w-4 h-4" />
+            </Button>
+          )}
+          {!isAppathonMode && (
+            <Button
+              onClick={() => saveImpact(true)}
+              disabled={!hasMinimumData || isPending}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white"
+            >
+              {isPending ? t('common.saving') : t('stepUI.completeCycle')}
+              <ChevronRight className="ml-1 w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

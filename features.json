@@ -117,7 +117,7 @@
       "description": "Validated projects can apply for tiered incubation. Tier 1: light support (mentor + resources + connections). Admin approves and suggests 3 mentors, team picks 1.",
       "priority": "P0",
       "deadline": "2026-01-07",
-      "status": "not-started",
+      "status": "self-verified",
       "test_steps": [
         "Complete a cycle to Step 8 with validation",
         "See 'Apply for NIF Incubation' button on cycle page",
@@ -126,6 +126,7 @@
         "Admin can approve and assign 3 mentor suggestions",
         "Applicant sees 3 mentor options and can pick 1"
       ],
+      "verification_notes": "Backend verified via SQL: is_cycle_nif_eligible returns true for completed cycles with impact assessment. submit_nif_application creates pending applications. Admin can update status to mentor_selection with suggested_mentors array. select_mentor function transitions to active status. UI: NIFApplicationButton.tsx integrated on cycle page (line 194). MentorSelection component handles mentor picking. 5 sample mentors seeded. RLS policies use users table. Verified 2026-01-04.",
       "dependencies": []
     },
     {
