@@ -55,9 +55,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch builder counts using RPC function (bypasses RLS)
+    // Uses UNION approach to count all registered users (active + cycles)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: countsData, error: countsError } = await (supabase as any)
-      .rpc('get_all_event_builder_counts');
+      .rpc('get_all_event_registered_builder_counts');
 
     if (countsError) {
       console.error('Error fetching builder counts:', countsError);
