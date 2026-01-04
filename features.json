@@ -135,7 +135,7 @@
       "description": "Next monthly challenge announced with registration open, countdown timer to Feb 1.",
       "priority": "P0",
       "deadline": "2026-01-07",
-      "status": "not-started",
+      "status": "self-verified",
       "test_steps": [
         "February challenge banner visible on dashboard",
         "Countdown timer shows days/hours until Feb 1",
@@ -143,6 +143,7 @@
         "User sees confirmation after registering",
         "Admin can configure challenge details (name, dates, description)"
       ],
+      "verification_notes": "February Challenge 2026 event created in production (slug: february-challenge-2026). Uses existing EventSelector component with countdown timer (shows days, adds hours when <7d remaining via formatCountdown). Join & Start button triggers registration. JOINED badge confirms registration. Admin can create/update events via POST/PATCH /api/events. Verified 2026-01-04.",
       "dependencies": []
     },
     {

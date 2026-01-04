@@ -99,6 +99,34 @@ export function getDaysUntilStart(event: Event): number {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
+// Get detailed countdown for upcoming events (days, hours)
+export function getCountdownUntilStart(event: Event): { days: number; hours: number; totalHours: number } {
+  const now = new Date();
+  const start = new Date(event.start_date);
+  const diff = Math.max(0, start.getTime() - now.getTime());
+
+  const totalHours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+
+  return { days, hours, totalHours };
+}
+
+// Format countdown string for display
+export function formatCountdown(event: Event): string {
+  const { days, hours } = getCountdownUntilStart(event);
+
+  if (days > 7) {
+    return `${days}d`;
+  } else if (days > 0) {
+    return `${days}d ${hours}h`;
+  } else if (hours > 0) {
+    return `${hours}h`;
+  } else {
+    return 'Starting soon';
+  }
+}
+
 // Banner color to Tailwind classes
 export function getBannerColorClasses(color: EventBannerColor): {
   gradient: string;

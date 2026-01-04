@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Users, Clock, Zap, ChevronRight, Trophy, Sparkles, X, Loader2 } from 'lucide-react';
 import { useActiveEvent } from '@/lib/context/EventContext';
 import type { EventWithBuilderCount } from '@/lib/events/types';
-import { getBannerColorClasses, isEventLive, isEventUpcoming, getDaysRemaining, getDaysUntilStart } from '@/lib/events/types';
+import { getBannerColorClasses, isEventLive, isEventUpcoming, getDaysRemaining, formatCountdown } from '@/lib/events/types';
 import { AppathonDetailsModal, isAppathonEvent } from '@/components/appathon/details/AppathonDetailsModal';
 
 export function EventSelector() {
@@ -134,7 +134,8 @@ function EventCard({ event, isActive, onJoinAndStart, onLeave, onViewDetails, is
   const colorClasses = getBannerColorClasses(event.banner_color);
   const isLive = isEventLive(event);
   const isUpcoming = isEventUpcoming(event);
-  const daysRemaining = isLive ? getDaysRemaining(event) : getDaysUntilStart(event);
+  const daysRemaining = getDaysRemaining(event);
+  const countdownText = formatCountdown(event);
 
   return (
     <motion.div
@@ -217,8 +218,8 @@ function EventCard({ event, isActive, onJoinAndStart, onLeave, onViewDetails, is
             </div>
             <div className="flex items-center gap-1.5 text-stone-400">
               <Calendar className="h-4 w-4" />
-              <span className="text-sm">
-                {isLive ? `${daysRemaining}d left` : `Starts in ${daysRemaining}d`}
+              <span className="text-sm" suppressHydrationWarning>
+                {isLive ? `${daysRemaining}d left` : `Starts in ${countdownText}`}
               </span>
             </div>
           </div>
