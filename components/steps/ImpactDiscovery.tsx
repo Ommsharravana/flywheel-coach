@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n/LanguageContext';
-import { useAppathonMode } from '@/lib/context/AppathonContext';
+import { useAppathonMode } from '@/lib/context/EventContext';
 
 interface ImpactDiscoveryProps {
   cycle: Cycle;
