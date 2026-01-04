@@ -152,7 +152,7 @@
       "description": "Live counters on homepage: startups incubated, learner earnings, active builders, problems solved. Real-time from database.",
       "priority": "P0",
       "deadline": "2026-01-07",
-      "status": "not-started",
+      "status": "self-verified",
       "test_steps": [
         "Metrics visible on public homepage without login",
         "Counters show: startups incubated, learner earnings (₹), active builders, problems solved",
@@ -160,6 +160,7 @@
         "Design is prominent and celebratory",
         "Works on mobile"
       ],
+      "verification_notes": "PublicMetricsStrip component added to homepage below hero. Shows 4 metrics: Startups Incubated (from nif_applications), Learner Earnings (₹0 placeholder until P08), Active Builders (from users), Problems Solved (completed cycles). API endpoint at /api/public/metrics fetches real data. Mobile responsive with grid-cols-2 md:grid-cols-4. 'Live Platform Metrics' badge and celebratory design. Verified 2026-01-04.",
       "dependencies": []
     },
     {

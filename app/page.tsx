@@ -7,6 +7,7 @@ import { Header } from '@/components/shared/Header'
 import { FlywheelLogo } from '@/components/shared/FlywheelLogo'
 import { LanguageToggle } from '@/components/shared/LanguageToggle'
 import { createTranslator, type Locale } from '@/lib/i18n'
+import { PublicMetricsStrip } from '@/components/public/PublicMetricsStrip'
 
 export default function Home() {
   const [locale, setLocale] = useState<Locale>('en')
@@ -110,6 +111,9 @@ export default function Home() {
             </svg>
           </div>
         </section>
+
+        {/* Public Metrics Strip */}
+        <PublicMetricsStrip />
 
         {/* Flywheel Steps Section */}
         <section className="relative py-24 px-4">
