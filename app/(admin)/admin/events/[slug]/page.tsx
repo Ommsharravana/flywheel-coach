@@ -68,15 +68,10 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
   // Get methodology
   const methodology = getMethodologyForEvent(event.config);
 
-  // Get statistics - count unique users who have cycles for this event
-  const { data: builderData } = await supabase
-    .from('cycles')
-    .select('user_id')
-    .eq('event_id', event.id) as { data: Array<{ user_id: string }> | null };
-
-  // Get unique builder count
-  const uniqueBuilders = builderData ? new Set(builderData.map(c => c.user_id)) : new Set();
-  const builderCount = uniqueBuilders.size;
+  // Get statistics - use RPC function to bypass RLS and get accurate count
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: builderCount } = await (supabase as any)
+    .rpc('get_event_participant_count', { p_event_id: event.id }) as { data: number | null };
 
   const { count: totalCycles } = await supabase
     .from('cycles')
