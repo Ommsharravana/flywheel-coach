@@ -1,6 +1,35 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Current Session: 2026-01-04 - P01 Public Portfolio Showcase Verified
+## Current Session: 2026-01-04 - Bug Fixes & Bug Reporter API Enhancement
+
+### What Was Done
+
+**1. Fixed BUG-126: Users cannot edit Appathon submissions**
+- Root cause: No edit button in submitted view of AppathonSubmission.tsx
+- Added "Edit Submission" button with Pencil icon (lines 424-431)
+- Button sets submission status back to 'draft' allowing edits
+- Committed: dcc8d20, deployed to Vercel
+
+**2. Fixed ESLint warning in NIFApplicationButton.tsx**
+- Removed unused `data` variable from destructuring
+
+**3. Enhanced Bug Reporter Public API**
+- Added PATCH endpoint to `/api/v1/public/bug-reports/[id]`
+- Allows updating bug status via API key authentication
+- Added types: UpdateBugReportStatusRequest, UpdateBugReportStatusResponse
+- Fixed schema alignment: correct status values (new, seen, in_progress, resolved, wont_fix)
+- Committed: db6b3b3 to Bug Reporter repo
+
+**4. Verified fix by updating BUG-126 to 'resolved' via API**
+- API call successful, bug now shows resolved status
+
+### Files Changed
+- `components/steps/AppathonSubmission.tsx` - Added Edit button
+- `components/nif/NIFApplicationButton.tsx` - Fixed unused variable
+
+---
+
+## Previous Session: 2026-01-04 - P01 Public Portfolio Showcase Verified
 
 ### What Was Done
 - **Verified P01: Public Portfolio Showcase feature**
@@ -514,3 +543,26 @@ When API returns generic "Failed to search users" error, check if RPC function s
 ---
 
 *Template: ~/.claude/templates/progress-txt.md*
+
+## 2026-01-04: Bug Fix Session - BUG-126/BUG-125
+
+### Bug Details
+- **Bugs:** BUG-126, BUG-125 (duplicates)
+- **Reporter:** Dhineshkumar C (dhineshkumar.c@jkkn.ac.in)
+- **Issue:** Cannot edit Appathon submission after submitting - no edit option visible
+
+### Root Cause
+In `components/steps/AppathonSubmission.tsx`, the submitted view (lines 421-498) showed only a read-only summary with no edit capability. Users who submitted could not modify their team members.
+
+### Fix Applied
+- Added "Edit Submission" button to submitted view
+- Button resets `submissionStatus` to 'draft', allowing users to edit and re-submit
+- Also fixed unused variable warning in `NIFApplicationButton.tsx`
+
+### Deployment
+- Commit: dcc8d20 (fix(appathon): Add Edit Submission button for submitted entries)
+- Vercel deployment: READY (dpl_7vkpkqvBfk4EzbNLbWCd8as79ADn)
+- Production URL: https://jkkn-solution-studio.vercel.app
+
+### Note
+Bug Reporter API doesn't support public status updates - mark as resolved manually in dashboard.
