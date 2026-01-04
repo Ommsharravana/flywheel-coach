@@ -39,18 +39,25 @@ export default function RevealPage() {
   // Trigger confetti when 1st place is revealed
   useEffect(() => {
     if (revealState?.current_place === 1) {
-      setShowConfetti(true);
-      const timer = setTimeout(() => setShowConfetti(false), 4000);
-      return () => clearTimeout(timer);
+      // Defer setState to avoid synchronous call in effect body
+      const showTimer = setTimeout(() => setShowConfetti(true), 0);
+      const hideTimer = setTimeout(() => setShowConfetti(false), 4000);
+      return () => {
+        clearTimeout(showTimer);
+        clearTimeout(hideTimer);
+      };
     }
   }, [revealState?.current_place]);
 
   if (!revealState) {
     return (
       <div className="min-h-screen bg-stone-950 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Trophy className="w-24 h-24 text-amber-500 mx-auto animate-pulse" />
-          <h1 className="text-4xl font-bold text-white">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0b6d41]/10 via-transparent to-[#ffde59]/5" />
+        <div className="relative text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-28 h-28 rounded-full bg-[#ffde59]/20 border-2 border-[#ffde59]/50">
+            <Trophy className="w-16 h-16 text-[#ffde59] animate-pulse" />
+          </div>
+          <h1 className="text-4xl font-display font-bold text-white">
             Grand Finale
           </h1>
           <p className="text-stone-400">
@@ -67,21 +74,37 @@ export default function RevealPage() {
   if (allTracksRevealed) {
     return (
       <div className="min-h-screen bg-stone-950 flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0b6d41]/10 via-transparent to-[#ffde59]/10" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#ffde59]/10 via-transparent to-transparent" />
         <Confetti active={true} />
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center space-y-6"
+          className="relative text-center space-y-6"
         >
-          <Trophy className="w-32 h-32 text-amber-500 mx-auto" />
-          <h1 className="text-6xl font-bold text-white">
+          <motion.div
+            animate={{
+              scale: [1, 1.05, 1],
+              rotate: [0, 5, -5, 0],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            <Trophy className="w-32 h-32 text-[#ffde59] mx-auto drop-shadow-[0_0_30px_rgba(255,222,89,0.5)]" />
+          </motion.div>
+          <h1 className="font-display text-6xl font-bold text-white">
             Congratulations!
           </h1>
           <p className="text-2xl text-stone-300">
             All winners revealed
           </p>
-          <div className="mt-8 text-amber-400 text-xl">
-            🎉 Appathon 2.0 - Thank you to all participants! 🎉
+          <div className="mt-8 px-6 py-3 rounded-full bg-[#0b6d41]/20 border border-[#0b6d41]/40 inline-block">
+            <span className="text-[#ffde59] text-xl font-semibold">
+              Appathon 2.0 - Thank you to all participants!
+            </span>
           </div>
         </motion.div>
       </div>
@@ -95,8 +118,8 @@ export default function RevealPage() {
   return (
     <div className="min-h-screen bg-stone-950 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-stone-950" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0b6d41]/10 via-transparent to-[#ffde59]/5" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#ffde59]/10 via-transparent to-transparent" />
 
       <Confetti active={showConfetti} />
 
@@ -107,14 +130,14 @@ export default function RevealPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-amber-500/20 border border-amber-500/30 mb-6">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <span className="text-lg font-semibold text-amber-400">
+          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-[#0b6d41]/20 border border-[#0b6d41]/40 mb-6">
+            <Sparkles className="w-5 h-5 text-[#ffde59]" />
+            <span className="text-lg font-semibold text-[#ffde59]">
               Appathon 2.0 Grand Finale
             </span>
           </div>
 
-          <h1 className="text-5xl font-bold text-white mb-4">
+          <h1 className="font-display text-5xl font-bold text-white mb-4">
             {currentTrackName}
           </h1>
 
@@ -126,9 +149,9 @@ export default function RevealPage() {
                 <div
                   key={i}
                   className={`
-                    w-3 h-3 rounded-full
-                    ${i < currentTrackIndex ? 'bg-emerald-500' : ''}
-                    ${i === currentTrackIndex ? 'bg-amber-500 animate-pulse' : ''}
+                    w-3 h-3 rounded-full transition-all duration-300
+                    ${i < currentTrackIndex ? 'bg-[#0b6d41]' : ''}
+                    ${i === currentTrackIndex ? 'bg-[#ffde59] animate-pulse shadow-[0_0_10px_rgba(255,222,89,0.5)]' : ''}
                     ${i > currentTrackIndex ? 'bg-stone-700' : ''}
                   `}
                 />
@@ -144,7 +167,19 @@ export default function RevealPage() {
             animate={{ opacity: 1 }}
             className="text-center py-24"
           >
-            <Trophy className="w-24 h-24 text-amber-500 mx-auto mb-6 animate-pulse" />
+            <motion.div
+              animate={{
+                scale: [1, 1.1, 1],
+                opacity: [0.5, 1, 0.5],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            >
+              <Trophy className="w-24 h-24 text-[#ffde59] mx-auto mb-6 drop-shadow-[0_0_20px_rgba(255,222,89,0.4)]" />
+            </motion.div>
             <p className="text-2xl text-stone-300">
               Preparing to reveal winners...
             </p>
@@ -203,8 +238,8 @@ export default function RevealPage() {
               exit={{ opacity: 0, y: 20 }}
               className="fixed bottom-8 left-1/2 -translate-x-1/2"
             >
-              <div className="px-6 py-3 rounded-full bg-yellow-500/20 border border-yellow-500/30">
-                <span className="text-yellow-400 font-semibold">
+              <div className="px-6 py-3 rounded-full bg-[#ffde59]/20 border border-[#ffde59]/40 shadow-[0_0_20px_rgba(255,222,89,0.2)]">
+                <span className="text-[#ffde59] font-semibold">
                   ⏸️ Paused
                 </span>
               </div>

@@ -15,10 +15,11 @@ const PLACE_CONFIG = {
   1: {
     label: '1st Place',
     icon: Trophy,
-    bgGradient: 'from-yellow-500/20 via-amber-500/20 to-orange-500/20',
-    borderColor: 'border-amber-500',
-    textColor: 'text-amber-400',
-    iconColor: 'text-amber-500',
+    bgGradient: 'from-[#ffde59]/20 via-[#f5c842]/20 to-[#ffde59]/20',
+    borderColor: 'border-[#ffde59]',
+    textColor: 'text-[#ffde59]',
+    iconColor: 'text-[#ffde59]',
+    glowColor: 'shadow-[0_0_40px_rgba(255,222,89,0.4)]',
     scale: 1.1,
   },
   2: {
@@ -28,15 +29,17 @@ const PLACE_CONFIG = {
     borderColor: 'border-slate-400',
     textColor: 'text-slate-300',
     iconColor: 'text-slate-400',
+    glowColor: 'shadow-[0_0_30px_rgba(148,163,184,0.3)]',
     scale: 1.0,
   },
   3: {
     label: '3rd Place',
     icon: Users,
-    bgGradient: 'from-orange-700/20 via-amber-700/20 to-orange-700/20',
-    borderColor: 'border-orange-600',
-    textColor: 'text-orange-400',
-    iconColor: 'text-orange-500',
+    bgGradient: 'from-amber-700/20 via-orange-700/20 to-amber-700/20',
+    borderColor: 'border-amber-600',
+    textColor: 'text-amber-400',
+    iconColor: 'text-amber-500',
+    glowColor: 'shadow-[0_0_25px_rgba(217,119,6,0.3)]',
     scale: 0.95,
   },
 };
@@ -72,7 +75,7 @@ export function WinnerCard({ winner, place, revealed, onRevealComplete }: Winner
           bg-gradient-to-br ${config.bgGradient}
           border-4 ${config.borderColor}
           backdrop-blur-sm
-          shadow-2xl
+          ${config.glowColor}
         `}
       >
         {/* Place Badge */}
@@ -124,9 +127,9 @@ export function WinnerCard({ winner, place, revealed, onRevealComplete }: Winner
 
           {/* Bonus Indicator */}
           {winner.avg_bonus > 0 && (
-            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30">
-              <Star className="w-4 h-4 text-emerald-400" />
-              <span className="text-sm text-emerald-400">
+            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0b6d41]/20 border border-[#0b6d41]/50">
+              <Star className="w-4 h-4 text-[#0b6d41]" />
+              <span className="text-sm text-[#0b6d41]">
                 +{winner.avg_bonus.toFixed(0)}% Bonus
               </span>
             </div>
