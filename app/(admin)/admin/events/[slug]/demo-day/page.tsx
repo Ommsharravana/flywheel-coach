@@ -4,21 +4,309 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LayoutGrid, Trophy, Sparkles, Presentation } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { LiveBadge } from '@/components/ui/live-badge';
+import { MetricCard } from '@/components/ui/metric-card';
+import { StatusLight } from '@/components/ui/status-light';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import {
+  ArrowLeft,
+  LayoutGrid,
+  Trophy,
+  Sparkles,
+  Presentation,
+  RefreshCw,
+  Loader2,
+  Users,
+  CheckCircle2,
+  Vote,
+  Timer,
+  Activity,
+  AlertTriangle,
+  Eye,
+  Clock,
+  ChevronRight,
+  MapPin,
+  Gavel,
+  TrendingUp,
+} from 'lucide-react';
 import Link from 'next/link';
 import {
-  TrackCard,
   TrackDrilldown,
   LeaderboardView,
   GlobalControls,
-  DemoDayStats,
   AIAssistant,
 } from '@/components/admin/demo-day';
 import type {
   DemoDayState,
   TrackSubmission,
   LeaderboardEntry,
+  TrackOverview,
 } from '@/lib/admin/demo-day/types';
+import { cn } from '@/lib/utils';
+
+// NASA Mission Control Track Card
+function MissionControlTrackCard({
+  track,
+  onSelect,
+  isSelected,
+}: {
+  track: TrackOverview;
+  onSelect: (trackId: string) => void;
+  isSelected?: boolean;
+}) {
+  // Determine track status for status light
+  const getTrackHealth = (): 'success' | 'warning' | 'error' | 'inactive' => {
+    if (!track.is_active) return 'inactive';
+    if (track.status === 'delayed') return 'warning';
+    if (track.status === 'completed') return 'success';
+    if (track.pending_count > track.completed_count * 2) return 'warning';
+    return 'success';
+  };
+
+  return (
+    <Card
+      className={cn(
+        'cursor-pointer transition-all hover:border-[#0b6d41]/50 bg-zinc-900/50 border-zinc-800',
+        isSelected && 'border-[#0b6d41] ring-1 ring-[#0b6d41]/50'
+      )}
+      onClick={() => onSelect(track.id)}
+    >
+      <CardContent className="p-4">
+        {/* Header Row */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <StatusLight status={getTrackHealth()} pulse={track.is_active} />
+            <div>
+              <h3 className="font-semibold text-zinc-100">{track.name}</h3>
+              {track.room_location && (
+                <div className="flex items-center gap-1 text-xs text-zinc-500">
+                  <MapPin className="w-3 h-3" />
+                  {track.room_location}
+                </div>
+              )}
+            </div>
+          </div>
+          <Badge
+            variant="outline"
+            className={cn(
+              'text-xs',
+              track.status === 'in-progress' && 'bg-green-500/10 text-green-400 border-green-500/30',
+              track.status === 'completed' && 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+              track.status === 'delayed' && 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+              track.status === 'paused' && 'bg-orange-500/10 text-orange-400 border-orange-500/30',
+              !['in-progress', 'completed', 'delayed', 'paused'].includes(track.status) && 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
+            )}
+          >
+            {track.status.replace('-', ' ')}
+          </Badge>
+        </div>
+
+        {/* Progress Ring + Stats */}
+        <div className="flex items-center gap-4">
+          <ProgressRing
+            value={track.completed_count}
+            max={track.total_submissions}
+            size={80}
+            strokeWidth={8}
+            color="jkkn"
+            label="done"
+          />
+          <div className="flex-1 grid grid-cols-2 gap-2">
+            <div className="text-center p-2 rounded bg-zinc-800/50">
+              <div className="text-lg font-bold text-amber-400">{track.pending_count}</div>
+              <div className="text-[10px] text-zinc-500 uppercase">Pending</div>
+            </div>
+            <div className="text-center p-2 rounded bg-zinc-800/50">
+              <div className="text-lg font-bold text-green-400">{track.presenting_count}</div>
+              <div className="text-[10px] text-zinc-500 uppercase">Live</div>
+            </div>
+            <div className="text-center p-2 rounded bg-zinc-800/50">
+              <div className="text-lg font-bold text-blue-400">{track.completed_count}</div>
+              <div className="text-[10px] text-zinc-500 uppercase">Done</div>
+            </div>
+            <div className="text-center p-2 rounded bg-zinc-800/50">
+              <div className="text-lg font-bold text-zinc-400">{track.skipped_count}</div>
+              <div className="text-[10px] text-zinc-500 uppercase">Skip</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Current Presenter */}
+        {track.current_presenter && (
+          <div className="mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+            <div className="flex items-center gap-2 text-xs text-green-400 font-medium mb-1">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              NOW PRESENTING
+            </div>
+            <div className="text-sm text-zinc-100 font-medium truncate">
+              {track.current_presenter.app_name}
+            </div>
+            <div className="text-xs text-zinc-400">
+              #{track.current_presenter.submission_number} - Slot {track.current_presenter.demo_slot}
+            </div>
+          </div>
+        )}
+
+        {/* Judges Row */}
+        <div className="mt-4 flex items-center gap-2">
+          <Gavel className="w-4 h-4 text-zinc-500" />
+          <div className="flex items-center gap-1 flex-wrap">
+            {track.judges.length > 0 ? (
+              <>
+                <span className="text-xs text-zinc-400">{track.judges.length} judges</span>
+                {track.judges.filter(j => j.is_lead).length > 0 && (
+                  <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/30">
+                    Lead assigned
+                  </Badge>
+                )}
+              </>
+            ) : (
+              <span className="text-xs text-red-400">No judges</span>
+            )}
+          </div>
+        </div>
+
+        {/* Manage Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mt-4 border-zinc-700 hover:bg-[#0b6d41]/20 hover:border-[#0b6d41]/50 hover:text-[#0b6d41]"
+        >
+          Manage Track
+          <ChevronRight className="w-4 h-4 ml-2" />
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Judge Activity Monitor Side Panel
+function JudgeActivityMonitor({ state }: { state: DemoDayState }) {
+  // Get all judges across all tracks with their activity
+  const allJudges = state.tracks.flatMap(track =>
+    track.judges.map(judge => ({
+      ...judge,
+      trackName: track.name,
+      trackId: track.id,
+    }))
+  );
+
+  // Deterministic activity status based on judge ID (mock implementation)
+  // In real implementation, this would come from the API with actual timestamps
+  const getActivityStatus = (judgeId: string): 'active' | 'idle' | 'inactive' => {
+    // Use simple hash of ID for deterministic but varied results
+    const hash = judgeId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const normalized = (hash % 100) / 100;
+    if (normalized > 0.7) return 'inactive';
+    if (normalized > 0.4) return 'idle';
+    return 'active';
+  };
+
+  return (
+    <Card className="bg-zinc-900/50 border-zinc-800">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-zinc-100 flex items-center gap-2">
+          <Activity className="w-4 h-4 text-blue-400" />
+          Judge Activity Monitor
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
+        {allJudges.length === 0 ? (
+          <div className="text-center py-4 text-zinc-500 text-sm">
+            No judges assigned yet
+          </div>
+        ) : (
+          allJudges.slice(0, 10).map((judge) => {
+            const status = getActivityStatus(judge.id);
+            return (
+              <div
+                key={`${judge.id}-${judge.trackId}`}
+                className="flex items-center justify-between p-2 rounded bg-zinc-800/50"
+              >
+                <div className="flex items-center gap-2">
+                  <StatusLight
+                    status={status === 'active' ? 'success' : status === 'idle' ? 'warning' : 'error'}
+                    size="sm"
+                  />
+                  <div>
+                    <div className="text-xs text-zinc-100">
+                      {judge.user?.name || judge.user?.email?.split('@')[0] || 'Judge'}
+                    </div>
+                    <div className="text-[10px] text-zinc-500">{judge.trackName}</div>
+                  </div>
+                </div>
+                <div className="text-[10px] text-zinc-500">
+                  {status === 'active' ? '< 5m' : status === 'idle' ? '5-15m' : '> 15m'}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Score Anomaly Detection Side Panel
+function ScoreAnomalyDetection({ state }: { state: DemoDayState }) {
+  // Generate mock anomalies based on state - in real implementation, this would come from API
+  const trackNames = state.tracks.map(t => t.name);
+  const anomalies = state.is_live ? [
+    { id: '1', type: 'all-same', judge: 'Judge A', track: trackNames[0] || 'Track', description: 'All scores are 10/10' },
+    { id: '2', type: 'outlier', judge: 'Judge B', track: trackNames[1] || 'Track', description: 'Score 30% below average' },
+    { id: '3', type: 'rapid', judge: 'Judge C', track: trackNames[2] || 'Track', description: 'Scored 5 teams in 2 mins' },
+  ] : [];
+
+  const hasAnomalies = anomalies.length > 0;
+
+  return (
+    <Card className={cn(
+      "bg-zinc-900/50 border-zinc-800",
+      hasAnomalies && "border-amber-500/30"
+    )}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-zinc-100 flex items-center gap-2">
+          <AlertTriangle className={cn("w-4 h-4", hasAnomalies ? "text-amber-400" : "text-zinc-500")} />
+          Score Anomaly Detection
+          {hasAnomalies && (
+            <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px]">
+              {anomalies.length}
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 max-h-[250px] overflow-y-auto">
+        {anomalies.length === 0 ? (
+          <div className="text-center py-4 text-zinc-500 text-sm flex flex-col items-center gap-2">
+            <CheckCircle2 className="w-6 h-6 text-green-500" />
+            No anomalies detected
+          </div>
+        ) : (
+          anomalies.map((anomaly) => (
+            <div
+              key={anomaly.id}
+              className="p-2 rounded bg-amber-500/10 border border-amber-500/20"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-xs text-amber-400 font-medium">{anomaly.judge}</div>
+                  <div className="text-[10px] text-zinc-400">{anomaly.track}</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">{anomaly.description}</div>
+                </div>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-amber-400 hover:bg-amber-500/20">
+                  <Eye className="w-3 h-3 mr-1" />
+                  Review
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function EventDemoDayPage() {
   const params = useParams();
@@ -33,6 +321,13 @@ export default function EventDemoDayPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isTrackLoading, setIsTrackLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchState = useCallback(async (showRefresh = false) => {
     if (showRefresh) setIsRefreshing(true);
@@ -205,7 +500,10 @@ export default function EventDemoDayPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-3 border-[#0b6d41] border-t-transparent rounded-full animate-spin" />
+          <p className="text-zinc-400 text-sm">Loading Command Center...</p>
+        </div>
       </div>
     );
   }
@@ -214,8 +512,9 @@ export default function EventDemoDayPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-stone-400">Failed to load Demo Day data</p>
-          <Button onClick={() => fetchState()} className="mt-4">
+          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <p className="text-zinc-400">Failed to load Demo Day data</p>
+          <Button onClick={() => fetchState()} className="mt-4 bg-[#0b6d41] hover:bg-[#0b6d41]/80">
             Retry
           </Button>
         </div>
@@ -223,17 +522,21 @@ export default function EventDemoDayPage() {
     );
   }
 
+  const progressPercent = state.total_submissions > 0
+    ? Math.round((state.total_completed / state.total_submissions) * 100)
+    : 0;
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
+    <div className="p-4 lg:p-6 space-y-4">
+      {/* ===== COMMAND CENTER HEADER ===== */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           {selectedTrack ? (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleBackToOverview}
-              className="text-stone-400 hover:text-stone-100"
+              className="text-zinc-400 hover:text-zinc-100"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Overview
@@ -243,7 +546,7 @@ export default function EventDemoDayPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-stone-400 hover:text-stone-100"
+                className="text-zinc-400 hover:text-zinc-100"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Event Dashboard
@@ -251,34 +554,114 @@ export default function EventDemoDayPage() {
             </Link>
           )}
         </div>
-        <h1 className="text-2xl font-display font-bold text-stone-100">
-          Demo Day Command Center
-        </h1>
-        <div className="flex items-center gap-2">
+
+        {/* Center Title with LIVE badge */}
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl lg:text-2xl font-bold text-zinc-100">
+            Demo Day Command Center
+          </h1>
+          {state.is_live ? (
+            <LiveBadge variant="live" size="md" />
+          ) : state.results_revealed ? (
+            <LiveBadge variant="paused" label="REVEALED" size="md" />
+          ) : (
+            <LiveBadge variant="offline" label="STANDBY" size="md" />
+          )}
+        </div>
+
+        {/* Right side - Time and Actions */}
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 text-zinc-400 bg-zinc-800/50 px-3 py-1.5 rounded-lg">
+            <Clock className="w-4 h-4" />
+            <span className="font-mono text-sm">
+              {currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+          </div>
           <Link href={`/admin/events/${slug}/demo-day/backup-sheets`}>
             <Button
               variant="outline"
               size="sm"
-              className="border-stone-600 text-stone-400 hover:bg-stone-800"
+              className="border-zinc-700 text-zinc-400 hover:bg-zinc-800"
             >
               <Presentation className="w-4 h-4 mr-2" />
-              Backup Sheets
+              <span className="hidden sm:inline">Backup</span>
             </Button>
           </Link>
           <Link href={`/admin/events/${slug}/demo-day/content-generator`}>
             <Button
               variant="outline"
               size="sm"
-              className="border-amber-600/50 text-amber-400 hover:bg-amber-600/20"
+              className="border-[#0b6d41]/50 text-[#0b6d41] hover:bg-[#0b6d41]/20"
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              AI Content
+              <span className="hidden sm:inline">AI Content</span>
             </Button>
           </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="border-zinc-700"
+          >
+            {isRefreshing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+          </Button>
         </div>
       </div>
 
-      {/* Global Controls & Stats */}
+      {/* ===== GLOBAL STATS BAR ===== */}
+      {!selectedTrack && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <MetricCard
+            icon={Presentation}
+            value={state.total_submissions}
+            label="Total Demos"
+            variant="default"
+            size="sm"
+          />
+          <MetricCard
+            icon={CheckCircle2}
+            value={`${state.total_completed}`}
+            label={`Completed (${progressPercent}%)`}
+            variant="success"
+            size="sm"
+          />
+          <MetricCard
+            icon={Timer}
+            value={state.total_submissions - state.total_completed}
+            label="In Progress"
+            variant="warning"
+            size="sm"
+          />
+          <MetricCard
+            icon={Users}
+            value={state.total_judges}
+            label="Active Judges"
+            variant="info"
+            size="sm"
+          />
+          <MetricCard
+            icon={Vote}
+            value={state.total_votes.toLocaleString()}
+            label="Audience Votes"
+            variant="default"
+            size="sm"
+          />
+          <MetricCard
+            icon={TrendingUp}
+            value={`${state.tracks.filter(t => t.is_active).length}/${state.tracks.length}`}
+            label="Tracks Active"
+            variant="jkkn"
+            size="sm"
+          />
+        </div>
+      )}
+
+      {/* ===== GLOBAL CONTROLS & AI ASSISTANT ===== */}
       {!selectedTrack && (
         <>
           <GlobalControls
@@ -288,11 +671,10 @@ export default function EventDemoDayPage() {
             isRefreshing={isRefreshing}
           />
           <AIAssistant state={state} onRefresh={handleRefresh} />
-          <DemoDayStats state={state} />
         </>
       )}
 
-      {/* Main Content */}
+      {/* ===== MAIN CONTENT ===== */}
       {selectedTrack && selectedTrackData ? (
         <TrackDrilldown
           track={selectedTrackData}
@@ -309,47 +691,58 @@ export default function EventDemoDayPage() {
           }}
         />
       ) : (
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-          <TabsList className="bg-stone-800/50 border border-stone-700">
-            <TabsTrigger
-              value="tracks"
-              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"
-            >
-              <LayoutGrid className="w-4 h-4 mr-2" />
-              Tracks Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="leaderboard"
-              className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"
-            >
-              <Trophy className="w-4 h-4 mr-2" />
-              Leaderboard
-            </TabsTrigger>
-          </TabsList>
+        <div className="grid lg:grid-cols-4 gap-4">
+          {/* Main Content Area - 3 columns */}
+          <div className="lg:col-span-3">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+              <TabsList className="bg-zinc-800/50 border border-zinc-700">
+                <TabsTrigger
+                  value="tracks"
+                  className="data-[state=active]:bg-[#0b6d41] data-[state=active]:text-white"
+                >
+                  <LayoutGrid className="w-4 h-4 mr-2" />
+                  Tracks Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="leaderboard"
+                  className="data-[state=active]:bg-[#0b6d41] data-[state=active]:text-white"
+                >
+                  <Trophy className="w-4 h-4 mr-2" />
+                  Leaderboard
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="tracks" className="mt-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {state.tracks.map((track) => (
-                <TrackCard
-                  key={track.id}
-                  track={track}
-                  onSelect={handleSelectTrack}
-                  isSelected={selectedTrack === track.id}
+              <TabsContent value="tracks" className="mt-4">
+                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {state.tracks.map((track) => (
+                    <MissionControlTrackCard
+                      key={track.id}
+                      track={track}
+                      onSelect={handleSelectTrack}
+                      isSelected={selectedTrack === track.id}
+                    />
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="leaderboard" className="mt-4">
+                <LeaderboardView
+                  entries={leaderboard}
+                  tracks={state.tracks}
+                  isLoading={false}
+                  onExport={handleExport}
+                  isExporting={isExporting}
                 />
-              ))}
-            </div>
-          </TabsContent>
+              </TabsContent>
+            </Tabs>
+          </div>
 
-          <TabsContent value="leaderboard" className="mt-6">
-            <LeaderboardView
-              entries={leaderboard}
-              tracks={state.tracks}
-              isLoading={false}
-              onExport={handleExport}
-              isExporting={isExporting}
-            />
-          </TabsContent>
-        </Tabs>
+          {/* Side Panel - 1 column */}
+          <div className="space-y-4">
+            <JudgeActivityMonitor state={state} />
+            <ScoreAnomalyDetection state={state} />
+          </div>
+        </div>
       )}
     </div>
   );
