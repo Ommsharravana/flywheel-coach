@@ -224,6 +224,14 @@ export function getStepStatus(cycle: Cycle, stepId: number): StepStatus {
 // Helper to check if step is accessible
 export function canAccessStep(cycle: Cycle, stepId: number): boolean {
   if (stepId === 1) return true;
+
+  // Step 9 (Appathon Submission) is a special case:
+  // - Database constraint limits current_step to 1-8
+  // - Step 9 is accessible when user has completed step 8 (current_step >= 8)
+  if (stepId === 9) {
+    return cycle.currentStep >= 8;
+  }
+
   // Can access current step or any previous step
   return stepId <= cycle.currentStep;
 }

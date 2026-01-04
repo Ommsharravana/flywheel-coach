@@ -241,25 +241,13 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
   };
 
   // Proceed to Appathon Submission (Step 9)
+  // Note: Step 9 access is controlled by canAccessStep() which allows step 9 when currentStep >= 8
+  // The database constraint limits current_step to 1-8, so we don't update it here
   const proceedToAppathon = async () => {
     setIsPending(true);
     try {
-      // First save the impact data
+      // Save the impact data first
       await saveImpact(false);
-
-      // Update current_step to 9 to allow access to Step 9
-      const { error: stepError } = await supabase
-        .from('cycles')
-        .update({
-          current_step: 9,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', cycle.id);
-
-      if (stepError) {
-        console.error('Error updating current_step:', stepError);
-        throw stepError;
-      }
 
       toast.success('Proceeding to Appathon Submission');
       router.push(`/cycle/${cycle.id}/step/9`);
