@@ -26,6 +26,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { MentorSelection } from './MentorSelection';
 
 interface NIFApplicationButtonProps {
   cycleId: string;
@@ -34,6 +35,7 @@ interface NIFApplicationButtonProps {
 
 interface ApplicationStatus {
   hasApplied: boolean;
+  applicationId?: string;
   status?: string;
   suggestedMentors?: string[];
   selectedMentorId?: string;
@@ -73,6 +75,7 @@ export function NIFApplicationButton({ cycleId, cycleName }: NIFApplicationButto
       if (existingApp) {
         setApplicationStatus({
           hasApplied: true,
+          applicationId: existingApp.id,
           status: existingApp.status,
           suggestedMentors: existingApp.suggested_mentors,
           selectedMentorId: existingApp.selected_mentor_id,
@@ -104,7 +107,7 @@ export function NIFApplicationButton({ cycleId, cycleName }: NIFApplicationButto
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc('submit_nif_application', {
+      const { error } = await supabase.rpc('submit_nif_application', {
         p_cycle_id: cycleId,
         p_startup_name: startupName || null,
         p_team_description: teamDescription || null,
@@ -175,6 +178,20 @@ export function NIFApplicationButton({ cycleId, cycleName }: NIFApplicationButto
 
     const config = statusConfig[applicationStatus.status as keyof typeof statusConfig] || statusConfig.pending;
     const Icon = config.icon;
+
+    // Show MentorSelection component when in mentor_selection status
+    if (applicationStatus.status === 'mentor_selection' &&
+        applicationStatus.applicationId &&
+        applicationStatus.suggestedMentors &&
+        applicationStatus.suggestedMentors.length > 0) {
+      return (
+        <MentorSelection
+          applicationId={applicationStatus.applicationId}
+          suggestedMentorIds={applicationStatus.suggestedMentors}
+          onMentorSelected={() => checkEligibility()}
+        />
+      );
+    }
 
     return (
       <Badge variant="outline" className={`px-4 py-2 ${config.color}`}>

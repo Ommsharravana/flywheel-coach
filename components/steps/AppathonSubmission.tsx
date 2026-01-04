@@ -21,6 +21,7 @@ import {
   ChevronRight,
   FileText,
   Loader2,
+  Pencil,
   Save,
   Trophy,
   Users,
@@ -491,9 +492,19 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
           </CardContent>
         </Card>
 
-        <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/8`)}>
-          Back to Impact Discovery
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            variant="default"
+            className="bg-amber-500 hover:bg-amber-600 text-stone-900"
+            onClick={() => setSubmissionStatus('draft')}
+          >
+            <Pencil className="w-4 h-4 mr-2" />
+            Edit Submission
+          </Button>
+          <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/8`)}>
+            Back to Impact Discovery
+          </Button>
+        </div>
       </div>
     );
   }
