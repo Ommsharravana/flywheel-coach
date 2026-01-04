@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Radio, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,8 +22,6 @@ interface VoteClientProps {
 }
 
 export function VoteClient({ userId, userName }: VoteClientProps) {
-  const [lastVote, setLastVote] = useState<AudienceVote | null>(null);
-
   // Get user's track assignment
   const {
     trackInfo,
@@ -58,15 +55,7 @@ export function VoteClient({ userId, userName }: VoteClientProps) {
   // Handle vote submission
   const handleVoteSubmitted = (vote: AudienceVote) => {
     setVote(vote);
-    setLastVote(vote);
   };
-
-  // Reset lastVote when presentation changes
-  useEffect(() => {
-    if (presenting?.id !== lastVote?.submission_id) {
-      setLastVote(null);
-    }
-  }, [presenting?.id, lastVote?.submission_id]);
 
   if (isLoading) {
     return (
@@ -102,8 +91,8 @@ export function VoteClient({ userId, userName }: VoteClientProps) {
             Audience Voting
           </h1>
           <div className="flex items-center gap-2 mt-1 text-stone-400">
-            <Radio className="w-4 h-4 text-amber-400" />
-            <span className="font-medium">{trackInfo.track_name}</span>
+            <Radio className="w-4 h-4 text-[#ffde59]" />
+            <span className="font-medium text-[#ffde59]">{trackInfo.track_name}</span>
             {trackInfo.room_location && (
               <>
                 <span className="text-stone-600">|</span>

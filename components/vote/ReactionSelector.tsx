@@ -30,10 +30,10 @@ export function ReactionSelector({ selected, onChange, disabled = false }: React
             className={cn(
               'flex flex-col items-center gap-1 px-3 py-2 sm:px-4 sm:py-3 rounded-xl',
               'transition-all duration-200 touch-manipulation',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde59]',
               disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
               isSelected
-                ? 'bg-amber-500/20 border-2 border-amber-400 shadow-lg shadow-amber-500/20'
+                ? 'bg-[#ffde59]/20 border-2 border-[#ffde59] shadow-lg shadow-[#ffde59]/20'
                 : 'bg-stone-800/50 border-2 border-transparent hover:border-stone-600'
             )}
             whileHover={!disabled ? { scale: 1.05 } : undefined}
@@ -44,7 +44,7 @@ export function ReactionSelector({ selected, onChange, disabled = false }: React
             <span className="text-2xl sm:text-3xl">{reaction.emoji}</span>
             <span className={cn(
               'text-xs font-medium',
-              isSelected ? 'text-amber-300' : 'text-stone-400'
+              isSelected ? 'text-[#ffde59]' : 'text-stone-400'
             )}>
               {reaction.label}
             </span>

@@ -10,6 +10,7 @@ import { PresentingTeamCard } from './PresentingTeamCard';
 import { VotingCountdown } from './VotingCountdown';
 import { submitVote } from '@/lib/vote/services';
 import { useVotingWindow } from '@/lib/vote/hooks';
+import { cn } from '@/lib/utils';
 import type { PresentingSubmission, AudienceVote, Reaction } from '@/lib/vote/types';
 
 interface VotingInterfaceProps {
@@ -71,6 +72,13 @@ export function VotingInterface({
     }
   }, [rating, reaction, submission.id, voterId, isOwnSubmission, onVoteSubmitted]);
 
+  // Time-lock border effect - pulsing gold when open
+  const timeLockBorderClass = isOpen && !isPending && !hasSubmitted
+    ? 'border-[#ffde59]/60 shadow-[0_0_20px_rgba(255,222,89,0.15)]'
+    : isVotingClosed
+      ? 'border-stone-600/50'
+      : 'border-stone-700/50';
+
   return (
     <div className="space-y-6">
       {/* Presenting team info */}
@@ -85,7 +93,10 @@ export function VotingInterface({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass-card rounded-2xl p-6 space-y-6"
+          className={cn(
+            "glass-card rounded-2xl p-6 space-y-6 border-2 transition-all duration-500",
+            timeLockBorderClass
+          )}
         >
           {/* Voting Timer - Dramatic Countdown */}
           {!hasSubmitted && (
@@ -113,9 +124,9 @@ export function VotingInterface({
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 200, damping: 10 }}
-                  className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/20 border-2 border-green-500"
+                  className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#0b6d41]/20 border-2 border-[#0b6d41]"
                 >
-                  <Check className="w-8 h-8 text-green-400" />
+                  <Check className="w-8 h-8 text-[#0b6d41]" />
                 </motion.div>
                 <h3 className="font-display text-xl font-bold text-stone-100">
                   Vote Submitted!
@@ -150,7 +161,7 @@ export function VotingInterface({
                     <motion.p
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-amber-400 font-medium"
+                      className="text-[#ffde59] font-medium"
                     >
                       {rating === 5 ? 'Outstanding!' :
                        rating === 4 ? 'Great work!' :
@@ -195,11 +206,11 @@ export function VotingInterface({
                     onClick={handleSubmit}
                     disabled={rating === 0 || isSubmitting || isVotingClosed}
                     size="lg"
-                    className="w-full bg-gradient-to-r from-amber-500 to-orange-600
-                               hover:from-amber-400 hover:to-orange-500
-                               text-stone-950 font-semibold text-lg py-6
+                    className="w-full bg-gradient-to-r from-[#ffde59] to-[#f5c842]
+                               hover:from-[#ffde59]/90 hover:to-[#f5c842]/90
+                               text-stone-900 font-bold text-lg py-6
                                disabled:opacity-50 disabled:cursor-not-allowed
-                               shadow-lg shadow-orange-500/25
+                               shadow-lg shadow-[#ffde59]/25
                                transition-all duration-200"
                   >
                     {isSubmitting ? (

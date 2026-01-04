@@ -106,21 +106,21 @@ export function VotingCountdown({
 
   if (secondsLeft === null) return null;
 
-  // Color schemes based on urgency
+  // Color schemes based on urgency - JKKN branded
   const urgencyStyles = {
     calm: {
-      bg: 'from-emerald-500/20 to-teal-500/20',
-      border: 'border-emerald-500/30',
-      text: 'text-emerald-400',
-      glow: 'shadow-emerald-500/20',
+      bg: 'from-[#0b6d41]/20 to-[#0b5d38]/20',
+      border: 'border-[#0b6d41]/40',
+      text: 'text-[#0b6d41]',
+      glow: 'shadow-[#0b6d41]/20',
       icon: Clock,
       pulse: false,
     },
     warning: {
-      bg: 'from-amber-500/20 to-orange-500/20',
-      border: 'border-amber-500/30',
-      text: 'text-amber-400',
-      glow: 'shadow-amber-500/20',
+      bg: 'from-[#ffde59]/20 to-amber-500/20',
+      border: 'border-[#ffde59]/40',
+      text: 'text-[#ffde59]',
+      glow: 'shadow-[#ffde59]/20',
       icon: Timer,
       pulse: false,
     },
@@ -192,14 +192,14 @@ export function VotingCountdown({
       </AnimatePresence>
 
       {/* Progress bar background */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-stone-900/50">
+      <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-stone-900/50">
         <motion.div
           className={cn(
             'h-full',
             urgencyLevel === 'critical' ? 'bg-red-500' :
             urgencyLevel === 'urgent' ? 'bg-orange-500' :
-            urgencyLevel === 'warning' ? 'bg-amber-500' :
-            'bg-emerald-500'
+            urgencyLevel === 'warning' ? 'bg-[#ffde59]' :
+            'bg-[#0b6d41]'
           )}
           initial={{ width: '100%' }}
           animate={{ width: `${percentageRemaining || 0}%` }}
@@ -304,8 +304,8 @@ export function VotingCountdownCompact({
   };
 
   const textColor = {
-    calm: 'text-emerald-400',
-    warning: 'text-amber-400',
+    calm: 'text-[#0b6d41]',
+    warning: 'text-[#ffde59]',
     urgent: 'text-orange-400',
     critical: 'text-red-400',
   }[urgencyLevel];

@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, User, Tag, Monitor } from 'lucide-react';
+import { ExternalLink, User, Tag, Monitor, Radio } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PresentingSubmission } from '@/lib/vote/types';
 import { Badge } from '@/components/ui/badge';
@@ -15,30 +15,33 @@ export function PresentingTeamCard({ submission, isOwnSubmission }: PresentingTe
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card rounded-2xl overflow-hidden"
+      className="glass-card rounded-2xl overflow-hidden border border-[#0b6d41]/30"
     >
-      {/* Live indicator */}
-      <div className="bg-gradient-to-r from-rose-600 to-orange-500 px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      {/* Live indicator - JKKN green */}
+      <div className="bg-gradient-to-r from-[#0b6d41] to-[#0b5d38] px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ffde59] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#ffde59]"></span>
           </span>
-          <span className="font-display font-semibold text-white uppercase tracking-wide text-sm">
-            Now Presenting
-          </span>
+          <div className="flex items-center gap-2">
+            <Radio className="w-4 h-4 text-[#ffde59]" />
+            <span className="font-display font-semibold text-white uppercase tracking-wide text-sm">
+              Now Presenting
+            </span>
+          </div>
         </div>
         {submission.demo_slot && (
-          <span className="text-white/80 text-sm">
-            Demo #{submission.demo_slot}
-          </span>
+          <Badge className="bg-[#ffde59]/20 text-[#ffde59] border-[#ffde59]/50 font-mono">
+            #{submission.demo_slot}
+          </Badge>
         )}
       </div>
 
       {/* Main content */}
       <div className="p-4 sm:p-6 space-y-4">
         {/* App name and badge */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <h2 className="font-display text-xl sm:text-2xl font-bold text-stone-100">
               {submission.app_name}
@@ -50,7 +53,7 @@ export function PresentingTeamCard({ submission, isOwnSubmission }: PresentingTe
           </div>
           <Badge
             variant="secondary"
-            className="w-fit bg-amber-500/20 text-amber-300 border border-amber-500/30"
+            className="w-fit bg-[#ffde59]/15 text-[#ffde59] border border-[#ffde59]/30"
           >
             <Tag className="w-3 h-3 mr-1" />
             {submission.category}
@@ -70,12 +73,12 @@ export function PresentingTeamCard({ submission, isOwnSubmission }: PresentingTe
             href={submission.app_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-800/50 rounded-lg
-                       text-stone-300 hover:text-amber-400 hover:bg-stone-800
-                       transition-colors duration-200"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-stone-800/50 rounded-xl
+                       text-stone-300 hover:text-[#ffde59] hover:bg-stone-800 hover:border-[#ffde59]/30
+                       border border-stone-700/50 transition-all duration-200"
           >
             <Monitor className="w-4 h-4" />
-            <span className="text-sm">View App</span>
+            <span className="text-sm font-medium">View App</span>
             <ExternalLink className="w-3 h-3" />
           </a>
         )}
@@ -85,10 +88,10 @@ export function PresentingTeamCard({ submission, isOwnSubmission }: PresentingTe
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3"
+            className="bg-[#ffde59]/10 border border-[#ffde59]/30 rounded-xl px-4 py-3"
           >
-            <p className="text-amber-300 text-sm font-medium">
-              This is your submission - you cannot vote for it
+            <p className="text-[#ffde59] text-sm font-medium">
+              This is your submission — you cannot vote for it
             </p>
           </motion.div>
         )}

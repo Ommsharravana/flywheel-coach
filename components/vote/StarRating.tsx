@@ -24,7 +24,7 @@ export function StarRating({ value, onChange, disabled = false, size = 'lg' }: S
   const containerClasses = {
     sm: 'gap-1',
     md: 'gap-2',
-    lg: 'gap-2 sm:gap-3',
+    lg: 'gap-3 sm:gap-4',
   };
 
   const displayValue = hoverValue ?? value;
@@ -54,13 +54,13 @@ export function StarRating({ value, onChange, disabled = false, size = 'lg' }: S
               handleClick(star);
             }}
             className={cn(
-              'relative p-1 rounded-full transition-all duration-200 touch-manipulation',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400',
-              disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-              isActive && !disabled && 'scale-110'
+              'relative p-2 rounded-full transition-all duration-200 touch-manipulation',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ffde59]',
+              disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-stone-800/50',
+              isActive && !disabled && 'scale-110 bg-[#ffde59]/10'
             )}
             whileTap={!disabled ? { scale: 0.9 } : undefined}
-            animate={isActive && !disabled ? { scale: [1, 1.2, 1] } : undefined}
+            animate={isActive && !disabled ? { scale: [1, 1.15, 1] } : undefined}
             transition={{ duration: 0.2 }}
           >
             <Star
@@ -68,7 +68,7 @@ export function StarRating({ value, onChange, disabled = false, size = 'lg' }: S
                 sizeClasses[size],
                 'transition-all duration-200',
                 isFilled
-                  ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                  ? 'fill-[#ffde59] text-[#ffde59] drop-shadow-[0_0_12px_rgba(255,222,89,0.6)]'
                   : 'fill-stone-700 text-stone-600'
               )}
             />
@@ -79,7 +79,7 @@ export function StarRating({ value, onChange, disabled = false, size = 'lg' }: S
                   animate={{ scale: 1.5, opacity: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="absolute inset-0 rounded-full bg-amber-400/30"
+                  className="absolute inset-0 rounded-full bg-[#ffde59]/30"
                 />
               )}
             </AnimatePresence>
@@ -105,7 +105,7 @@ export function StarDisplay({ rating, size = 'sm' }: { rating: number; size?: 's
           className={cn(
             sizeClasses[size],
             star <= rating
-              ? 'fill-amber-400 text-amber-400'
+              ? 'fill-[#ffde59] text-[#ffde59]'
               : 'fill-stone-700 text-stone-600'
           )}
         />

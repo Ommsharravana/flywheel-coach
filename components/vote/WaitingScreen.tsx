@@ -20,9 +20,9 @@ export function WaitingScreen({ trackInfo, queue }: WaitingScreenProps) {
     >
       {/* Track info header */}
       <div className="text-center space-y-2 mb-8">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-stone-800/50 rounded-full">
-          <Radio className="w-4 h-4 text-amber-400" />
-          <span className="text-stone-300 font-medium">{trackInfo.track_name}</span>
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0b6d41]/10 border border-[#0b6d41]/30 rounded-full">
+          <Radio className="w-4 h-4 text-[#ffde59]" />
+          <span className="text-[#ffde59] font-medium">{trackInfo.track_name}</span>
         </div>
         {trackInfo.room_location && (
           <p className="text-stone-500 text-sm flex items-center justify-center gap-1">
@@ -45,10 +45,10 @@ export function WaitingScreen({ trackInfo, queue }: WaitingScreenProps) {
             ease: 'easeInOut'
           }}
           className="inline-flex items-center justify-center w-20 h-20 rounded-full
-                     bg-gradient-to-br from-stone-800 to-stone-900
-                     border-2 border-stone-700"
+                     bg-gradient-to-br from-[#0b6d41]/20 to-stone-900
+                     border-2 border-[#0b6d41]/40"
         >
-          <Clock className="w-10 h-10 text-stone-400" />
+          <Clock className="w-10 h-10 text-[#0b6d41]" />
         </motion.div>
 
         <div className="space-y-2">
