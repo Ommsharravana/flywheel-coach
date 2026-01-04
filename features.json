@@ -94,6 +94,118 @@
       }
     ]
   },
+  "demo_day_redesign": {
+    "phase": "Critical - Demo Day Jan 7",
+    "deadline": "2026-01-07",
+    "style": "NASA Mission Control",
+    "features": [
+      {
+        "id": "DD01",
+        "name": "Deploy Missing Migrations",
+        "description": "Deploy migrations 083-087 to production for audience voting, time-lock, final scoring, reveal state",
+        "priority": "P0",
+        "status": "not-started",
+        "test_steps": [
+          "Run migration 083_audience_voting.sql in Supabase SQL Editor",
+          "Run migration 084_time_locked_voting.sql",
+          "Run migration 085_grand_finale_reveal.sql",
+          "Run migration 086_judge_submission_rls.sql",
+          "Run migration 087_demo_reveal_state.sql",
+          "Verify is_voting_open() RPC function exists",
+          "Verify submission_final_scores view exists"
+        ]
+      },
+      {
+        "id": "DD02",
+        "name": "UI Component Library",
+        "description": "Create reusable components: StatusLight, MetricCard, ProgressRing, LiveBadge, CountdownTimer",
+        "priority": "P0",
+        "status": "not-started",
+        "test_steps": [
+          "StatusLight component renders green/amber/red states",
+          "MetricCard displays icon + value + label with consistent styling",
+          "ProgressRing shows circular progress indicator",
+          "LiveBadge pulses when active",
+          "CountdownTimer shows time remaining with auto-update"
+        ]
+      },
+      {
+        "id": "DD03",
+        "name": "Event Admin Dashboard Redesign",
+        "description": "NASA mission control style dashboard with key metrics strip, track status grid, activity feed, alert panel",
+        "priority": "P0",
+        "status": "not-started",
+        "test_steps": [
+          "Event header shows name, status badge, quick actions",
+          "Key metrics strip shows 6 stats horizontally",
+          "Track status grid shows 6 tracks in 3x2 layout with status lights",
+          "Activity feed shows real-time updates",
+          "Alert panel highlights issues needing attention",
+          "Quick actions bar provides 1-click access to common tasks"
+        ]
+      },
+      {
+        "id": "DD04",
+        "name": "Demo Day Command Center Redesign",
+        "description": "Real-time control room with global stats, track cards, judge monitoring, anomaly detection",
+        "priority": "P0",
+        "status": "not-started",
+        "test_steps": [
+          "Global stats bar shows total/completed/in-progress demos",
+          "Track control cards show progress rings and status lights",
+          "Judge activity monitor shows last activity per judge",
+          "Score anomaly detection flags suspicious patterns",
+          "Status lights change color based on health logic",
+          "30-second auto-refresh when event is live"
+        ]
+      },
+      {
+        "id": "DD05",
+        "name": "Judge Panel Redesign",
+        "description": "Clean, focused scoring interface with better sliders, bonus section, score preview",
+        "priority": "P0",
+        "status": "not-started",
+        "test_steps": [
+          "Submission info card shows app details and links",
+          "Scoring sliders are large and touch-friendly",
+          "Weight badges visible next to each criterion",
+          "Bonus checkboxes in horizontal layout",
+          "Score preview updates in real-time",
+          "Submit button disabled until all criteria scored"
+        ]
+      },
+      {
+        "id": "DD06",
+        "name": "Audience Voting Redesign",
+        "description": "Mobile-first voting with star rating, reactions, countdown timer, time-lock UI",
+        "priority": "P0",
+        "status": "not-started",
+        "test_steps": [
+          "Current presenter card shows app name and team",
+          "Star rating is large and touch-friendly (1-5 stars)",
+          "Reaction buttons allow optional quick feedback",
+          "Countdown timer shows time remaining in voting window",
+          "Voting closed state shows clear message",
+          "Submit vote works within 5-minute window"
+        ]
+      },
+      {
+        "id": "DD07",
+        "name": "Results Reveal Redesign",
+        "description": "Animated grand finale reveal with track tabs, leaderboard, winner cards",
+        "priority": "P0",
+        "status": "not-started",
+        "test_steps": [
+          "Pre-reveal state shows countdown and anticipation",
+          "Track-by-track reveal with animation",
+          "Winner cards animate in sequence (3rd, 2nd, 1st)",
+          "Full leaderboard visible after reveal",
+          "Track tabs allow switching between categories",
+          "Score breakdown visible for each entry"
+        ]
+      }
+    ]
+  },
   "features": [
     {
       "id": "P01",
