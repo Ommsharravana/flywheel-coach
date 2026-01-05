@@ -22,9 +22,10 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
   }
 
   // Get event with full details
+  // Note: events table has is_active (boolean) not status, and methodology is in config jsonb
   const { data: eventData, error } = await supabase
     .from('events')
-    .select('id, name, slug, methodology, status, start_date, end_date')
+    .select('id, name, slug, is_active, config, start_date, end_date')
     .eq('slug', slug)
     .single();
 
@@ -36,8 +37,8 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     id: string;
     name: string;
     slug: string;
-    methodology: string;
-    status: string;
+    is_active: boolean;
+    config: Record<string, unknown> | null;
     start_date: string | null;
     end_date: string | null;
   };
@@ -80,7 +81,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     completedCycles: completedResult.count ?? 0,
   };
 
-  const isLive = event.status === 'active';
+  const isLive = event.is_active === true;
 
   return (
     <div className="space-y-6">
