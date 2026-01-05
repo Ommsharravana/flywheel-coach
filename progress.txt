@@ -1,13 +1,43 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Latest Session: 2026-01-06
+## Latest Session: 2026-01-06 (Session 2)
+
+### Task
+Fix Learners Monitor showing 0 learners
+
+### Bug
+Learners Monitor was showing 0 learners despite `team_members` data existing in database.
+
+### Root Cause
+The `get_learner_stats` RPC function existed in migration file (`096_learner_stats_rpc.sql`) but was NEVER applied to production Supabase. Error: `function get_learner_stats(uuid) does not exist`
+
+### Fix Applied
+1. ✅ Applied CREATE FUNCTION statement directly to production Supabase via SQL Editor
+2. ✅ Applied GRANT EXECUTE permissions to `authenticated` and `service_role`
+3. ✅ Verified RPC returns data correctly (595 learners)
+4. ✅ Verified Learners Monitor page displays correctly
+
+### Result
+- 595 Total Learners
+- 557 Teams with Members
+- 1.7 Avg Teams / Learner
+- 8 Most Teams (highest team count)
+- Role Distribution: Builder (594), Event_admin (1)
+- Institution column showing correctly
+
+### Technical Note
+Fix was applied directly to production database, not through code changes. Migration file already contained correct SQL.
+
+---
+
+## Previous Session: 2026-01-06 (Session 1)
 
 ### Task
 Add institution name to Learners and Senior Learners dashboards
 
 ### Actions Completed
 1. ✅ Updated `get_learner_stats` RPC to JOIN with users table for institution + role
-2. ✅ Updated `get_senior_learner_stats` RPC to JOIN with users table for institution  
+2. ✅ Updated `get_senior_learner_stats` RPC to JOIN with users table for institution
 3. ✅ Modified Senior Learners page to use institution_name directly from RPC
 4. ✅ Removed redundant institutions lookup from Senior Learners page
 5. ✅ Applied both updated RPCs to production Supabase
@@ -17,12 +47,11 @@ Add institution name to Learners and Senior Learners dashboards
 ### Technical Details
 - Both RPCs now LEFT JOIN with `users` table to get institution
 - Institution column shows "—" when user doesn't have institution set
-- Learners Monitor shows 0 learners (teams don't have team_members populated yet)
 - Senior Learners Monitor shows 106 senior learners with institution column
 
 ### Files Changed
 - `supabase/migrations/095_fix_senior_learner_stats_array.sql` - Updated RPC
-- `supabase/migrations/096_learner_stats_rpc.sql` - Updated RPC  
+- `supabase/migrations/096_learner_stats_rpc.sql` - Updated RPC
 - `app/(admin)/admin/events/[slug]/senior-learners/page.tsx` - Simplified
 - `app/(admin)/admin/events/[slug]/senior-learners/SeniorLearnersTable.tsx` - Updated interface
 - `app/(admin)/admin/events/[slug]/learners/page.tsx` - New page
