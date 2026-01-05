@@ -101,7 +101,12 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching submissions:', error);
-      return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
+      return NextResponse.json({
+        error: 'Failed to fetch submissions',
+        details: error.message,
+        code: error.code,
+        hint: error.hint
+      }, { status: 500 });
     }
 
     // Transform data

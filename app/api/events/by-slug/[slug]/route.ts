@@ -35,41 +35,32 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get event admins
+    // Get event admins using RPC (bypasses RLS issues with auth.uid() in server context)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: admins, error: adminsError } = await (supabase as any)
-      .from('event_admins')
-      .select(`
-        id,
-        user_id,
-        role,
-        created_at,
-        users:user_id (
-          id,
-          name,
-          email
-        )
-      `)
-      .eq('event_id', event.id)
-      .order('created_at', { ascending: true });
+      .rpc('get_event_admins', {
+        p_event_id: event.id,
+        p_requesting_user_id: user.id,
+      });
 
     if (adminsError) {
       console.error('Error fetching event admins:', adminsError);
     }
 
-    // Transform admins
+    // Transform admins from RPC result
     const transformedAdmins = (admins || []).map((admin: {
       id: string;
       user_id: string;
       role: string;
       created_at: string;
-      users: { id: string; name: string; email: string } | null;
+      user_name: string | null;
+      user_email: string | null;
     }) => ({
       id: admin.id,
       user_id: admin.user_id,
       role: admin.role,
       created_at: admin.created_at,
-      user: admin.users || { name: 'Unknown', email: '' },
+      user: { name: admin.user_name || 'Unknown', email: admin.user_email || '' },
     }));
 
     return NextResponse.json({

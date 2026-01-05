@@ -1161,6 +1161,38 @@ In `components/steps/AppathonSubmission.tsx`, the submitted view (lines 421-498)
 ### Note
 Bug Reporter API doesn't support public status updates - mark as resolved manually in dashboard.
 
+## 5 Jan 2026 - Session 4 (BUG-184 Senior Learner Search)
+
+### BUG-184 Fixed ✅
+- **Issue**: "Senior learner name not found in search" - users couldn't find Senior Learners when selecting mentors
+- **Root Cause**: Migration 056 (`user_category_vs_role.sql`) was never applied to production Supabase
+  - `user_category` column didn't exist in production users table
+  - `search_users_for_team` function didn't exist in production
+  - MCP Supabase tools connect to LOCAL database (127.0.0.1:55321), NOT production
+- **Fix Applied via Supabase SQL Editor**:
+  1. Added `user_category` column to users table with 'learner' default
+  2. Added `users_category_check` constraint for valid values
+  3. Created index `idx_users_category` for performance
+  4. Created `search_users_for_team` function with SECURITY DEFINER
+  5. Granted execute permission to authenticated users
+- **Verification**:
+  - Database: 10 senior learners found (Janani V, Prithiviraja A.K, PRIYANGA S, etc.)
+  - API: `/api/users/search?q=Janani&category=senior_learner` returns 3 users correctly
+  - Function security check working ("Not authenticated" when called without auth context)
+- **Status**: Production API returns senior learners correctly with `userCategory: "senior_learner"`
+
+### Also Fixed
+- **Demo-day backup sheets event filter**: Added `event_id` filter to judging_tracks query
+- **Commit**: b909c90 - fix(api): Filter demo-day backup sheets by event ID
+
+### Current State
+- Build passing ✅
+- All bugs resolved (BUG-184, BUG-188, BUG-189)
+- Production deployed via Vercel auto-deploy
+- Senior learner search working on production
+
+---
+
 ## 5 Jan 2026 - Session 3 (Bug Fixes)
 
 ### BUG-188 Fixed ✅
