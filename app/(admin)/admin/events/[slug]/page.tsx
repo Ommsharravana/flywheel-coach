@@ -380,6 +380,50 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     });
   }
 
+  // Sanitize recentCycles data - ensure all properties are safe for rendering
+  const safeRecentCycles = (recentCycles || []).map((cycle, idx) => {
+    try {
+      return {
+        id: cycle.id || `cycle-${idx}`,
+        name: cycle.name || 'Unnamed',
+        current_step: typeof cycle.current_step === 'number' ? cycle.current_step : 0,
+        status: cycle.status || 'unknown',
+        created_at: cycle.created_at || null,
+        updated_at: cycle.updated_at || null,
+        users: cycle.users ? {
+          name: cycle.users.name || 'Unknown',
+          email: cycle.users.email || '',
+          institution: cycle.users.institution || null,
+        } : null,
+      };
+    } catch (e) {
+      console.error('[EventAdminPage] Error sanitizing cycle:', idx, e);
+      return {
+        id: `cycle-error-${idx}`,
+        name: 'Error',
+        current_step: 0,
+        status: 'error',
+        created_at: null,
+        updated_at: null,
+        users: null,
+      };
+    }
+  });
+
+  // Sanitize institutionBreakdown data
+  const safeInstitutionBreakdown = (institutionBreakdown || []).filter(inst => {
+    if (!inst || typeof inst.institution_id !== 'string') {
+      console.warn('[EventAdminPage] Invalid institution entry:', inst);
+      return false;
+    }
+    return true;
+  }).map((inst, idx) => ({
+    institution_id: inst.institution_id || `inst-${idx}`,
+    institution_name: inst.institution_name || 'Unknown Institution',
+    builder_count: typeof inst.builder_count === 'number' ? inst.builder_count : 0,
+    cycle_count: typeof inst.cycle_count === 'number' ? inst.cycle_count : 0,
+  }));
+
   // Debug logging with detailed data inspection
   console.log('[EventAdminPage] DEBUG - Full data check:', JSON.stringify({
     eventId,
@@ -388,9 +432,9 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     eventConfig: event?.config,
     trackStatsCount: trackStats?.length,
     trackStatsData: trackStats?.slice(0, 2),
-    recentCyclesCount: recentCycles?.length,
-    recentCyclesData: recentCycles?.slice(0, 2),
-    institutionBreakdownCount: institutionBreakdown?.length,
+    safeRecentCyclesCount: safeRecentCycles?.length,
+    safeRecentCyclesData: safeRecentCycles?.slice(0, 2),
+    safeInstitutionBreakdownCount: safeInstitutionBreakdown?.length,
     methodologyName: methodology?.name,
     methodologyStepsCount: methodology?.steps?.length,
     builderCount,
@@ -613,9 +657,9 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
 
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardContent className="p-0">
-              {recentCycles && recentCycles.length > 0 ? (
+              {safeRecentCycles.length > 0 ? (
                 <div className="divide-y divide-zinc-800">
-                  {recentCycles.map((cycle) => (
+                  {safeRecentCycles.map((cycle) => (
                     <div
                       key={cycle.id}
                       className="flex items-center justify-between p-3 hover:bg-zinc-800/50 transition-colors"
@@ -633,7 +677,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
                             {cycle.users?.name || 'Unknown'}
                           </div>
                           <div className="text-xs text-zinc-500">
-                            Step {cycle.current_step ?? 0}/{methodology.steps?.length ?? 8}
+                            Step {cycle.current_step}/{methodology.steps?.length ?? 8}
                           </div>
                         </div>
                       </div>
@@ -653,7 +697,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
           </Card>
 
           {/* Institution Breakdown */}
-          {institutionBreakdown && institutionBreakdown.length > 0 && (
+          {safeInstitutionBreakdown.length > 0 && (
             <>
               <h2 className="text-lg font-semibold text-zinc-100 flex items-center gap-2 mt-6">
                 <MapPin className="h-5 w-5 text-blue-400" />
@@ -662,7 +706,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
               <Card className="bg-zinc-900/50 border-zinc-800">
                 <CardContent className="p-0">
                   <div className="divide-y divide-zinc-800">
-                    {institutionBreakdown.slice(0, 5).map((inst, index) => (
+                    {safeInstitutionBreakdown.slice(0, 5).map((inst, index) => (
                       <div
                         key={inst.institution_id}
                         className="flex items-center justify-between p-3"
