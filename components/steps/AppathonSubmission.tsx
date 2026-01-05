@@ -265,6 +265,23 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
     return true;
   };
 
+  // Get list of validation errors to show user what's missing
+  const getValidationErrors = (): string[] => {
+    const errors: string[] = [];
+    if (!teamName) errors.push('Team name');
+    if (seniorLearners.length < 1) errors.push('At least 1 Senior Learner');
+    if (seniorLearners.length > 3) errors.push('Maximum 3 Senior Learners');
+    if (totalTeamSize < 2) errors.push('At least 2 team members total');
+    if (totalTeamSize > 10) errors.push('Maximum 10 team members');
+    if (!applicantName) errors.push('Applicant name');
+    if (!applicantEmail) errors.push('Applicant email');
+    if (!appName) errors.push('App name');
+    if (!problemStatement) errors.push('Problem statement');
+    if (!category) errors.push('Category');
+    if (!declarationAccepted) errors.push('Declaration acceptance');
+    return errors;
+  };
+
   const canSubmit = () => {
     return isValid() && declarationAccepted && submissionStatus === 'draft';
   };
@@ -828,28 +845,44 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
       </Card>
 
       {/* Actions */}
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/8`)}>
-          Back to Impact Discovery
-        </Button>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={saveDraft} disabled={isPending}>
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="mr-2 w-4 h-4" />}
-            Save Draft
+      <div className="space-y-3">
+        {/* Show validation errors when submit is disabled */}
+        {!canSubmit() && submissionStatus === 'draft' && (
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <p className="text-red-400 text-sm font-medium mb-2 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Please complete the following to submit:
+            </p>
+            <ul className="text-red-300 text-sm space-y-1 ml-6 list-disc">
+              {getValidationErrors().map((error, i) => (
+                <li key={i}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/8`)}>
+            Back to Impact Discovery
           </Button>
-          <Button
-            onClick={submitForReview}
-            disabled={!canSubmit() || isPending}
-            className="bg-amber-500 hover:bg-amber-600 text-stone-900"
-          >
-            {isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <Trophy className="mr-2 w-4 h-4" />
-            )}
-            Submit Entry
-            <ChevronRight className="ml-1 w-4 h-4" />
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={saveDraft} disabled={isPending}>
+              {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="mr-2 w-4 h-4" />}
+              Save Draft
+            </Button>
+            <Button
+              onClick={submitForReview}
+              disabled={!canSubmit() || isPending}
+              className="bg-amber-500 hover:bg-amber-600 text-stone-900"
+            >
+              {isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Trophy className="mr-2 w-4 h-4" />
+              )}
+              Submit Entry
+              <ChevronRight className="ml-1 w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
