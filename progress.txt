@@ -1,6 +1,66 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Session: 2026-01-05 (Latest) - MetricCard Import Fix COMPLETE ✅
+## Session: 2026-01-05 (Latest) - Event Admin Page Redirect FIX COMPLETE ✅
+
+### Issue
+Superadmin (director@jkkn.ac.in) couldn't access `/admin/events/appathon-2` - page kept redirecting to `/admin/events` list.
+
+### Root Causes Found & Fixed
+
+**Root Cause #1: get_user_role RPC function (Database)**
+- Function in migration 019 referenced `institution_id` column which doesn't exist
+- Correct column name is `institution` (TEXT)
+- Created migration `092_fix_get_user_role_column.sql`
+- Applied to production Supabase via SQL Editor
+
+**Root Cause #2: Event admin page query (Code)**
+- `/app/(admin)/admin/events/[slug]/page.tsx` was selecting non-existent columns:
+  - `methodology` - doesn't exist (stored in `config` jsonb)
+  - `status` - doesn't exist (table has `is_active` boolean)
+- Query was failing, triggering redirect to `/admin/events`
+
+### Fixes Applied
+
+**Database Fix:**
+```sql
+DROP FUNCTION IF EXISTS get_user_role(UUID);
+CREATE OR REPLACE FUNCTION get_user_role(user_id UUID)
+RETURNS TABLE(role TEXT, institution TEXT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT u.role, u.institution  -- Fixed: was institution_id
+  FROM public.users u
+  WHERE u.id = get_user_role.user_id
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+**Code Fix:**
+- Changed select from: `id, name, slug, methodology, status, start_date, end_date`
+- Changed select to: `id, name, slug, is_active, config, start_date, end_date`
+- Changed `event.status === 'active'` to `event.is_active === true`
+
+### Verification
+| Check | Result |
+|-------|--------|
+| get_user_role RPC | Returns `superadmin, JKKN` ✅ |
+| Build | Passes ✅ |
+| Production deployment | Live ✅ |
+| Event admin page loads | YES ✅ |
+| Shows event stats | Total Builders: 0, Active Cycles: 2048, Submissions: 0, Completed: 482 ✅ |
+| Shows "Live" badge | YES ✅ |
+| Shows "Super Admin" role | YES ✅ |
+
+### Commits
+- `edf8526` - fix(admin): Use correct column names in event admin page query
+
+### Lesson Learned
+When a server component redirects unexpectedly, check if the database query is selecting columns that don't exist. Supabase returns an error for non-existent columns, which triggers the error handling redirect.
+
+---
+
+## Session: 2026-01-05 (Previous) - MetricCard Import Fix COMPLETE ✅
 
 ### Admin Event Dashboard Error - ROOT CAUSE FOUND & FIXED
 
