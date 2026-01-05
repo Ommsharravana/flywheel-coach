@@ -429,7 +429,7 @@ export default async function StepPage({ params }: StepPageProps) {
                       <Button
                         variant="outline"
                         className="w-full justify-start"
-                        disabled={stepNumber >= cycle.currentStep}
+                        disabled={stepNumber > cycle.currentStep}
                       >
                         Step {nextStep}: {allSteps[nextStep - 1].shortName}
                         <ArrowRight className="ml-auto h-4 w-4" />
