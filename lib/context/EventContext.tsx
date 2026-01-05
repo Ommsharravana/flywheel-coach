@@ -52,8 +52,8 @@ export function EventProvider({ children, activeEvent: serverActiveEvent }: Even
   // Use local state for rendering (enables optimistic updates)
   const activeEvent = localActiveEvent;
 
-  // Parse config from active event
-  const eventConfig = activeEvent?.config ?? null;
+  // Parse config from active event - memoize to prevent unnecessary re-renders
+  const eventConfig = useMemo(() => activeEvent?.config ?? null, [activeEvent]);
 
   // Backward compatibility
   const isAppathonMode = activeEvent !== null;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useCallback, useState } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useState, useMemo } from 'react';
 import { useNetworkStatus, NetworkStatus } from '@/lib/hooks/useNetworkStatus';
 import {
   getQueue,
@@ -144,15 +144,19 @@ export function OfflineProvider({ children }: OfflineProviderProps) {
     }
   }, [network.isOnline, network.isSlowConnection]);
 
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(
+    () => ({
+      network,
+      pendingActions,
+      isProcessingQueue,
+      processQueue,
+    }),
+    [network, pendingActions, isProcessingQueue, processQueue]
+  );
+
   return (
-    <OfflineContext.Provider
-      value={{
-        network,
-        pendingActions,
-        isProcessingQueue,
-        processQueue,
-      }}
-    >
+    <OfflineContext.Provider value={value}>
       {children}
     </OfflineContext.Provider>
   );

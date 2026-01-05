@@ -48,7 +48,8 @@ export function PromptGenerator({ cycle }: PromptGeneratorProps) {
       setHasGoogleOAuth(!!session?.provider_token);
     }
     checkGoogleOAuth();
-  }, [supabase]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount - one-time OAuth check
 
   // Generate the full 9-prompt sequence with data from all previous steps
   // Support multi-select with backward compatibility for single selection

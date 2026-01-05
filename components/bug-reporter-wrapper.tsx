@@ -3,20 +3,23 @@
 import { BugReporterProvider } from '@boobalan_jkkn/bug-reporter-sdk';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 export function BugReporterWrapper({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
     // Get initial user
-    supabase.auth.getUser().then(({ data }: { data: any }) => {
-      setUser(data.user);
-    });
+    const getInitialUser = async () => {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+    };
+    getInitialUser();
 
     // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event: any, session: any) => {
+      (_event: AuthChangeEvent, session: Session | null) => {
         setUser(session?.user ?? null);
       }
     );
@@ -24,7 +27,8 @@ export function BugReporterWrapper({ children }: { children: React.ReactNode }) 
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount - supabase client is stable
 
   return (
     <BugReporterProvider

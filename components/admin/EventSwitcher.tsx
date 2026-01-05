@@ -58,7 +58,8 @@ export function EventSwitcher({ userId, userRole, currentEventId, onEventChange 
     }
 
     fetchEvents();
-  }, [userId, supabase, selectedEventId, onEventChange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]); // Only refetch when userId changes - supabase is stable, others cause loops
 
   // Superadmin doesn't need event switcher - they see everything
   if (userRole === 'superadmin') {
