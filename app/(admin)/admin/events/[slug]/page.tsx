@@ -3,14 +3,16 @@ import { createClient } from '@/lib/supabase/server';
 import { getEffectiveUserId } from '@/lib/supabase/effective-user';
 import { checkEventAdminAccess } from '@/lib/methodologies/helpers';
 import Link from 'next/link';
+import { Users, FileText, Rocket, Trophy } from 'lucide-react';
+import { MetricCard } from '@/components/ui/metric-card';
 
 interface EventAdminPageProps {
   params: Promise<{ slug: string }>;
 }
 
 export default async function EventAdminPage({ params }: EventAdminPageProps) {
-  // DIAGNOSTIC: Minimal version to isolate error source
-  // Step 1: Just auth checks + static content
+  // DIAGNOSTIC: Test Step 2 - Add MetricCard with static data
+  // No RPC calls yet - testing if component imports cause the error
 
   // Get params
   const resolvedParams = await params;
@@ -45,43 +47,81 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     redirect('/admin/events');
   }
 
-  // MINIMAL RENDER - no components, no complex logic
+  // STATIC DATA for testing - no RPC calls
+  const staticStats = {
+    totalBuilders: 42,
+    activeCycles: 15,
+    submissions: 28,
+    completedCycles: 7
+  };
+
   return (
-    <div style={{ padding: '24px', backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#fafafa' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>
-        {event.name} - Admin Dashboard
-      </h1>
-      <p style={{ color: '#a1a1aa', marginBottom: '24px' }}>
-        Role: {role || 'unknown'} | Event ID: {event.id}
-      </p>
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">{event.name} - Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Role: {role || 'unknown'} | Event ID: {event.id}
+        </p>
+      </div>
+
+      {/* Metrics Grid - Using static data */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          icon={Users}
+          label="Total Builders"
+          value={staticStats.totalBuilders}
+          variant="jkkn"
+        />
+        <MetricCard
+          icon={Rocket}
+          label="Active Cycles"
+          value={staticStats.activeCycles}
+          variant="warning"
+        />
+        <MetricCard
+          icon={FileText}
+          label="Submissions"
+          value={staticStats.submissions}
+          variant="info"
+        />
+        <MetricCard
+          icon={Trophy}
+          label="Completed"
+          value={staticStats.completedCycles}
+          variant="success"
+        />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-3">
         <Link
           href={`/admin/events/${slug}/submissions`}
-          style={{ padding: '12px 24px', backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', color: '#fafafa', textDecoration: 'none' }}
+          className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
         >
           Submissions
         </Link>
         <Link
           href={`/admin/events/${slug}/builders`}
-          style={{ padding: '12px 24px', backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', color: '#fafafa', textDecoration: 'none' }}
+          className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
         >
           Builders
         </Link>
         <Link
           href={`/admin/events/${slug}/demo-day`}
-          style={{ padding: '12px 24px', backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', color: '#fafafa', textDecoration: 'none' }}
+          className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
         >
           Demo Day
         </Link>
         <Link
           href={`/admin/events/${slug}/settings`}
-          style={{ padding: '12px 24px', backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', color: '#fafafa', textDecoration: 'none' }}
+          className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
         >
           Settings
         </Link>
       </div>
-      <p style={{ marginTop: '24px', color: '#52525b', fontSize: '12px' }}>
-        Diagnostic: Minimal page rendering test
+
+      <p className="text-xs text-muted-foreground">
+        Diagnostic: Step 2 - MetricCard with static data (no RPC calls)
       </p>
     </div>
   );
