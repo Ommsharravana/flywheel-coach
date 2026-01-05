@@ -33,12 +33,17 @@ export default async function EventLayout({
   children,
   params,
 }: EventLayoutProps) {
-  let slug: string;
+  let slug: string = '';
   try {
     const resolvedParams = await params;
     slug = resolvedParams.slug;
   } catch (err) {
     console.error('[EventLayout] params error:', err);
+    notFound();
+  }
+
+  if (!slug) {
+    console.error('[EventLayout] slug is empty after params resolution');
     notFound();
   }
 

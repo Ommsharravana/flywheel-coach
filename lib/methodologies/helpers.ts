@@ -143,31 +143,54 @@ export async function checkEventAdminAccess(
   userId: string,
   eventId: string
 ): Promise<{ isAdmin: boolean; role: string | null }> {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  // Check if superadmin first using RPC (bypasses RLS, same as middleware)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: userId });
-  const userRole = (roleData as { role: string }[] | null)?.[0]?.role;
+    // Check if superadmin first using RPC (bypasses RLS, same as middleware)
+    let userRole: string | undefined;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: roleData, error: roleError } = await (supabase as any).rpc('get_user_role', { user_id: userId });
+      if (roleError) {
+        console.error('[checkEventAdminAccess] get_user_role RPC error:', roleError);
+      } else {
+        userRole = (roleData as { role: string }[] | null)?.[0]?.role;
+      }
+    } catch (rpcErr) {
+      console.error('[checkEventAdminAccess] get_user_role RPC exception:', rpcErr);
+    }
 
-  if (userRole === 'superadmin') {
-    return { isAdmin: true, role: 'superadmin' };
+    if (userRole === 'superadmin') {
+      return { isAdmin: true, role: 'superadmin' };
+    }
+
+    // Check event_admins table
+    try {
+      const { data: adminData, error: adminError } = await supabase
+        .from('event_admins')
+        .select('role')
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .single();
+
+      if (adminError) {
+        // PGRST116 means no rows returned, which is expected for non-admins
+        if (adminError.code !== 'PGRST116') {
+          console.error('[checkEventAdminAccess] event_admins query error:', adminError);
+        }
+      } else if (adminData) {
+        // All event admin roles (admin, reviewer, viewer) can access settings
+        return { isAdmin: true, role: (adminData as { role: string }).role };
+      }
+    } catch (queryErr) {
+      console.error('[checkEventAdminAccess] event_admins query exception:', queryErr);
+    }
+
+    return { isAdmin: false, role: null };
+  } catch (err) {
+    console.error('[checkEventAdminAccess] unexpected error:', err);
+    return { isAdmin: false, role: null };
   }
-
-  // Check event_admins table
-  const { data: adminData } = await supabase
-    .from('event_admins')
-    .select('role')
-    .eq('event_id', eventId)
-    .eq('user_id', userId)
-    .single() as { data: { role: string } | null };
-
-  if (adminData) {
-    // All event admin roles (admin, reviewer, viewer) can access settings
-    return { isAdmin: true, role: adminData.role };
-  }
-
-  return { isAdmin: false, role: null };
 }
 
 /**
