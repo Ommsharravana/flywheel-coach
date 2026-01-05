@@ -1,6 +1,34 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Session: 2026-01-05 (Latest) - Dashboard Flickering & Offline Detection FIXES ✅
+## Session: 2026-01-05 (Latest) - BUG-184 Senior Learner Search FIX ✅
+
+### Issue
+BUG-184: "Senior learner name not found in search" - The user search combobox wasn't returning senior learners when filtering by `category=senior_learner`.
+
+### Root Cause
+Migration 056 (`user_category_vs_role.sql`) was never applied to production Supabase:
+- Missing `user_category` column on `users` table
+- Missing `search_users_for_team` function
+
+### Fix Applied
+Applied the migration SQL directly via Supabase SQL Editor:
+1. Added `user_category` column (enum: 'learner', 'senior_learner')
+2. Created `search_users_for_team` function with proper filtering
+3. Backfilled existing users based on role → user_category mapping
+
+### Verification
+```bash
+curl "https://jkkn-solution-studio.vercel.app/api/users/search?q=Janani&category=senior_learner"
+# Returns: {"users":[{"id":"...","name":"Janani Murugan","email":"...","userCategory":"senior_learner",...}]}
+```
+✅ Senior learners now return correctly in search results
+
+### Bug Reporter Status
+**BLOCKED**: Neither md@jkkn.org nor mailomm@gmail.com have access to the Bug Reporter platform (both show "Access Pending"). User must manually mark BUG-184 as resolved using an admin account.
+
+---
+
+## Session: 2026-01-05 (Previous) - Dashboard Flickering & Offline Detection FIXES ✅
 
 ### Issue 1: Dashboard Flickering
 User reported continuous flickering on the Solution Studio dashboard.
@@ -1236,3 +1264,30 @@ Bug Reporter API doesn't support public status updates - mark as resolved manual
 - Build passing ✅
 - All bugs resolved
 - Production deployed via Vercel auto-deploy
+
+---
+
+## 2026-01-05: Backup Sheets API Fix
+
+### Issue
+All buttons on `/admin/events/appathon-2/demo-day/backup-sheets` page returned:
+`{"error":"Failed to fetch submissions"}`
+
+### Root Causes Found & Fixed
+1. **PGRST201 Error** - Multiple FK relationships between `appathon_submissions` and `users`
+   - Fix: Specified explicit FK `users!appathon_submissions_user_id_fkey`
+
+2. **Invalid Column Names** - Query referenced non-existent columns
+   - Changed `description` → `problem_statement`
+   - Changed `app_url` → `live_url`
+
+### Files Modified
+- `app/api/admin/demo-day/backup-sheets/route.ts`
+
+### Verification
+- API now returns proper HTML backup sheets
+- Page shows 1 submission, 6 tracks, 7 total pages
+- All buttons functional (Generate Complete Package, Preview, Individual Sheets, Master Grids, Track-specific)
+
+### Commit
+`8f7a81b` - fix(backup-sheets): Use correct column names from appathon_submissions
