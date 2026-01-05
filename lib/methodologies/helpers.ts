@@ -160,6 +160,22 @@ export async function checkEventAdminAccess(
       console.error('[checkEventAdminAccess] get_user_role RPC exception:', rpcErr);
     }
 
+    // Fallback: If RPC didn't return a role, try direct query
+    if (!userRole) {
+      try {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', userId)
+          .single();
+        if (!userError && userData) {
+          userRole = (userData as { role: string }).role;
+        }
+      } catch (fallbackErr) {
+        console.error('[checkEventAdminAccess] fallback query exception:', fallbackErr);
+      }
+    }
+
     if (userRole === 'superadmin') {
       return { isAdmin: true, role: 'superadmin' };
     }
