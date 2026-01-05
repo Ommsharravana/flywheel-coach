@@ -425,29 +425,34 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
   }));
 
   // Debug logging with detailed data inspection
-  console.log('[EventAdminPage] DEBUG - Full data check:', JSON.stringify({
-    eventId,
-    eventName: event?.name,
-    eventDescription: event?.description,
-    eventConfig: event?.config,
-    trackStatsCount: trackStats?.length,
-    trackStatsData: trackStats?.slice(0, 2),
-    safeRecentCyclesCount: safeRecentCycles?.length,
-    safeRecentCyclesData: safeRecentCycles?.slice(0, 2),
-    safeInstitutionBreakdownCount: safeInstitutionBreakdown?.length,
-    methodologyName: methodology?.name,
-    methodologyStepsCount: methodology?.steps?.length,
-    builderCount,
-    totalCycles,
-    completedCycles,
-    problemCount,
-    submissionCount,
-    completionRate,
-    daysToEnd,
-    eventStatus,
-    role,
-    issuesCount: issues?.length,
-  }, null, 2));
+  console.log('[EventAdminPage] DEBUG - Starting render preparation');
+
+  // Wrap all data in try-catch for final safety
+  let renderData;
+  try {
+    renderData = {
+      eventId: String(eventId || ''),
+      eventName: String(event?.name || 'Unknown Event'),
+      eventDescription: String(event?.description || ''),
+      methodologyName: String(methodology?.name || 'Flywheel'),
+      methodologyStepsLength: Number(methodology?.steps?.length) || 8,
+      builderCount: Number(builderCount) || 0,
+      submissionCount: Number(submissionCount) || 0,
+      totalCycles: Number(totalCycles) || 0,
+      completedCycles: Number(completedCycles) || 0,
+      problemCount: Number(problemCount) || 0,
+      completionRate: Number(completionRate) || 0,
+      daysToEnd: daysToEnd !== null ? Number(daysToEnd) : null,
+      eventStatus: String(eventStatus || 'active'),
+      role: String(role || 'admin'),
+      startDateStr: startDate ? startDate.toLocaleDateString() : null,
+      endDateStr: endDate ? endDate.toLocaleDateString() : null,
+    };
+    console.log('[EventAdminPage] DEBUG - Render data prepared:', JSON.stringify(renderData));
+  } catch (dataError) {
+    console.error('[EventAdminPage] FATAL: Error preparing render data:', dataError);
+    throw new Error('Failed to prepare render data: ' + String(dataError));
+  }
 
   // Validate critical data before render to catch issues
   // Note: event and methodology are already validated earlier with redirect
@@ -455,6 +460,23 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     console.error('[EventAdminPage] FATAL: trackStats is not an array', trackStats);
     throw new Error('Track stats is not an array');
   }
+
+  if (!Array.isArray(safeRecentCycles)) {
+    console.error('[EventAdminPage] FATAL: safeRecentCycles is not an array');
+    throw new Error('safeRecentCycles is not an array');
+  }
+
+  if (!Array.isArray(safeInstitutionBreakdown)) {
+    console.error('[EventAdminPage] FATAL: safeInstitutionBreakdown is not an array');
+    throw new Error('safeInstitutionBreakdown is not an array');
+  }
+
+  if (!Array.isArray(issues)) {
+    console.error('[EventAdminPage] FATAL: issues is not an array');
+    throw new Error('issues is not an array');
+  }
+
+  console.log('[EventAdminPage] DEBUG - All validations passed, starting JSX render');
 
   return (
     <div className="p-6 space-y-6 bg-[#0a0a0a] min-h-screen">
