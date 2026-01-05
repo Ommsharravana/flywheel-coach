@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,34 +17,43 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { createUserSchema, type CreateUserInput } from '@/lib/validations/user';
 
 export default function NewUserPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: 'builder' as 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin',
-    password: '',
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateUserInput>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      role: 'builder',
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const role = watch('role');
+
+  const onSubmit = async (data: CreateUserInput) => {
     setError(null);
 
     try {
       const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create user');
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to create user');
       }
 
       const { user } = await response.json();
@@ -50,8 +61,6 @@ export default function NewUserPage() {
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -78,7 +87,7 @@ export default function NewUserPage() {
             <CardTitle className="text-lg text-stone-100">User Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {error && (
                 <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">
                   {error}
@@ -91,14 +100,13 @@ export default function NewUserPage() {
                 </Label>
                 <Input
                   id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
+                  {...register('name')}
                   placeholder="Enter user name"
-                  className="bg-stone-800 border-stone-700"
-                  required
+                  className={`bg-stone-800 border-stone-700 ${errors.name ? 'border-red-500' : ''}`}
                 />
+                {errors.name && (
+                  <p className="text-xs text-red-400">{errors.name.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -108,14 +116,13 @@ export default function NewUserPage() {
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  {...register('email')}
                   placeholder="Enter email address"
-                  className="bg-stone-800 border-stone-700"
-                  required
+                  className={`bg-stone-800 border-stone-700 ${errors.email ? 'border-red-500' : ''}`}
                 />
+                {errors.email && (
+                  <p className="text-xs text-red-400">{errors.email.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -125,16 +132,15 @@ export default function NewUserPage() {
                 <Input
                   id="password"
                   type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
+                  {...register('password')}
                   placeholder="Enter password"
-                  className="bg-stone-800 border-stone-700"
-                  required
-                  minLength={6}
+                  className={`bg-stone-800 border-stone-700 ${errors.password ? 'border-red-500' : ''}`}
                 />
-                <p className="text-xs text-stone-500">Minimum 6 characters</p>
+                {errors.password ? (
+                  <p className="text-xs text-red-400">{errors.password.message}</p>
+                ) : (
+                  <p className="text-xs text-stone-500">Minimum 6 characters</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -142,15 +148,10 @@ export default function NewUserPage() {
                   Role
                 </Label>
                 <Select
-                  value={formData.role}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      role: value as typeof formData.role,
-                    })
-                  }
+                  value={role}
+                  onValueChange={(value) => setValue('role', value as CreateUserInput['role'])}
                 >
-                  <SelectTrigger className="bg-stone-800 border-stone-700">
+                  <SelectTrigger className={`bg-stone-800 border-stone-700 ${errors.role ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -161,15 +162,18 @@ export default function NewUserPage() {
                     <SelectItem value="superadmin">Super Admin</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.role && (
+                  <p className="text-xs text-red-400">{errors.role.message}</p>
+                )}
               </div>
 
               <div className="flex justify-end pt-4">
                 <Button
                   type="submit"
                   className="gap-2 bg-amber-500 hover:bg-amber-600 text-stone-900"
-                  disabled={loading}
+                  disabled={isSubmitting}
                 >
-                  {loading ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Creating...

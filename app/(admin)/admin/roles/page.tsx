@@ -38,6 +38,7 @@ import {
   CalendarCheck,
   Info,
 } from 'lucide-react';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 
@@ -322,8 +323,8 @@ export default function AdminRolesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 text-amber-400 animate-spin" />
+      <div className="p-6">
+        <TableSkeleton rows={10} columns={5} showHeader showStats statsCount={4} />
       </div>
     );
   }

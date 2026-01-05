@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { updateUserSchema, type UpdateUserInput } from '@/lib/validations/user';
 
 interface User {
   id: string;
@@ -41,40 +44,47 @@ interface UserEditFormProps {
 
 export function UserEditForm({ user }: UserEditFormProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    name: user.name || '',
-    email: user.email,
-    role: user.role,
-    user_category: user.user_category || 'learner',
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<UpdateUserInput>({
+    resolver: zodResolver(updateUserSchema),
+    defaultValues: {
+      name: user.name || '',
+      email: user.email,
+      role: user.role,
+      user_category: user.user_category || 'learner',
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const role = watch('role');
+  const userCategory = watch('user_category');
+
+  const onSubmit = async (data: UpdateUserInput) => {
     setError(null);
 
     try {
       const response = await fetch(`/api/admin/users/${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to update user');
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to update user');
       }
 
       router.push(`/admin/users/${user.id}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -109,7 +119,7 @@ export function UserEditForm({ user }: UserEditFormProps) {
           <CardTitle className="text-lg text-stone-100">User Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
               <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm">
                 {error}
@@ -122,13 +132,13 @@ export function UserEditForm({ user }: UserEditFormProps) {
               </Label>
               <Input
                 id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                {...register('name')}
                 placeholder="Enter user name"
-                className="bg-stone-800 border-stone-700"
+                className={`bg-stone-800 border-stone-700 ${errors.name ? 'border-red-500' : ''}`}
               />
+              {errors.name && (
+                <p className="text-xs text-red-400">{errors.name.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -138,10 +148,7 @@ export function UserEditForm({ user }: UserEditFormProps) {
               <Input
                 id="email"
                 type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
+                {...register('email')}
                 placeholder="Enter email address"
                 className="bg-stone-800 border-stone-700"
                 disabled
@@ -156,16 +163,11 @@ export function UserEditForm({ user }: UserEditFormProps) {
                 Category (Who they are)
               </Label>
               <Select
-                value={formData.user_category}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    user_category: value as typeof formData.user_category,
-                  })
-                }
+                value={userCategory}
+                onValueChange={(value) => setValue('user_category', value as UpdateUserInput['user_category'])}
                 disabled={isSuperadmin}
               >
-                <SelectTrigger className="bg-stone-800 border-stone-700">
+                <SelectTrigger className={`bg-stone-800 border-stone-700 ${errors.user_category ? 'border-red-500' : ''}`}>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -173,9 +175,13 @@ export function UserEditForm({ user }: UserEditFormProps) {
                   <SelectItem value="senior_learner">Senior Learner (Faculty/Staff)</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-stone-500">
-                This determines if they appear in Senior Learner searches for team formation
-              </p>
+              {errors.user_category ? (
+                <p className="text-xs text-red-400">{errors.user_category.message}</p>
+              ) : (
+                <p className="text-xs text-stone-500">
+                  This determines if they appear in Senior Learner searches for team formation
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -183,16 +189,11 @@ export function UserEditForm({ user }: UserEditFormProps) {
                 Role (What they can do)
               </Label>
               <Select
-                value={formData.role}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    role: value as typeof formData.role,
-                  })
-                }
+                value={role}
+                onValueChange={(value) => setValue('role', value as UpdateUserInput['role'])}
                 disabled={isSuperadmin}
               >
-                <SelectTrigger className="bg-stone-800 border-stone-700">
+                <SelectTrigger className={`bg-stone-800 border-stone-700 ${errors.role ? 'border-red-500' : ''}`}>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -203,11 +204,13 @@ export function UserEditForm({ user }: UserEditFormProps) {
                   <SelectItem value="superadmin">Super Admin</SelectItem>
                 </SelectContent>
               </Select>
-              {isSuperadmin && (
+              {errors.role ? (
+                <p className="text-xs text-red-400">{errors.role.message}</p>
+              ) : isSuperadmin ? (
                 <p className="text-xs text-amber-400">
                   Super admin role cannot be changed
                 </p>
-              )}
+              ) : null}
             </div>
 
             <div className="flex items-center justify-between pt-4">
@@ -257,9 +260,9 @@ export function UserEditForm({ user }: UserEditFormProps) {
               <Button
                 type="submit"
                 className="gap-2 bg-amber-500 hover:bg-amber-600 text-stone-900"
-                disabled={loading}
+                disabled={isSubmitting}
               >
-                {loading ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Saving...

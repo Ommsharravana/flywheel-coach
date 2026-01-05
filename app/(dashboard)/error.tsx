@@ -3,9 +3,9 @@
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, RefreshCw, LayoutDashboard } from 'lucide-react';
+import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 
-export default function AdminError({
+export default function DashboardError({
   error,
   reset,
 }: {
@@ -13,7 +13,7 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('[AdminError]', error.message, error.digest);
+    console.error('[DashboardError]', error.message, error.digest);
   }, [error]);
 
   return (
@@ -23,11 +23,11 @@ export default function AdminError({
           <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center">
             <AlertCircle className="h-6 w-6 text-red-400" />
           </div>
-          <CardTitle className="text-xl text-stone-100">Admin Error</CardTitle>
+          <CardTitle className="text-xl text-stone-100">Something went wrong</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-center text-stone-400">
-            {error.message || 'An unexpected error occurred in the admin panel.'}
+            {error.message || 'An unexpected error occurred. Please try again.'}
           </p>
 
           {error.digest && (
@@ -49,7 +49,7 @@ export default function AdminError({
               variant="outline"
               className="border-stone-700 text-stone-300 hover:bg-stone-800"
             >
-              <LayoutDashboard className="h-4 w-4 mr-2" />
+              <Home className="h-4 w-4 mr-2" />
               Dashboard
             </Button>
           </div>

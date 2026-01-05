@@ -3,9 +3,9 @@
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, RefreshCw, LayoutDashboard } from 'lucide-react';
+import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 
-export default function AdminError({
+export default function GlobalError({
   error,
   reset,
 }: {
@@ -13,21 +13,21 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('[AdminError]', error.message, error.digest);
+    console.error('[GlobalError]', error.message, error.digest);
   }, [error]);
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center p-6">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-stone-950">
       <Card className="max-w-md w-full bg-stone-900/50 border-stone-800">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center">
             <AlertCircle className="h-6 w-6 text-red-400" />
           </div>
-          <CardTitle className="text-xl text-stone-100">Admin Error</CardTitle>
+          <CardTitle className="text-xl text-stone-100">Something went wrong</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-center text-stone-400">
-            {error.message || 'An unexpected error occurred in the admin panel.'}
+            {error.message || 'An unexpected error occurred. Please try again.'}
           </p>
 
           {error.digest && (
@@ -45,12 +45,12 @@ export default function AdminError({
               Try again
             </Button>
             <Button
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => window.location.href = '/'}
               variant="outline"
               className="border-stone-700 text-stone-300 hover:bg-stone-800"
             >
-              <LayoutDashboard className="h-4 w-4 mr-2" />
-              Dashboard
+              <Home className="h-4 w-4 mr-2" />
+              Go Home
             </Button>
           </div>
         </CardContent>

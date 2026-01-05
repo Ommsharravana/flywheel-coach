@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,61 +25,69 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { PROBLEM_THEMES, type ProblemTheme } from '@/lib/types/problem-bank';
+import { PROBLEM_THEMES } from '@/lib/types/problem-bank';
+import { submitProblemSchema, type SubmitProblemInput } from '@/lib/validations/problem';
 
 export default function SubmitProblemPage() {
   const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    title: '',
-    problem_statement: '',
-    theme: 'other' as ProblemTheme | 'other',
-    who_affected: '',
-    when_occurs: '',
-    where_occurs: '',
-    current_workaround: '',
-    severity_rating: '',
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<SubmitProblemInput>({
+    resolver: zodResolver(submitProblemSchema),
+    defaultValues: {
+      title: '',
+      problem_statement: '',
+      theme: 'other',
+      who_affected: '',
+      when_occurs: '',
+      where_occurs: '',
+      current_workaround: '',
+      severity_rating: '',
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const title = watch('title');
+  const theme = watch('theme');
+  const severityRating = watch('severity_rating');
+
+  const onSubmit = async (data: SubmitProblemInput) => {
     setError(null);
     setSuccess(null);
-    setSubmitting(true);
 
     try {
       const response = await fetch('/api/problems/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
-          severity_rating: formData.severity_rating && String(formData.severity_rating).trim() !== '' ? parseInt(String(formData.severity_rating), 10) : null,
+          ...data,
+          severity_rating: data.severity_rating && String(data.severity_rating).trim() !== ''
+            ? parseInt(String(data.severity_rating), 10)
+            : null,
         }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit problem');
+        throw new Error(result.error || 'Failed to submit problem');
       }
 
       setSuccess('Problem submitted successfully!');
 
       // Redirect after 2 seconds
       setTimeout(() => {
-        router.push(`/dashboard/problem-bank/${data.problem_id}`);
+        router.push(`/dashboard/problem-bank/${result.problem_id}`);
       }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      setSubmitting(false);
     }
-  };
-
-  const updateField = (field: keyof typeof formData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -127,7 +137,7 @@ export default function SubmitProblemPage() {
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <Card className="bg-stone-900/50 border-stone-800">
           <CardHeader>
             <CardTitle className="text-lg text-stone-100">Problem Details</CardTitle>
@@ -144,15 +154,17 @@ export default function SubmitProblemPage() {
               <Input
                 id="title"
                 placeholder="e.g., Hospital nurses spend too much time on medication documentation"
-                value={formData.title}
-                onChange={(e) => updateField('title', e.target.value)}
-                className="bg-stone-800 border-stone-700"
-                required
+                {...register('title')}
+                className={`bg-stone-800 border-stone-700 ${errors.title ? 'border-red-500' : ''}`}
                 maxLength={200}
               />
-              <p className="text-xs text-stone-500">
-                {formData.title.length}/200 characters
-              </p>
+              {errors.title ? (
+                <p className="text-xs text-red-400">{errors.title.message}</p>
+              ) : (
+                <p className="text-xs text-stone-500">
+                  {title?.length || 0}/200 characters
+                </p>
+              )}
             </div>
 
             {/* Problem Statement */}
@@ -163,11 +175,12 @@ export default function SubmitProblemPage() {
               <Textarea
                 id="problem_statement"
                 placeholder="Describe the problem in detail. What's the pain? Who experiences it? What happens when it's not solved?"
-                value={formData.problem_statement}
-                onChange={(e) => updateField('problem_statement', e.target.value)}
-                className="bg-stone-800 border-stone-700 min-h-[150px]"
-                required
+                {...register('problem_statement')}
+                className={`bg-stone-800 border-stone-700 min-h-[150px] ${errors.problem_statement ? 'border-red-500' : ''}`}
               />
+              {errors.problem_statement && (
+                <p className="text-xs text-red-400">{errors.problem_statement.message}</p>
+              )}
             </div>
 
             {/* Theme */}
@@ -176,10 +189,10 @@ export default function SubmitProblemPage() {
                 Theme
               </Label>
               <Select
-                value={formData.theme}
-                onValueChange={(value) => updateField('theme', value)}
+                value={theme}
+                onValueChange={(value) => setValue('theme', value as SubmitProblemInput['theme'])}
               >
-                <SelectTrigger className="bg-stone-800 border-stone-700">
+                <SelectTrigger className={`bg-stone-800 border-stone-700 ${errors.theme ? 'border-red-500' : ''}`}>
                   <SelectValue placeholder="Select a theme" />
                 </SelectTrigger>
                 <SelectContent>
@@ -191,6 +204,9 @@ export default function SubmitProblemPage() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.theme && (
+                <p className="text-xs text-red-400">{errors.theme.message}</p>
+              )}
             </div>
 
             {/* Context Fields */}
@@ -202,8 +218,7 @@ export default function SubmitProblemPage() {
                 <Input
                   id="who_affected"
                   placeholder="e.g., Hospital nurses"
-                  value={formData.who_affected}
-                  onChange={(e) => updateField('who_affected', e.target.value)}
+                  {...register('who_affected')}
                   className="bg-stone-800 border-stone-700"
                 />
               </div>
@@ -215,8 +230,7 @@ export default function SubmitProblemPage() {
                 <Input
                   id="when_occurs"
                   placeholder="e.g., During shift changes"
-                  value={formData.when_occurs}
-                  onChange={(e) => updateField('when_occurs', e.target.value)}
+                  {...register('when_occurs')}
                   className="bg-stone-800 border-stone-700"
                 />
               </div>
@@ -228,8 +242,7 @@ export default function SubmitProblemPage() {
                 <Input
                   id="where_occurs"
                   placeholder="e.g., Hospital wards"
-                  value={formData.where_occurs}
-                  onChange={(e) => updateField('where_occurs', e.target.value)}
+                  {...register('where_occurs')}
                   className="bg-stone-800 border-stone-700"
                 />
               </div>
@@ -243,8 +256,7 @@ export default function SubmitProblemPage() {
               <Textarea
                 id="current_workaround"
                 placeholder="How do people currently deal with this problem?"
-                value={formData.current_workaround}
-                onChange={(e) => updateField('current_workaround', e.target.value)}
+                {...register('current_workaround')}
                 className="bg-stone-800 border-stone-700 min-h-[80px]"
               />
             </div>
@@ -255,8 +267,8 @@ export default function SubmitProblemPage() {
                 Severity (1-10)
               </Label>
               <Select
-                value={formData.severity_rating}
-                onValueChange={(value) => updateField('severity_rating', value)}
+                value={severityRating || ''}
+                onValueChange={(value) => setValue('severity_rating', value)}
               >
                 <SelectTrigger className="bg-stone-800 border-stone-700 w-32">
                   <SelectValue placeholder="Select" />
@@ -278,16 +290,16 @@ export default function SubmitProblemPage() {
                 variant="outline"
                 onClick={() => router.back()}
                 className="border-stone-700 text-stone-300 hover:bg-stone-800"
-                disabled={submitting}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={submitting || !formData.title || !formData.problem_statement}
+                disabled={isSubmitting}
                 className="bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-semibold hover:from-amber-400 hover:to-orange-500"
               >
-                {submitting ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Submitting...
