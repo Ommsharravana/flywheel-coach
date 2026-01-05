@@ -31,9 +31,18 @@ export default async function AdminLayout({
 
   // Use RPC function (SECURITY DEFINER) to check role - same as middleware
   // This bypasses RLS to ensure consistent behavior
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: roleData } = await (supabase as any).rpc('get_user_role', { user_id: user.id });
-  const userRole = (roleData as { role: string; institution_id: string }[] | null)?.[0];
+  let userRole: { role: string; institution_id: string } | undefined;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: roleData, error } = await (supabase as any).rpc('get_user_role', { user_id: user.id });
+    if (error) {
+      console.error('[AdminLayout] get_user_role RPC error:', error);
+    } else {
+      userRole = (roleData as { role: string; institution_id: string }[] | null)?.[0];
+    }
+  } catch (err) {
+    console.error('[AdminLayout] get_user_role RPC exception:', err);
+  }
 
   // Check admin role using RPC (bypasses RLS)
   // Simplified model: role='event_admin' grants global admin access
@@ -46,11 +55,21 @@ export default async function AdminLayout({
 
   // Now fetch full profile for display purposes
   // If this fails due to RLS, we still have the role from RPC
-  const { data: profileData } = await supabase
-    .from('users')
-    .select('name, email, avatar_url, role, institution_id')
-    .eq('id', user.id)
-    .single();
+  let profileData: ProfileRow | null = null;
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('name, email, avatar_url, role, institution_id')
+      .eq('id', user.id)
+      .single();
+    if (error) {
+      console.error('[AdminLayout] profile query error:', error);
+    } else {
+      profileData = data as unknown as ProfileRow;
+    }
+  } catch (err) {
+    console.error('[AdminLayout] profile query exception:', err);
+  }
 
   // Use profile data if available, otherwise construct from RPC + auth user
   const profile: ProfileRow = profileData ? (profileData as unknown as ProfileRow) : {
@@ -76,13 +95,21 @@ export default async function AdminLayout({
   let eventName = 'Event';
   let eventType = 'appathon';
   if (isEventRoute && eventSlug) {
-    const { data: event } = (await supabase
-      .from('events')
-      .select('name, config')
-      .eq('slug', eventSlug)
-      .single()) as { data: { name: string; config: { type?: string } | null } | null };
-    eventName = event?.name || 'Event';
-    eventType = event?.config?.type || 'appathon';
+    try {
+      const { data: event, error } = await supabase
+        .from('events')
+        .select('name, config')
+        .eq('slug', eventSlug)
+        .single();
+      if (error) {
+        console.error('[AdminLayout] event query error:', error);
+      } else if (event) {
+        eventName = (event as { name: string; config: { type?: string } | null }).name || 'Event';
+        eventType = (event as { name: string; config: { type?: string } | null }).config?.type || 'appathon';
+      }
+    } catch (err) {
+      console.error('[AdminLayout] event query exception:', err);
+    }
   }
 
   return (
