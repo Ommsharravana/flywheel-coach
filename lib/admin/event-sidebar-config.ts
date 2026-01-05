@@ -19,6 +19,7 @@ import {
   MessageSquare,
   BarChart3,
   LucideIcon,
+  UserCheck,
 } from 'lucide-react';
 
 // ============================================
@@ -87,6 +88,7 @@ function createSidebarConfig(slug: string, type: string): NavSection[] {
           items: [
             { label: 'Submissions', href: `${basePath}/submissions`, icon: FileText },
             { label: 'Builders', href: `${basePath}/builders`, icon: Users },
+            { label: 'Senior Learners', href: `${basePath}/senior-learners`, icon: UserCheck },
             { label: 'Curate Problems', href: `${basePath}/curate`, icon: Target },
             { label: 'Settings', href: `${basePath}/settings`, icon: Settings },
           ],
