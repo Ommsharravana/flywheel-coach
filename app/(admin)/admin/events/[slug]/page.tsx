@@ -348,11 +348,6 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
         </div>
       </div>
 
-      {/* Debug Info */}
-      <div className="mt-8 p-4 bg-green-900/20 border border-green-500/30 rounded text-sm">
-        <p className="text-green-400 font-medium mb-2">Simplified Dashboard - Working!</p>
-        <p className="text-zinc-400">This is a simplified version without track stats and recent activity sections.</p>
-      </div>
     </div>
   );
 }
