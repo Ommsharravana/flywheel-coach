@@ -1,12 +1,19 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useWalkthroughStore } from '@/lib/stores/walkthrough';
 import { cn } from '@/lib/utils';
+
+interface TargetRect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
 
 export interface WalkthroughStep {
   id: string;
@@ -70,20 +77,21 @@ export function Walkthrough({
   } = useWalkthroughStore();
 
   const targetRef = useRef<HTMLElement | null>(null);
+  const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
   const isActive = activeWalkthrough === id;
   const step = steps[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;
 
   // Handlers defined first to avoid temporal dead zone issues in useEffect
-  const handleComplete = () => {
+  const handleComplete = useCallback(() => {
     completeWalkthrough(id);
     onComplete?.();
-  };
+  }, [completeWalkthrough, id, onComplete]);
 
-  const handleSkip = () => {
+  const handleSkip = useCallback(() => {
     skipWalkthrough(id);
-  };
+  }, [skipWalkthrough, id]);
 
   // Auto-start if user hasn't completed
   useEffect(() => {
@@ -98,11 +106,25 @@ export function Walkthrough({
       const element = document.querySelector(step.targetSelector) as HTMLElement;
       targetRef.current = element;
 
-      // Scroll target into view
+      // Scroll target into view and update rect
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Small delay to allow scroll to complete
+        const timeoutId = setTimeout(() => {
+          const rect = element.getBoundingClientRect();
+          setTargetRect({
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+          });
+        }, 100);
+        return () => clearTimeout(timeoutId);
       }
     }
+    // Clear target rect when not active or no target selector
+    targetRef.current = null;
+    return undefined;
   }, [isActive, step, currentStep]);
 
   // Keyboard navigation
@@ -129,14 +151,12 @@ export function Walkthrough({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isActive, isFirstStep, isLastStep, nextStep, previousStep, handleComplete, handleSkip]);
 
-  if (!isActive || !step) return null;
+  // Get target position for card placement using targetRect state (not ref)
+  // Must be defined before early return to satisfy hooks rules
+  const getCardPosition = useCallback(() => {
+    if (step?.customPosition) return step.customPosition;
 
-  // Get target position for card placement
-  const getCardPosition = () => {
-    if (step.customPosition) return step.customPosition;
-
-    const target = targetRef.current;
-    if (!target || !step.targetSelector) {
+    if (!targetRect || !step?.targetSelector) {
       // Center if no target
       return {
         top: '50%',
@@ -145,32 +165,31 @@ export function Walkthrough({
       };
     }
 
-    const rect = target.getBoundingClientRect();
     const position = step.position || 'bottom';
 
     switch (position) {
       case 'top':
         return {
-          top: `${rect.top - 20}px`,
-          left: `${rect.left + rect.width / 2}px`,
+          top: `${targetRect.top - 20}px`,
+          left: `${targetRect.left + targetRect.width / 2}px`,
           transform: 'translate(-50%, -100%)',
         };
       case 'bottom':
         return {
-          top: `${rect.bottom + 20}px`,
-          left: `${rect.left + rect.width / 2}px`,
+          top: `${targetRect.top + targetRect.height + 20}px`,
+          left: `${targetRect.left + targetRect.width / 2}px`,
           transform: 'translateX(-50%)',
         };
       case 'left':
         return {
-          top: `${rect.top + rect.height / 2}px`,
-          left: `${rect.left - 20}px`,
+          top: `${targetRect.top + targetRect.height / 2}px`,
+          left: `${targetRect.left - 20}px`,
           transform: 'translate(-100%, -50%)',
         };
       case 'right':
         return {
-          top: `${rect.top + rect.height / 2}px`,
-          left: `${rect.right + 20}px`,
+          top: `${targetRect.top + targetRect.height / 2}px`,
+          left: `${targetRect.left + targetRect.width + 20}px`,
           transform: 'translateY(-50%)',
         };
       default:
@@ -180,7 +199,9 @@ export function Walkthrough({
           transform: 'translate(-50%, -50%)',
         };
     }
-  };
+  }, [step, targetRect]);
+
+  if (!isActive || !step) return null;
 
   return (
     <AnimatePresence>
@@ -196,17 +217,17 @@ export function Walkthrough({
           />
 
           {/* Spotlight on target (if exists) */}
-          {targetRef.current && step.targetSelector && (
+          {targetRect && step.targetSelector && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed z-50 pointer-events-none border-2 border-amber-400 rounded-lg shadow-lg shadow-amber-400/50"
               style={{
-                top: targetRef.current.getBoundingClientRect().top - 4,
-                left: targetRef.current.getBoundingClientRect().left - 4,
-                width: targetRef.current.getBoundingClientRect().width + 8,
-                height: targetRef.current.getBoundingClientRect().height + 8,
+                top: targetRect.top - 4,
+                left: targetRect.left - 4,
+                width: targetRect.width + 8,
+                height: targetRect.height + 8,
               }}
             />
           )}
