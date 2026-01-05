@@ -18,6 +18,7 @@ import {
   Search,
   Mail,
   Building2,
+  Briefcase,
   ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -31,17 +32,18 @@ interface Team {
   submission_number: string | null;
 }
 
-interface SeniorLearnerData {
-  senior_learner_id: string;
-  senior_learner_name: string;
-  senior_learner_email: string;
+interface LearnerData {
+  learner_id: string;
+  learner_name: string;
+  learner_email: string;
+  learner_role: string | null;
   institution_name: string | null;
   team_count: number;
   teams: Team[];
 }
 
-interface SeniorLearnersTableProps {
-  data: SeniorLearnerData[];
+interface LearnersTableProps {
+  data: LearnerData[];
   eventSlug: string;
 }
 
@@ -63,7 +65,7 @@ const statusLabels: Record<string, string> = {
   rejected: 'Rejected',
 };
 
-export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProps) {
+export function LearnersTable({ data, eventSlug }: LearnersTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -78,13 +80,14 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
   };
 
   // Filter data based on search
-  const filteredData = data.filter(sl => {
+  const filteredData = data.filter(l => {
     const query = searchQuery.toLowerCase();
     return (
-      sl.senior_learner_name?.toLowerCase().includes(query) ||
-      sl.senior_learner_email?.toLowerCase().includes(query) ||
-      sl.institution_name?.toLowerCase().includes(query) ||
-      sl.teams.some(t =>
+      l.learner_name?.toLowerCase().includes(query) ||
+      l.learner_email?.toLowerCase().includes(query) ||
+      l.learner_role?.toLowerCase().includes(query) ||
+      l.institution_name?.toLowerCase().includes(query) ||
+      l.teams.some(t =>
         t.team_name?.toLowerCase().includes(query) ||
         t.app_name?.toLowerCase().includes(query)
       )
@@ -97,7 +100,7 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
         <Input
-          placeholder="Search by name, email, institution, or team..."
+          placeholder="Search by name, email, role, institution, or team..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 bg-stone-800 border-stone-700"
@@ -110,18 +113,19 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
           <TableHeader>
             <TableRow className="border-stone-800 hover:bg-transparent">
               <TableHead className="w-10 text-stone-400"></TableHead>
-              <TableHead className="text-stone-400">Senior Learner</TableHead>
+              <TableHead className="text-stone-400">Learner</TableHead>
+              <TableHead className="text-stone-400">Role</TableHead>
               <TableHead className="text-stone-400">Institution</TableHead>
               <TableHead className="text-stone-400 text-center">Teams</TableHead>
               <TableHead className="text-stone-400">Team Status Summary</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.map((sl) => {
-              const isExpanded = expandedRows.has(sl.senior_learner_id);
+            {filteredData.map((l) => {
+              const isExpanded = expandedRows.has(l.learner_id);
 
               // Calculate status counts
-              const statusCounts = sl.teams.reduce((acc, team) => {
+              const statusCounts = l.teams.reduce((acc, team) => {
                 acc[team.status] = (acc[team.status] || 0) + 1;
                 return acc;
               }, {} as Record<string, number>);
@@ -130,12 +134,12 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
                 <>
                   {/* Main Row */}
                   <TableRow
-                    key={sl.senior_learner_id}
+                    key={l.learner_id}
                     className={cn(
                       'border-stone-800 cursor-pointer transition-colors',
                       isExpanded ? 'bg-stone-800/50' : 'hover:bg-stone-800/30'
                     )}
-                    onClick={() => toggleRow(sl.senior_learner_id)}
+                    onClick={() => toggleRow(l.learner_id)}
                   >
                     <TableCell className="py-3">
                       <Button
@@ -153,27 +157,37 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
                     <TableCell className="py-3">
                       <div>
                         <div className="font-medium text-stone-100">
-                          {sl.senior_learner_name || 'Unknown'}
+                          {l.learner_name || 'Unknown'}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-stone-500">
                           <Mail className="h-3 w-3" />
-                          {sl.senior_learner_email}
+                          {l.learner_email}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="py-3">
-                      {sl.institution_name ? (
+                      {l.learner_role ? (
+                        <div className="flex items-center gap-1 text-sm text-stone-300">
+                          <Briefcase className="h-3 w-3 text-stone-500" />
+                          <span className="capitalize">{l.learner_role}</span>
+                        </div>
+                      ) : (
+                        <span className="text-stone-500 text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      {l.institution_name ? (
                         <div className="flex items-center gap-1 text-sm text-stone-300">
                           <Building2 className="h-3 w-3 text-stone-500" />
-                          {sl.institution_name}
+                          {l.institution_name}
                         </div>
                       ) : (
                         <span className="text-stone-500 text-sm">—</span>
                       )}
                     </TableCell>
                     <TableCell className="py-3 text-center">
-                      <div className="inline-flex items-center justify-center min-w-[2rem] h-7 px-2 bg-emerald-500/20 text-emerald-400 font-semibold text-sm rounded-full border border-emerald-500/30">
-                        {sl.team_count}
+                      <div className="inline-flex items-center justify-center min-w-[2rem] h-7 px-2 bg-blue-500/20 text-blue-400 font-semibold text-sm rounded-full border border-blue-500/30">
+                        {l.team_count}
                       </div>
                     </TableCell>
                     <TableCell className="py-3">
@@ -194,13 +208,13 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
                   {/* Expanded Row - Team Details */}
                   {isExpanded && (
                     <TableRow className="border-stone-800 bg-stone-900/50">
-                      <TableCell colSpan={5} className="py-0">
+                      <TableCell colSpan={6} className="py-0">
                         <div className="py-4 px-6 space-y-3">
                           <div className="text-xs font-semibold uppercase text-stone-500 tracking-wider">
-                            Teams Mentored
+                            Teams Participated
                           </div>
                           <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                            {sl.teams.map((team) => (
+                            {l.teams.map((team) => (
                               <Link
                                 key={team.id}
                                 href={`/admin/events/${eventSlug}/submissions/${team.id}`}
@@ -244,10 +258,10 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
 
             {filteredData.length === 0 && (
               <TableRow className="border-stone-800">
-                <TableCell colSpan={5} className="py-8 text-center text-stone-500">
+                <TableCell colSpan={6} className="py-8 text-center text-stone-500">
                   {searchQuery
-                    ? 'No senior learners match your search'
-                    : 'No senior learners found'}
+                    ? 'No learners match your search'
+                    : 'No learners found'}
                 </TableCell>
               </TableRow>
             )}
@@ -257,7 +271,7 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
 
       {/* Summary */}
       <div className="text-xs text-stone-500 text-right">
-        Showing {filteredData.length} of {data.length} senior learners
+        Showing {filteredData.length} of {data.length} learners
       </div>
     </div>
   );

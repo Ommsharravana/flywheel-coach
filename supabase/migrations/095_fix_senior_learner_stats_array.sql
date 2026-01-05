@@ -6,6 +6,7 @@
 -- 2. Single object format (legacy): { id, name, email, role, ... }
 --
 -- This function handles BOTH formats using UNION ALL
+-- Now joins with users table to get institution info
 
 CREATE OR REPLACE FUNCTION get_senior_learner_stats(
   target_event_id UUID
@@ -14,7 +15,7 @@ RETURNS TABLE (
   senior_learner_id UUID,
   senior_learner_name TEXT,
   senior_learner_email TEXT,
-  institution_id UUID,
+  institution_name TEXT,
   team_count BIGINT,
   teams JSONB
 )
@@ -55,23 +56,24 @@ BEGIN
   ),
   senior_learner_teams AS (
     SELECT
-      (sl_elem->>'id')::UUID AS sl_id,
-      sl_elem->>'name' AS sl_name,
-      sl_elem->>'email' AS sl_email,
-      NULL::UUID AS sl_institution_id,  -- Data stores institution name, not ID
-      submission_id,
-      team_name,
-      app_name,
-      status,
-      submission_number
-    FROM normalized_senior_learners
-    WHERE sl_elem->>'id' IS NOT NULL
+      (nsl.sl_elem->>'id')::UUID AS sl_id,
+      nsl.sl_elem->>'name' AS sl_name,
+      nsl.sl_elem->>'email' AS sl_email,
+      u.institution AS sl_institution,  -- Get institution from users table
+      nsl.submission_id,
+      nsl.team_name,
+      nsl.app_name,
+      nsl.status,
+      nsl.submission_number
+    FROM normalized_senior_learners nsl
+    LEFT JOIN users u ON u.id = (nsl.sl_elem->>'id')::UUID
+    WHERE nsl.sl_elem->>'id' IS NOT NULL
   )
   SELECT
     slt.sl_id AS senior_learner_id,
     slt.sl_name AS senior_learner_name,
     slt.sl_email AS senior_learner_email,
-    slt.sl_institution_id AS institution_id,
+    slt.sl_institution AS institution_name,
     COUNT(DISTINCT slt.submission_id)::BIGINT AS team_count,
     jsonb_agg(
       DISTINCT jsonb_build_object(
@@ -83,7 +85,7 @@ BEGIN
       )
     ) AS teams
   FROM senior_learner_teams slt
-  GROUP BY slt.sl_id, slt.sl_name, slt.sl_email, slt.sl_institution_id
+  GROUP BY slt.sl_id, slt.sl_name, slt.sl_email, slt.sl_institution
   ORDER BY team_count DESC, slt.sl_name;
 END;
 $$;
