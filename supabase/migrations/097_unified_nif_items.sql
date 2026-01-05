@@ -44,7 +44,7 @@ SELECT
   -- Details
   p.refined_statement AS problem_statement,
   na.motivation,
-  b.project_url,
+  b.deployed_url AS project_url,
 
   -- Metrics
   ia.total_users,
