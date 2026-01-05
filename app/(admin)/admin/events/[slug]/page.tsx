@@ -34,38 +34,74 @@ interface EventAdminPageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Event type for type safety after fetching
+type EventData = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  config: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+};
+
 export default async function EventAdminPage({ params }: EventAdminPageProps) {
   const { slug } = await params;
   const supabase = await createClient();
-  const userId = await getEffectiveUserId();
+
+  let userId: string | null = null;
+  try {
+    userId = await getEffectiveUserId();
+  } catch (err) {
+    console.error('[EventAdminPage] getEffectiveUserId error:', err);
+    redirect('/login');
+  }
 
   if (!userId) {
     redirect('/login');
   }
 
   // Get event by slug
-  const { data: event, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('slug', slug)
-    .single() as { data: {
-      id: string;
-      name: string;
-      slug: string;
-      description: string | null;
-      start_date: string | null;
-      end_date: string | null;
-      config: Record<string, unknown>;
-      is_active: boolean;
-      created_at: string;
-    } | null; error: unknown };
+  let event: EventData | null = null;
 
-  if (error || !event) {
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+
+    if (error) {
+      console.error('[EventAdminPage] Event fetch error:', error);
+      redirect('/admin/events');
+    }
+    event = data as EventData;
+  } catch (err) {
+    console.error('[EventAdminPage] Event query exception:', err);
     redirect('/admin/events');
   }
 
+  if (!event) {
+    redirect('/admin/events');
+  }
+
+  // TypeScript doesn't recognize redirect() throws, so cast to known type
+  const validEvent = event as EventData;
+  const eventId = validEvent.id;
+
   // Check if user has admin access to this event
-  const { isAdmin, role } = await checkEventAdminAccess(userId, event.id);
+  let isAdmin = false;
+  let role: string | null = null;
+  try {
+    const accessResult = await checkEventAdminAccess(userId, eventId);
+    isAdmin = accessResult.isAdmin;
+    role = accessResult.role;
+  } catch (err) {
+    console.error('[EventAdminPage] checkEventAdminAccess error:', err);
+    redirect('/admin/events');
+  }
 
   if (!isAdmin) {
     redirect('/admin/events');
@@ -74,32 +110,42 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
   // Get methodology
   const methodology = getMethodologyForEvent(event.config);
 
-  // Get statistics
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: builderCount } = await (supabase as any)
-    .rpc('get_event_registered_builder_count', { p_event_id: event.id }) as { data: number | null };
+  // Get statistics with error handling
+  let builderCount: number | null = 0;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .rpc('get_event_registered_builder_count', { p_event_id: eventId });
+    if (error) {
+      console.error('[EventAdminPage] get_event_registered_builder_count error:', error);
+    } else {
+      builderCount = data;
+    }
+  } catch (err) {
+    console.error('[EventAdminPage] builderCount RPC exception:', err);
+  }
 
   const { count: totalCycles } = await supabase
     .from('cycles')
     .select('*', { count: 'exact', head: true })
-    .eq('event_id', event.id);
+    .eq('event_id', eventId);
 
   const { count: completedCycles } = await supabase
     .from('cycles')
     .select('*', { count: 'exact', head: true })
-    .eq('event_id', event.id)
+    .eq('event_id', eventId)
     .gte('current_step', methodology.completionStep);
 
   const { count: problemCount } = await supabase
     .from('problem_bank')
     .select('*', { count: 'exact', head: true })
-    .eq('event_id', event.id);
+    .eq('event_id', eventId);
 
   // Get submissions count
   const { count: submissionCount } = await supabase
     .from('appathon_submissions')
     .select('*', { count: 'exact', head: true })
-    .eq('event_id', event.id);
+    .eq('event_id', eventId);
 
   // Get judging tracks with progress
   const { data: tracks } = await supabase
@@ -117,7 +163,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
         users:user_id (name, email)
       )
     `)
-    .eq('event_id', event.id)
+    .eq('event_id', eventId)
     .order('demo_order', { ascending: true }) as { data: Array<{
       id: string;
       name: string;
@@ -172,7 +218,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
         institutions (short_name)
       )
     `)
-    .eq('event_id', event.id)
+    .eq('event_id', eventId)
     .order('updated_at', { ascending: false })
     .limit(8) as { data: Array<{
       id: string;
@@ -188,17 +234,25 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
       } | null;
     }> | null };
 
-  // Get institution breakdown
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: institutionBreakdown } = await (supabase as any)
-    .rpc('get_event_institution_stats', { target_event_id: event.id }) as {
-    data: Array<{
-      institution_id: string;
-      institution_name: string;
-      builder_count: number;
-      cycle_count: number;
-    }> | null
-  };
+  // Get institution breakdown with error handling
+  let institutionBreakdown: Array<{
+    institution_id: string;
+    institution_name: string;
+    builder_count: number;
+    cycle_count: number;
+  }> | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .rpc('get_event_institution_stats', { target_event_id: eventId });
+    if (error) {
+      console.error('[EventAdminPage] get_event_institution_stats error:', error);
+    } else {
+      institutionBreakdown = data;
+    }
+  } catch (err) {
+    console.error('[EventAdminPage] institutionBreakdown RPC exception:', err);
+  }
 
   // Calculate event status
   const now = new Date();
