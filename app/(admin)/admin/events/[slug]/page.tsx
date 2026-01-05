@@ -369,16 +369,44 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     });
   }
 
-  // Debug logging
-  console.log('[EventAdminPage] About to render with:', {
+  // Debug logging with detailed data inspection
+  console.log('[EventAdminPage] DEBUG - Full data check:', JSON.stringify({
     eventId,
     eventName: event?.name,
-    trackStatsLength: trackStats?.length,
-    recentCyclesLength: recentCycles?.length,
-    institutionBreakdownLength: institutionBreakdown?.length,
+    eventDescription: event?.description,
+    eventConfig: event?.config,
+    trackStatsCount: trackStats?.length,
+    trackStatsData: trackStats?.slice(0, 2),
+    recentCyclesCount: recentCycles?.length,
+    recentCyclesData: recentCycles?.slice(0, 2),
+    institutionBreakdownCount: institutionBreakdown?.length,
     methodologyName: methodology?.name,
-    methodologyStepsLength: methodology?.steps?.length,
-  });
+    methodologyStepsCount: methodology?.steps?.length,
+    builderCount,
+    totalCycles,
+    completedCycles,
+    problemCount,
+    submissionCount,
+    completionRate,
+    daysToEnd,
+    eventStatus,
+    role,
+    issuesCount: issues?.length,
+  }, null, 2));
+
+  // Validate critical data before render to catch issues
+  if (!event) {
+    console.error('[EventAdminPage] FATAL: event is null/undefined');
+    throw new Error('Event data is missing');
+  }
+  if (!methodology) {
+    console.error('[EventAdminPage] FATAL: methodology is null/undefined');
+    throw new Error('Methodology data is missing');
+  }
+  if (!Array.isArray(trackStats)) {
+    console.error('[EventAdminPage] FATAL: trackStats is not an array', trackStats);
+    throw new Error('Track stats is not an array');
+  }
 
   return (
     <div className="p-6 space-y-6 bg-[#0a0a0a] min-h-screen">
