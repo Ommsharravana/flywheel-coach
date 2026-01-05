@@ -1,6 +1,39 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Session: 2026-01-05 (Latest) - Bug Fixes & Admin Page Simplification
+## Session: 2026-01-05 (Latest) - MetricCard Import Fix COMPLETE ✅
+
+### Admin Event Dashboard Error - ROOT CAUSE FOUND & FIXED
+
+**Issue:** Persistent server-side exception (Digest: 3152496465) on `/admin/events/appathon-2`
+
+**Binary Search Debugging Process:**
+1. Minimal page (no components) → WORKED
+2. MetricCard with static data → ERROR
+3. Lucide icons only (no MetricCard) → WORKED
+4. Tailwind only (no icons) → WORKED
+
+**Root Cause:** Importing `MetricCard` component caused the server-side render error.
+
+**Fix Applied:**
+- Replaced MetricCard import with inline metric card implementation
+- Used individual Supabase count queries for real stats
+- Kept Lucide icons and Badge component (they work fine)
+- Full dashboard functionality preserved
+
+**Verification:**
+| Check | Result |
+|-------|--------|
+| Vercel deployment | READY (dpl_CreXERKkEaAG3QuW78gDPdZEQ3kL) |
+| WebFetch to production | Status 200, no error digest |
+| Local dev server | Running without errors |
+
+**Commit:** `6874605` - fix(admin): Restore full dashboard without MetricCard import
+
+**Technical Note:** The MetricCard component uses `'use client'` directive and imports from `class-variance-authority`. Something in the import chain causes issues when used in a Server Component page. Inline implementation works perfectly.
+
+---
+
+## Session: 2026-01-05 (Earlier) - Bug Fixes & Admin Page Simplification
 
 ### Bug Reporter Fixes
 Ran `/fix-studio-bugs` skill to fetch and fix pending bugs:
