@@ -258,6 +258,8 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     const presenting = assignments.filter(a => a.status === 'presenting').length;
     return {
       ...track,
+      // Ensure track_judges is always an array (Supabase can return null for empty relations)
+      track_judges: track.track_judges || [],
       total,
       completed,
       presenting,
