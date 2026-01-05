@@ -33,7 +33,15 @@ export default async function EventLayout({
   children,
   params,
 }: EventLayoutProps) {
-  const { slug } = await params;
+  let slug: string;
+  try {
+    const resolvedParams = await params;
+    slug = resolvedParams.slug;
+  } catch (err) {
+    console.error('[EventLayout] params error:', err);
+    notFound();
+  }
+
   const event = await getEvent(slug);
 
   if (!event) {

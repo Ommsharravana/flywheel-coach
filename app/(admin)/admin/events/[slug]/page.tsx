@@ -48,8 +48,22 @@ type EventData = {
 };
 
 export default async function EventAdminPage({ params }: EventAdminPageProps) {
-  const { slug } = await params;
-  const supabase = await createClient();
+  let slug: string;
+  try {
+    const resolvedParams = await params;
+    slug = resolvedParams.slug;
+  } catch (err) {
+    console.error('[EventAdminPage] params error:', err);
+    redirect('/admin/events');
+  }
+
+  let supabase;
+  try {
+    supabase = await createClient();
+  } catch (err) {
+    console.error('[EventAdminPage] createClient error:', err);
+    redirect('/admin/events');
+  }
 
   let userId: string | null = null;
   try {

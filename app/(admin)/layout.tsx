@@ -19,11 +19,23 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
+  // Wrap early operations in try/catch to prevent server crashes
+  let supabase;
+  try {
+    supabase = await createClient();
+  } catch (err) {
+    console.error('[AdminLayout] createClient error:', err);
+    redirect('/login');
+  }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch (err) {
+    console.error('[AdminLayout] getUser error:', err);
+    redirect('/login');
+  }
 
   if (!user) {
     redirect('/login');
@@ -81,8 +93,14 @@ export default async function AdminLayout({
   };
 
   // Check if we're on an event-specific route (e.g., /admin/events/appathon-2)
-  const headersList = await headers();
-  const pathname = headersList.get('x-pathname') || '';
+  let pathname = '';
+  try {
+    const headersList = await headers();
+    pathname = headersList.get('x-pathname') || '';
+  } catch (err) {
+    console.error('[AdminLayout] headers() error:', err);
+    // Continue with empty pathname - will show AdminSidebar
+  }
 
   // Match pattern: /admin/events/[slug] where slug is NOT empty
   // /admin/events should show AdminSidebar
