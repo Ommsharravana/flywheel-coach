@@ -48,13 +48,12 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     redirect('/admin/events');
   }
 
-  // Fetch stats - using individual queries for reliability
+  // Fetch stats - using RPC for builder count (bypasses RLS, counts correctly)
   const [buildersResult, cyclesResult, submissionsResult, completedResult] = await Promise.all([
-    // Total builders in this event
-    supabase
-      .from('event_participants')
-      .select('id', { count: 'exact', head: true })
-      .eq('event_id', event.id),
+    // Total builders in this event - use RPC that counts users with active_event_id + cycles
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .rpc('get_event_registered_builder_count', { p_event_id: event.id }),
     // Active cycles
     supabase
       .from('cycles')
@@ -75,7 +74,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
   ]);
 
   const stats = {
-    totalBuilders: buildersResult.count ?? 0,
+    totalBuilders: (buildersResult.data as number) ?? 0,
     activeCycles: cyclesResult.count ?? 0,
     submissions: submissionsResult.count ?? 0,
     completedCycles: completedResult.count ?? 0,
