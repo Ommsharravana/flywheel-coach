@@ -369,6 +369,17 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     });
   }
 
+  // Debug logging
+  console.log('[EventAdminPage] About to render with:', {
+    eventId,
+    eventName: event?.name,
+    trackStatsLength: trackStats?.length,
+    recentCyclesLength: recentCycles?.length,
+    institutionBreakdownLength: institutionBreakdown?.length,
+    methodologyName: methodology?.name,
+    methodologyStepsLength: methodology?.steps?.length,
+  });
+
   return (
     <div className="p-6 space-y-6 bg-[#0a0a0a] min-h-screen">
       {/* Mission Control Header */}
