@@ -125,67 +125,116 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     console.error('[EventAdminPage] builderCount RPC exception:', err);
   }
 
-  const { count: totalCycles } = await supabase
-    .from('cycles')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', eventId);
+  let totalCycles: number | null = 0;
+  let completedCycles: number | null = 0;
+  let problemCount: number | null = 0;
+  let submissionCount: number | null = 0;
 
-  const { count: completedCycles } = await supabase
-    .from('cycles')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', eventId)
-    .gte('current_step', methodology.completionStep);
+  try {
+    const { count } = await supabase
+      .from('cycles')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', eventId);
+    totalCycles = count;
+  } catch (err) {
+    console.error('[EventAdminPage] totalCycles query error:', err);
+  }
 
-  const { count: problemCount } = await supabase
-    .from('problem_bank')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', eventId);
+  try {
+    const { count } = await supabase
+      .from('cycles')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', eventId)
+      .gte('current_step', methodology.completionStep);
+    completedCycles = count;
+  } catch (err) {
+    console.error('[EventAdminPage] completedCycles query error:', err);
+  }
+
+  try {
+    const { count } = await supabase
+      .from('problem_bank')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', eventId);
+    problemCount = count;
+  } catch (err) {
+    console.error('[EventAdminPage] problemCount query error:', err);
+  }
 
   // Get submissions count
-  const { count: submissionCount } = await supabase
-    .from('appathon_submissions')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', eventId);
+  try {
+    const { count } = await supabase
+      .from('appathon_submissions')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', eventId);
+    submissionCount = count;
+  } catch (err) {
+    console.error('[EventAdminPage] submissionCount query error:', err);
+  }
 
   // Get judging tracks with progress
-  const { data: tracks } = await supabase
-    .from('judging_tracks')
-    .select(`
-      id,
-      name,
-      theme,
-      room_location,
-      is_active,
-      track_judges (
-        id,
-        user_id,
-        is_lead,
-        users:user_id (name, email)
-      )
-    `)
-    .eq('event_id', eventId)
-    .order('demo_order', { ascending: true }) as { data: Array<{
+  let tracks: Array<{
+    id: string;
+    name: string;
+    theme: string;
+    room_location: string | null;
+    is_active: boolean;
+    track_judges: Array<{
       id: string;
-      name: string;
-      theme: string;
-      room_location: string | null;
-      is_active: boolean;
-      track_judges: Array<{
-        id: string;
-        user_id: string;
-        is_lead: boolean;
-        users: { name: string | null; email: string } | null;
-      }>;
-    }> | null };
+      user_id: string;
+      is_lead: boolean;
+      users: { name: string | null; email: string } | null;
+    }>;
+  }> | null = null;
+
+  try {
+    const { data, error } = await supabase
+      .from('judging_tracks')
+      .select(`
+        id,
+        name,
+        theme,
+        room_location,
+        is_active,
+        track_judges (
+          id,
+          user_id,
+          is_lead,
+          users:user_id (name, email)
+        )
+      `)
+      .eq('event_id', eventId)
+      .order('demo_order', { ascending: true });
+    if (error) {
+      console.error('[EventAdminPage] tracks query error:', error);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tracks = data as any;
+    }
+  } catch (err) {
+    console.error('[EventAdminPage] tracks query exception:', err);
+  }
 
   // Get submission counts per track
-  const { data: trackSubmissionCounts } = await supabase
-    .from('submission_track_assignments')
-    .select('track_id, status')
-    .in('track_id', tracks?.map(t => t.id) || []) as { data: Array<{
-      track_id: string;
-      status: string;
-    }> | null };
+  let trackSubmissionCounts: Array<{
+    track_id: string;
+    status: string;
+  }> | null = null;
+
+  try {
+    const { data, error } = await supabase
+      .from('submission_track_assignments')
+      .select('track_id, status')
+      .in('track_id', tracks?.map(t => t.id) || []);
+    if (error) {
+      console.error('[EventAdminPage] trackSubmissionCounts query error:', error);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      trackSubmissionCounts = data as any;
+    }
+  } catch (err) {
+    console.error('[EventAdminPage] trackSubmissionCounts query exception:', err);
+  }
 
   // Aggregate track stats
   const trackStats = tracks?.map(track => {
@@ -203,36 +252,48 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
   }) || [];
 
   // Get recent activity (removed institutions join - table doesn't exist)
-  const { data: recentCycles } = await supabase
-    .from('cycles')
-    .select(`
-      id,
-      name,
-      current_step,
-      status,
-      created_at,
-      updated_at,
-      users!cycles_user_id_fkey (
-        name,
-        email,
-        institution
-      )
-    `)
-    .eq('event_id', eventId)
-    .order('updated_at', { ascending: false })
-    .limit(8) as { data: Array<{
-      id: string;
+  let recentCycles: Array<{
+    id: string;
+    name: string;
+    current_step: number;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    users: {
       name: string;
-      current_step: number;
-      status: string;
-      created_at: string;
-      updated_at: string;
-      users: {
-        name: string;
-        email: string;
-        institution: string | null;
-      } | null;
-    }> | null };
+      email: string;
+      institution: string | null;
+    } | null;
+  }> | null = null;
+
+  try {
+    const { data, error } = await supabase
+      .from('cycles')
+      .select(`
+        id,
+        name,
+        current_step,
+        status,
+        created_at,
+        updated_at,
+        users!cycles_user_id_fkey (
+          name,
+          email,
+          institution
+        )
+      `)
+      .eq('event_id', eventId)
+      .order('updated_at', { ascending: false })
+      .limit(8);
+    if (error) {
+      console.error('[EventAdminPage] recentCycles query error:', error);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recentCycles = data as any;
+    }
+  } catch (err) {
+    console.error('[EventAdminPage] recentCycles query exception:', err);
+  }
 
   // Get institution breakdown with error handling
   let institutionBreakdown: Array<{

@@ -1,27 +1,60 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Session: 2026-01-05 (Latest) - Production Database Fix ACTUALLY Applied
+## Session: 2026-01-05 (Latest) - Additional Code Fix for Admin Page
 
-### Issue Revisited
-User reported `/admin/events/appathon-2` still broken despite previous "fix" claim.
+### Issue Revisited Again
+User reported `/admin/events/appathon-2` still showing server-side exception after database fix.
 
-### Root Cause Found
-Previous session only "marked" migrations as applied but the actual SQL was NOT executed in production. The `supabase migration repair` command marks migrations in the tracking table but doesn't run them.
+### Second Root Cause Found
+The `recentCycles` query in `app/(admin)/admin/events/[slug]/page.tsx` was joining with a non-existent `institutions` table:
+```
+users!cycles_user_id_fkey (
+  name,
+  email,
+  institutions (short_name)  // <-- This table doesn't exist!
+)
+```
 
-### Fix Actually Applied
-1. Repaired migration status to "reverted" for 061, 089, 090
-2. Ran `npx supabase db push --linked --include-all` to ACTUALLY execute SQL
-3. Output confirmed: "Applying migration 061...089...090... Finished supabase db push."
+The users table has a simple `institution` TEXT field, not a foreign key to an institutions table.
 
-### Migrations Now Active in Production
-- `061_add_cluster_increment_function.sql`
-- `089_fix_registered_builder_count.sql` (get_event_registered_builder_count)
-- `090_event_institution_stats.sql` (get_event_institution_stats)
+### Fix Applied
+Changed the query to use the `institution` field directly:
+```
+users!cycles_user_id_fkey (
+  name,
+  email,
+  institution  // <-- Direct text field
+)
+```
+
+### Deployed
+- Commit: "fix(admin): Remove non-existent institutions table join"
+- Deployment: dpl_HZcs8iGFBkrCAU2doA1Nqn1nxk88 (READY)
+- Verified: HTTP 200 returned (login redirect for unauthenticated)
 
 ### Status
-- **Build**: Already deployed (dpl_AyJAMyXy8KsuR8BWrH6nGuss5ke4)
-- **Database**: Functions NOW actually exist
-- **Test**: User should verify `/admin/events/appathon-2` loads
+- **Build**: Passed
+- **Deployment**: Live on production
+- **Test**: Awaiting user verification with authentication
+
+---
+
+## Previous Session: 2026-01-05 - Production Database Fix
+
+### Issue
+User reported `/admin/events/appathon-2` broken despite previous "fix" claim.
+
+### Root Cause
+Previous session only "marked" migrations as applied but the actual SQL was NOT executed in production.
+
+### Fix Applied
+1. Repaired migration status to "reverted" for 061, 089, 090
+2. Ran `npx supabase db push --linked --include-all` to ACTUALLY execute SQL
+
+### Migrations Active
+- `061_add_cluster_increment_function.sql`
+- `089_fix_registered_builder_count.sql`
+- `090_event_institution_stats.sql`
 
 ---
 
