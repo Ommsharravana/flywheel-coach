@@ -3,16 +3,14 @@ import { createClient } from '@/lib/supabase/server';
 import { getEffectiveUserId } from '@/lib/supabase/effective-user';
 import { checkEventAdminAccess } from '@/lib/methodologies/helpers';
 import Link from 'next/link';
-import { Users, FileText, Rocket, Trophy } from 'lucide-react';
-// DIAGNOSTIC: Testing without MetricCard import to isolate issue
+// DIAGNOSTIC: No lucide imports, using Tailwind only
 
 interface EventAdminPageProps {
   params: Promise<{ slug: string }>;
 }
 
 export default async function EventAdminPage({ params }: EventAdminPageProps) {
-  // DIAGNOSTIC: Test Step 3 - Icons only (no MetricCard)
-  // Testing if lucide-react icons work in Server Component
+  // DIAGNOSTIC: Test Step 4 - Tailwind classes only (no Lucide icons)
 
   // Get params
   const resolvedParams = await params;
@@ -64,43 +62,23 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
         </p>
       </div>
 
-      {/* Metrics Grid - Manual divs with icons */}
+      {/* Metrics Grid - No icons, just Tailwind */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-[#0b6d41]/30 bg-[#0b6d41]/5 p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Builders</p>
-              <p className="text-2xl font-bold">{staticStats.totalBuilders}</p>
-            </div>
-            <Users className="h-5 w-5 text-[#0b6d41]" />
-          </div>
+          <p className="text-sm text-muted-foreground">Total Builders</p>
+          <p className="text-2xl font-bold">{staticStats.totalBuilders}</p>
         </div>
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Active Cycles</p>
-              <p className="text-2xl font-bold">{staticStats.activeCycles}</p>
-            </div>
-            <Rocket className="h-5 w-5 text-amber-500" />
-          </div>
+          <p className="text-sm text-muted-foreground">Active Cycles</p>
+          <p className="text-2xl font-bold">{staticStats.activeCycles}</p>
         </div>
         <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Submissions</p>
-              <p className="text-2xl font-bold">{staticStats.submissions}</p>
-            </div>
-            <FileText className="h-5 w-5 text-blue-500" />
-          </div>
+          <p className="text-sm text-muted-foreground">Submissions</p>
+          <p className="text-2xl font-bold">{staticStats.submissions}</p>
         </div>
         <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Completed</p>
-              <p className="text-2xl font-bold">{staticStats.completedCycles}</p>
-            </div>
-            <Trophy className="h-5 w-5 text-green-500" />
-          </div>
+          <p className="text-sm text-muted-foreground">Completed</p>
+          <p className="text-2xl font-bold">{staticStats.completedCycles}</p>
         </div>
       </div>
 
@@ -133,7 +111,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Diagnostic: Step 3 - Icons only (no MetricCard import)
+        Diagnostic: Step 4 - Tailwind only (no Lucide icons)
       </p>
     </div>
   );
