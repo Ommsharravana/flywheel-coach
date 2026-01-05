@@ -41,8 +41,12 @@ const statusColors: Record<StepStatus, { bg: string; border: string; text: strin
   },
 };
 
-export function FlywheelNavigator({ cycle, currentStep, onStepClick, compact = false }: FlywheelNavigatorProps) {
-  const steps = FLYWHEEL_STEPS.map((step) => ({
+export function FlywheelNavigator({ cycle, currentStep, onStepClick, compact = false, isAppathonMode = true }: FlywheelNavigatorProps) {
+  // Get steps based on whether we're in Appathon mode (includes step 9)
+  const baseSteps = useMemo(() => getFlywheelSteps(isAppathonMode), [isAppathonMode]);
+  const totalSteps = baseSteps.length;
+
+  const steps = baseSteps.map((step) => ({
     ...step,
     status: getStepStatus(cycle, step.id),
     accessible: canAccessStep(cycle, step.id),
@@ -96,13 +100,13 @@ export function FlywheelNavigator({ cycle, currentStep, onStepClick, compact = f
             <div className="text-2xl font-bold text-stone-900">
               {steps.filter((s) => s.status === 'completed').length}
             </div>
-            <div className="text-xs text-stone-800 font-medium">of 8</div>
+            <div className="text-xs text-stone-800 font-medium">of {totalSteps}</div>
           </div>
         </div>
 
         {/* Steps around the wheel */}
         {steps.map((step, index) => {
-          const angle = (index * 360) / 8 - 90; // Start from top
+          const angle = (index * 360) / totalSteps - 90; // Start from top
           const radius = 160;
           const x = Math.cos((angle * Math.PI) / 180) * radius;
           const y = Math.sin((angle * Math.PI) / 180) * radius;
@@ -156,9 +160,9 @@ export function FlywheelNavigator({ cycle, currentStep, onStepClick, compact = f
         {/* Connection lines */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
           {steps.map((step, index) => {
-            const nextIndex = (index + 1) % 8;
-            const angle1 = (index * 360) / 8 - 90;
-            const angle2 = (nextIndex * 360) / 8 - 90;
+            const nextIndex = (index + 1) % totalSteps;
+            const angle1 = (index * 360) / totalSteps - 90;
+            const angle2 = (nextIndex * 360) / totalSteps - 90;
             const radius = 160;
             const x1 = 200 + Math.cos((angle1 * Math.PI) / 180) * radius;
             const y1 = 200 + Math.sin((angle1 * Math.PI) / 180) * radius;
@@ -228,16 +232,19 @@ export function FlywheelNavigator({ cycle, currentStep, onStepClick, compact = f
 }
 
 // Export a simpler progress bar version
-export function FlywheelProgress({ cycle }: { cycle: Cycle }) {
-  // If cycle is completed, show 8/8. Otherwise show currentStep - 1 (completed steps)
-  const completed = cycle.status === 'completed' ? 8 : Math.max(0, cycle.currentStep - 1);
-  const percentage = (completed / 8) * 100;
+export function FlywheelProgress({ cycle, isAppathonMode = true }: { cycle: Cycle; isAppathonMode?: boolean }) {
+  // Get total steps based on methodology
+  const totalSteps = isAppathonMode ? 9 : 8;
+  // For completed cycles, use the appropriate total. Otherwise show currentStep - 1 (completed steps)
+  // Note: currentStep can be max 8 in DB, so for appathon mode we check if cycle is completed
+  const completed = cycle.status === 'completed' ? totalSteps : Math.max(0, cycle.currentStep - 1);
+  const percentage = (completed / totalSteps) * 100;
 
   return (
     <div className="w-full">
       <div className="flex justify-between text-sm text-stone-400 mb-2">
         <span>Progress</span>
-        <span>{completed}/8 steps</span>
+        <span>{completed}/{totalSteps} steps</span>
       </div>
       <div className="h-2 bg-stone-800 rounded-full overflow-hidden">
         <motion.div
