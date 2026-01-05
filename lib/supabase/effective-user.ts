@@ -38,17 +38,46 @@ interface UserRow {
  * the correct user's data during impersonation.
  */
 export async function getEffectiveUser(): Promise<EffectiveUser | null> {
-  const supabase = await createClient();
+  let supabase;
+  try {
+    supabase = await createClient();
+  } catch (err) {
+    console.error('[getEffectiveUser] createClient error:', err);
+    return null;
+  }
 
   // Get the actual authenticated user
-  const { data: { user: authUser } } = await supabase.auth.getUser();
+  let authUser;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('[getEffectiveUser] getUser error:', error);
+      return null;
+    }
+    authUser = data.user;
+  } catch (err) {
+    console.error('[getEffectiveUser] getUser exception:', err);
+    return null;
+  }
 
   if (!authUser) {
     return null;
   }
 
   // Check for impersonation session
-  const cookieStore = await cookies();
+  let cookieStore;
+  try {
+    cookieStore = await cookies();
+  } catch (err) {
+    console.error('[getEffectiveUser] cookies() error:', err);
+    // Continue without impersonation check
+    return {
+      id: authUser.id,
+      email: authUser.email || '',
+      name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || null,
+      isImpersonating: false,
+    };
+  }
   const impersonationCookie = cookieStore.get(IMPERSONATION_COOKIE);
 
   if (impersonationCookie) {
@@ -58,39 +87,77 @@ export async function getEffectiveUser(): Promise<EffectiveUser | null> {
       // Check if session is expired
       if (new Date(session.expiresAt) < new Date()) {
         // Session expired, return normal user
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id, email, name')
-          .eq('id', authUser.id)
-          .single();
+        try {
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('id, email, name')
+            .eq('id', authUser.id)
+            .single();
 
-        const user = userData as unknown as UserRow | null;
+          if (error) {
+            console.error('[getEffectiveUser] expired session user query error:', error);
+          }
 
-        return user ? {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          isImpersonating: false,
-        } : null;
+          const user = userData as unknown as UserRow | null;
+
+          return user ? {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            isImpersonating: false,
+          } : {
+            id: authUser.id,
+            email: authUser.email || '',
+            name: authUser.user_metadata?.name || null,
+            isImpersonating: false,
+          };
+        } catch (err) {
+          console.error('[getEffectiveUser] expired session user query exception:', err);
+          return {
+            id: authUser.id,
+            email: authUser.email || '',
+            name: authUser.user_metadata?.name || null,
+            isImpersonating: false,
+          };
+        }
       }
 
       // Verify the admin is actually the one who started impersonation
       if (session.adminId !== authUser.id) {
         // Cookie doesn't belong to this user
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id, email, name')
-          .eq('id', authUser.id)
-          .single();
+        try {
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('id, email, name')
+            .eq('id', authUser.id)
+            .single();
 
-        const user = userData as unknown as UserRow | null;
+          if (error) {
+            console.error('[getEffectiveUser] wrong admin user query error:', error);
+          }
 
-        return user ? {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          isImpersonating: false,
-        } : null;
+          const user = userData as unknown as UserRow | null;
+
+          return user ? {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            isImpersonating: false,
+          } : {
+            id: authUser.id,
+            email: authUser.email || '',
+            name: authUser.user_metadata?.name || null,
+            isImpersonating: false,
+          };
+        } catch (err) {
+          console.error('[getEffectiveUser] wrong admin user query exception:', err);
+          return {
+            id: authUser.id,
+            email: authUser.email || '',
+            name: authUser.user_metadata?.name || null,
+            isImpersonating: false,
+          };
+        }
       }
 
       // Return impersonated user's data
@@ -109,22 +176,30 @@ export async function getEffectiveUser(): Promise<EffectiveUser | null> {
 
   // No impersonation, return actual user
   // Try direct query first, fall back to auth user data if RLS blocks
-  const { data: userData } = await supabase
-    .from('users')
-    .select('id, email, name')
-    .eq('id', authUser.id)
-    .maybeSingle();
+  try {
+    const { data: userData, error } = await supabase
+      .from('users')
+      .select('id, email, name')
+      .eq('id', authUser.id)
+      .maybeSingle();
 
-  const user = userData as unknown as UserRow | null;
+    if (error) {
+      console.error('[getEffectiveUser] user query error:', error);
+    }
 
-  // If user profile exists, use it; otherwise create response from auth data
-  if (user) {
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      isImpersonating: false,
-    };
+    const user = userData as unknown as UserRow | null;
+
+    // If user profile exists, use it; otherwise create response from auth data
+    if (user) {
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        isImpersonating: false,
+      };
+    }
+  } catch (err) {
+    console.error('[getEffectiveUser] user query exception:', err);
   }
 
   // Fallback: return auth user data (profile might not exist yet or RLS blocked)
@@ -148,7 +223,14 @@ export async function getEffectiveUserId(): Promise<string | null> {
  * Checks if current session is impersonating
  */
 export async function isImpersonating(): Promise<boolean> {
-  const cookieStore = await cookies();
+  let cookieStore;
+  try {
+    cookieStore = await cookies();
+  } catch (err) {
+    console.error('[isImpersonating] cookies() error:', err);
+    return false;
+  }
+
   const impersonationCookie = cookieStore.get(IMPERSONATION_COOKIE);
 
   if (!impersonationCookie) {
