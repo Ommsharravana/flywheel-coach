@@ -174,7 +174,6 @@ export async function* streamGenerateCode(
   });
 
   let fullContent = '';
-  let currentFileMatch: RegExpMatchArray | null = null;
   let inCodeBlock = false;
   let codeBlockContent = '';
   let codeBlockType = '';

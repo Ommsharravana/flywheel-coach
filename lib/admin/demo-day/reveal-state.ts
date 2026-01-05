@@ -75,7 +75,7 @@ export async function advanceReveal(
     throw new Error('Reveal state not initialized');
   }
 
-  let newState = { ...currentState };
+  const newState = { ...currentState };
 
   if (currentState.current_place === null) {
     // Start revealing 3rd place

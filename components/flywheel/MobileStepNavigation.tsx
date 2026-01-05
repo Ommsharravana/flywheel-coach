@@ -47,8 +47,9 @@ export function MobileStepNavigation({ cycle, currentStep, children, isAppathonM
     onSwipedRight: () => goToPrevStep(),
     trackMouse: false,
     trackTouch: true,
-    delta: 50,
+    delta: 120, // Increased from 50 to prevent accidental swipes while scrolling forms
     preventScrollOnSwipe: false,
+    swipeDuration: 300, // Must complete swipe within 300ms to be intentional
   });
 
   const currentStepInfo = steps[currentStep - 1];

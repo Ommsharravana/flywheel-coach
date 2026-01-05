@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export interface NetworkStatus {
   isOnline: boolean;
@@ -12,30 +12,97 @@ export interface NetworkStatus {
   wasOffline: boolean;
 }
 
+// Network Information API types (not yet in TypeScript lib)
+interface NetworkInformation extends EventTarget {
+  type?: string;
+  effectiveType?: string;
+  downlink?: number;
+  rtt?: number;
+  saveData?: boolean;
+}
+
+interface NavigatorWithConnection extends Navigator {
+  connection?: NetworkInformation;
+  mozConnection?: NetworkInformation;
+  webkitConnection?: NetworkInformation;
+}
+
+/**
+ * Get the connection API from navigator
+ */
+function getConnection(): NetworkInformation | null {
+  if (typeof navigator === 'undefined') return null;
+  const nav = navigator as NavigatorWithConnection;
+  return nav.connection || nav.mozConnection || nav.webkitConnection || null;
+}
+
+/**
+ * Get initial network status synchronously
+ */
+function getInitialStatus(): NetworkStatus {
+  if (typeof navigator === 'undefined') {
+    return {
+      isOnline: true,
+      isSlowConnection: false,
+      connectionType: null,
+      downlink: null,
+      rtt: null,
+      effectiveType: null,
+      wasOffline: false,
+    };
+  }
+
+  const connection = getConnection();
+  const isOnline = navigator.onLine;
+
+  let isSlowConnection = false;
+  let connectionType: string | null = null;
+  let downlink: number | null = null;
+  let rtt: number | null = null;
+  let effectiveType: string | null = null;
+
+  if (connection) {
+    connectionType = connection.type || null;
+    downlink = connection.downlink ?? null;
+    rtt = connection.rtt ?? null;
+    effectiveType = connection.effectiveType || null;
+
+    isSlowConnection =
+      effectiveType === '2g' ||
+      effectiveType === 'slow-2g' ||
+      (rtt !== null && rtt > 500) ||
+      (downlink !== null && downlink < 0.5);
+  }
+
+  return {
+    isOnline,
+    isSlowConnection,
+    connectionType,
+    downlink,
+    rtt,
+    effectiveType,
+    wasOffline: false,
+  };
+}
+
 /**
  * Custom hook to monitor network connectivity status
  * Designed for areas with poor/intermittent connectivity (hilly, remote areas)
  */
 export function useNetworkStatus(): NetworkStatus {
-  const [status, setStatus] = useState<NetworkStatus>({
-    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
-    isSlowConnection: false,
-    connectionType: null,
-    downlink: null,
-    rtt: null,
-    effectiveType: null,
-    wasOffline: false,
-  });
+  const [status, setStatus] = useState<NetworkStatus>(getInitialStatus);
+  const wasOfflineRef = useRef(false);
 
   const updateNetworkInfo = useCallback(() => {
     if (typeof navigator === 'undefined') return;
 
-    const connection = (navigator as any).connection ||
-                       (navigator as any).mozConnection ||
-                       (navigator as any).webkitConnection;
-
+    const connection = getConnection();
     const isOnline = navigator.onLine;
-    const wasOffline = !isOnline || status.wasOffline;
+
+    // Track if we were ever offline
+    if (!isOnline) {
+      wasOfflineRef.current = true;
+    }
 
     let isSlowConnection = false;
     let connectionType: string | null = null;
@@ -45,14 +112,10 @@ export function useNetworkStatus(): NetworkStatus {
 
     if (connection) {
       connectionType = connection.type || null;
-      downlink = connection.downlink || null;
-      rtt = connection.rtt || null;
+      downlink = connection.downlink ?? null;
+      rtt = connection.rtt ?? null;
       effectiveType = connection.effectiveType || null;
 
-      // Consider connection slow if:
-      // - effectiveType is '2g' or 'slow-2g'
-      // - RTT > 500ms
-      // - downlink < 0.5 Mbps
       isSlowConnection =
         effectiveType === '2g' ||
         effectiveType === 'slow-2g' ||
@@ -67,19 +130,20 @@ export function useNetworkStatus(): NetworkStatus {
       downlink,
       rtt,
       effectiveType,
-      wasOffline,
+      wasOffline: wasOfflineRef.current,
     });
-  }, [status.wasOffline]);
+  }, []);
 
   const handleOnline = useCallback(() => {
     setStatus(prev => ({
       ...prev,
       isOnline: true,
+      wasOffline: wasOfflineRef.current,
     }));
-    updateNetworkInfo();
-  }, [updateNetworkInfo]);
+  }, []);
 
   const handleOffline = useCallback(() => {
+    wasOfflineRef.current = true;
     setStatus(prev => ({
       ...prev,
       isOnline: false,
@@ -90,18 +154,12 @@ export function useNetworkStatus(): NetworkStatus {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Initial check
-    updateNetworkInfo();
-
     // Listen for online/offline events
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
     // Listen for connection changes (Network Information API)
-    const connection = (navigator as any).connection ||
-                       (navigator as any).mozConnection ||
-                       (navigator as any).webkitConnection;
-
+    const connection = getConnection();
     if (connection) {
       connection.addEventListener('change', updateNetworkInfo);
     }

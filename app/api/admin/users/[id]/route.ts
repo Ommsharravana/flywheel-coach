@@ -64,7 +64,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, role } = body;
+    const { name, role, user_category } = body;
 
     // Use RPC to update user (bypasses RLS, includes all validation)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,6 +72,7 @@ export async function PUT(
       target_user_id: id,
       new_name: name || null,
       new_role: role || null,
+      new_user_category: user_category || null,
     });
 
     if (error) {
@@ -98,7 +99,7 @@ export async function PUT(
           action: 'update_user',
           entity_type: 'user',
           entity_id: id,
-          details: { changes: { name, role } },
+          details: { changes: { name, role, user_category } },
         });
       }
     } catch {

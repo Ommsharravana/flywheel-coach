@@ -374,11 +374,11 @@ export default async function StepPage({ params }: StepPageProps) {
           </div>
 
           {/* Compact step navigator */}
-          <FlywheelNavigator cycle={cycle} currentStep={stepNumber} compact />
+          <FlywheelNavigator cycle={cycle} currentStep={stepNumber} compact isAppathonMode={methodology.features?.submission === true} />
         </div>
 
         {/* Mobile swipe navigation */}
-        <MobileStepNavigation cycle={cycle} currentStep={stepNumber}>
+        <MobileStepNavigation cycle={cycle} currentStep={stepNumber} isAppathonMode={methodology.features?.submission === true}>
           {/* Mobile step content */}
           <div className="space-y-4">
             {renderStepComponent()}

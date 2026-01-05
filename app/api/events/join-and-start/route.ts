@@ -44,7 +44,21 @@ export async function POST(request: NextRequest) {
     // Check if event has ended
     const now = new Date();
     const endDate = new Date(event.end_date);
-    if (now > endDate) {
+    const eventHasEnded = now > endDate;
+
+    // Check if user is already in this event (bypass the ended check for existing participants)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: userProfile } = await (supabase as any)
+      .from('users')
+      .select('active_event_id')
+      .eq('id', user.id)
+      .single();
+
+    const userAlreadyInEvent = userProfile?.active_event_id === eventId;
+
+    // Only block NEW users from joining ended events
+    // Existing participants can still create new cycles
+    if (eventHasEnded && !userAlreadyInEvent) {
       return NextResponse.json({ error: 'This event has ended' }, { status: 400 });
     }
 

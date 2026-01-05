@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Users, Clock, Zap, ChevronRight, Trophy, Sparkles, X, Loader2 } from 'lucide-react';
+import { Calendar, Users, Clock, Zap, ChevronRight, Trophy, Sparkles, X, Loader2, CheckCircle } from 'lucide-react';
 import { useActiveEvent } from '@/lib/context/EventContext';
 import type { EventWithBuilderCount } from '@/lib/events/types';
-import { getBannerColorClasses, isEventLive, isEventUpcoming, getDaysRemaining, formatCountdown } from '@/lib/events/types';
+import { getBannerColorClasses, isEventLive, isEventUpcoming, isEventEnded, getDaysRemaining, formatCountdown } from '@/lib/events/types';
 import { AppathonDetailsModal, isAppathonEvent } from '@/components/appathon/details/AppathonDetailsModal';
 
 export function EventSelector() {
@@ -33,7 +33,12 @@ export function EventSelector() {
   }, []);
 
   // Filter to show only active/upcoming events
-  const availableEvents = events.filter(e => isEventLive(e) || isEventUpcoming(e));
+  // ALSO include user's active event even if it ended (so they can still create new cycles)
+  const availableEvents = events.filter(e =>
+    isEventLive(e) ||
+    isEventUpcoming(e) ||
+    (activeEvent && e.id === activeEvent.id)  // Always show user's current event
+  );
 
   // Show loading state
   if (loading) {
@@ -134,6 +139,7 @@ function EventCard({ event, isActive, onJoinAndStart, onLeave, onViewDetails, is
   const colorClasses = getBannerColorClasses(event.banner_color);
   const isLive = isEventLive(event);
   const isUpcoming = isEventUpcoming(event);
+  const hasEnded = isEventEnded(event);
   const daysRemaining = getDaysRemaining(event);
   const countdownText = formatCountdown(event);
 
@@ -174,6 +180,11 @@ function EventCard({ event, isActive, onJoinAndStart, onLeave, onViewDetails, is
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-sm">
                 <Clock className="h-3 w-3 text-white/80" />
                 <span className="text-xs font-semibold text-white">COMING SOON</span>
+              </div>
+            ) : hasEnded ? (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-sm">
+                <CheckCircle className="h-3 w-3 text-white/80" />
+                <span className="text-xs font-semibold text-white">BUILD ENDED</span>
               </div>
             ) : null}
           </div>
@@ -219,7 +230,7 @@ function EventCard({ event, isActive, onJoinAndStart, onLeave, onViewDetails, is
             <div className="flex items-center gap-1.5 text-stone-400">
               <Calendar className="h-4 w-4" />
               <span className="text-sm" suppressHydrationWarning>
-                {isLive ? `${daysRemaining}d left` : `Starts in ${countdownText}`}
+                {hasEnded ? 'Demo Day Jan 7' : isLive ? `${daysRemaining}d left` : `Starts in ${countdownText}`}
               </span>
             </div>
           </div>

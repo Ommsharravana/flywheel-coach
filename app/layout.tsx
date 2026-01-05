@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { BugReporterWrapper } from "@/components/bug-reporter-wrapper";
+import { OfflineWrapper } from "@/components/offline-wrapper";
 
 export const metadata: Metadata = {
   title: "JKKN Solution Studio | Problem-to-Impact Learning",
@@ -36,10 +37,12 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-background antialiased">
-        <BugReporterWrapper>
-          {children}
-        </BugReporterWrapper>
-        <Toaster />
+        <OfflineWrapper>
+          <BugReporterWrapper>
+            {children}
+          </BugReporterWrapper>
+          <Toaster />
+        </OfflineWrapper>
       </body>
     </html>
   );

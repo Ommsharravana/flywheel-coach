@@ -75,6 +75,16 @@ export function Walkthrough({
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;
 
+  // Handlers defined first to avoid temporal dead zone issues in useEffect
+  const handleComplete = () => {
+    completeWalkthrough(id);
+    onComplete?.();
+  };
+
+  const handleSkip = () => {
+    skipWalkthrough(id);
+  };
+
   // Auto-start if user hasn't completed
   useEffect(() => {
     if (autoStart && !hasCompletedWalkthrough(id) && !activeWalkthrough) {
@@ -117,16 +127,7 @@ export function Walkthrough({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isActive, isFirstStep, isLastStep, nextStep, previousStep]);
-
-  const handleComplete = () => {
-    completeWalkthrough(id);
-    onComplete?.();
-  };
-
-  const handleSkip = () => {
-    skipWalkthrough(id);
-  };
+  }, [isActive, isFirstStep, isLastStep, nextStep, previousStep, handleComplete, handleSkip]);
 
   if (!isActive || !step) return null;
 

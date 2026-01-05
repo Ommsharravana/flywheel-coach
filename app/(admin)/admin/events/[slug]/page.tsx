@@ -71,8 +71,11 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     redirect('/admin/events');
   }
 
-  // Get methodology
-  const methodology = getMethodologyForEvent(event.config);
+  // Get methodology (with fallback)
+  const methodology = getMethodologyForEvent(event.config) || {
+    name: 'Problem-to-Impact Flywheel',
+    completionStep: 8,
+  };
 
   // Get statistics (with error handling)
   let builderCount = 0;

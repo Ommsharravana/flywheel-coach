@@ -51,6 +51,8 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
     })) || []
   );
   const [currentTab, setCurrentTab] = useState('context');
+  // Track IDs of interviews deleted from UI (to delete from DB on save)
+  const [deletedInterviewIds, setDeletedInterviewIds] = useState<string[]>([]);
 
   // Auto-save timer ref (debounce saves)
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -142,6 +144,11 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
   };
 
   const removeInterview = (id: string) => {
+    // If this is a UUID (from database), track it for deletion
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isUUID) {
+      setDeletedInterviewIds((prev) => [...prev, id]);
+    }
     setInterviews(interviews.filter((i) => i.id !== id));
   };
 
@@ -237,6 +244,17 @@ export function ContextDiscovery({ cycle }: ContextDiscoveryProps) {
             if (insertInterviewError) throw insertInterviewError;
           }
         }
+      }
+
+      // Delete interviews that were removed from the UI
+      if (deletedInterviewIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('interviews')
+          .delete()
+          .in('id', deletedInterviewIds);
+        if (deleteError) throw deleteError;
+        // Clear the deleted IDs after successful deletion
+        setDeletedInterviewIds([]);
       }
 
       // Update cycle step only if completing

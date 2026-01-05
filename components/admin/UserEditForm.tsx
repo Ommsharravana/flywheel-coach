@@ -31,6 +31,7 @@ interface User {
   email: string;
   name: string | null;
   role: 'builder' | 'admin' | 'event_admin' | 'institution_admin' | 'superadmin';
+  user_category?: 'learner' | 'senior_learner';
   avatar_url: string | null;
 }
 
@@ -48,6 +49,7 @@ export function UserEditForm({ user }: UserEditFormProps) {
     name: user.name || '',
     email: user.email,
     role: user.role,
+    user_category: user.user_category || 'learner',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -150,8 +152,35 @@ export function UserEditForm({ user }: UserEditFormProps) {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="user_category" className="text-stone-300">
+                Category (Who they are)
+              </Label>
+              <Select
+                value={formData.user_category}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    user_category: value as typeof formData.user_category,
+                  })
+                }
+                disabled={isSuperadmin}
+              >
+                <SelectTrigger className="bg-stone-800 border-stone-700">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="learner">Learner (Student)</SelectItem>
+                  <SelectItem value="senior_learner">Senior Learner (Faculty/Staff)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-stone-500">
+                This determines if they appear in Senior Learner searches for team formation
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="role" className="text-stone-300">
-                Role
+                Role (What they can do)
               </Label>
               <Select
                 value={formData.role}

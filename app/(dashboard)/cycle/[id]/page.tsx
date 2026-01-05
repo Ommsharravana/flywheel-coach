@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getEffectiveUserId } from '@/lib/supabase/effective-user';
+import { getMethodologyForCycle } from '@/lib/methodologies/helpers';
 import { FlywheelNavigator, FlywheelProgress } from '@/components/flywheel/FlywheelNavigator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +52,10 @@ export default async function CyclePage({ params }: CyclePageProps) {
   if (error || !rawCycleData) {
     redirect('/dashboard');
   }
+
+  // Get methodology for this cycle (determines steps, features, etc.)
+  const { methodology } = await getMethodologyForCycle(id);
+  const isAppathonMode = methodology.features?.submission === true;
 
   // Transform to Cycle type
   const cycle: Cycle = {
@@ -141,7 +146,7 @@ export default async function CyclePage({ params }: CyclePageProps) {
         {/* Progress */}
         <Card className="glass-card mb-8">
           <CardContent className="pt-6">
-            <FlywheelProgress cycle={cycle} />
+            <FlywheelProgress cycle={cycle} isAppathonMode={isAppathonMode} />
           </CardContent>
         </Card>
 
@@ -153,7 +158,7 @@ export default async function CyclePage({ params }: CyclePageProps) {
               <CardDescription>Click any completed or current step to navigate</CardDescription>
             </CardHeader>
             <CardContent>
-              <FlywheelNavigator cycle={cycle} currentStep={cycle.currentStep} />
+              <FlywheelNavigator cycle={cycle} currentStep={cycle.currentStep} isAppathonMode={isAppathonMode} />
             </CardContent>
           </Card>
 

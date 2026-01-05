@@ -43,8 +43,8 @@ export default function AppathonGuidePage() {
     <div className="min-h-screen bg-stone-950">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-stone-950" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-stone-950 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent pointer-events-none" />
 
         <div className="relative max-w-4xl mx-auto px-4 py-16 sm:py-24">
           <motion.div

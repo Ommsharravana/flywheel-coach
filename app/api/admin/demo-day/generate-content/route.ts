@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch additional data for track summary
-    let stateData: { trackCount?: number; appCount?: number; trackApps?: Array<{ app_name: string; category: string }> } = {};
+    const stateData: { trackCount?: number; appCount?: number; trackApps?: Array<{ app_name: string; category: string }> } = {};
 
     if (content_type === 'track-summary' && context?.trackId) {
       try {
