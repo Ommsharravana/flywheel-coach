@@ -246,7 +246,7 @@ export function SubmissionsTableClient({
   return (
     <TooltipProvider>
       <div className="overflow-x-auto -mx-4 px-4">
-      <Table className="min-w-[900px]">
+      <Table className="min-w-[800px]">
         <TableHeader>
           <TableRow className="border-stone-700">
             <TableHead className="text-stone-400">#</TableHead>
@@ -302,7 +302,7 @@ export function SubmissionsTableClient({
                     onValueChange={(value) => handleStatusChange(submission.id, value)}
                     disabled={saving}
                   >
-                    <SelectTrigger className="w-[140px] h-8 bg-stone-800 border-stone-700 text-xs">
+                    <SelectTrigger className="w-[120px] h-7 bg-stone-800 border-stone-700 text-xs">
                       {saving ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
@@ -332,7 +332,7 @@ export function SubmissionsTableClient({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-amber-400" />
+                    <Star className="h-3 w-3 text-amber-400" />
                     <Input
                       type="number"
                       min={0}
@@ -348,7 +348,7 @@ export function SubmissionsTableClient({
                         }
                       }}
                       disabled={saving}
-                      className="w-16 h-7 text-sm bg-stone-800 border-stone-700 text-stone-200 text-center px-1"
+                      className="w-14 h-6 text-xs bg-stone-800 border-stone-700 text-stone-200 text-center px-1"
                       placeholder="—"
                     />
                   </div>

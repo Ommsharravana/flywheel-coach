@@ -165,52 +165,52 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-6">
-        <Card className="bg-stone-900/50 border-stone-800">
-          <CardContent className="pt-4 pb-4">
+      <div className="grid gap-3 grid-cols-3 lg:grid-cols-6">
+        <Card className="bg-stone-800 border-stone-700">
+          <CardContent className="p-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-stone-100">{stats.total}</div>
-              <p className="text-xs text-stone-500">Total</p>
+              <div className="text-xl font-bold text-stone-100">{stats.total}</div>
+              <p className="text-xs text-stone-400">Total</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-stone-900/50 border-stone-800">
-          <CardContent className="pt-4 pb-4">
+        <Card className="bg-stone-800 border-stone-700">
+          <CardContent className="p-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400">{stats.submitted}</div>
-              <p className="text-xs text-stone-500">Submitted</p>
+              <div className="text-xl font-bold text-blue-400">{stats.submitted}</div>
+              <p className="text-xs text-stone-400">Submitted</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-stone-900/50 border-stone-800">
-          <CardContent className="pt-4 pb-4">
+        <Card className="bg-stone-800 border-stone-700">
+          <CardContent className="p-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-amber-400">{stats.underReview}</div>
-              <p className="text-xs text-stone-500">Under Review</p>
+              <div className="text-xl font-bold text-amber-400">{stats.underReview}</div>
+              <p className="text-xs text-stone-400">Review</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-stone-900/50 border-stone-800">
-          <CardContent className="pt-4 pb-4">
+        <Card className="bg-stone-800 border-stone-700">
+          <CardContent className="p-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400">{stats.shortlisted}</div>
-              <p className="text-xs text-stone-500">Shortlisted</p>
+              <div className="text-xl font-bold text-purple-400">{stats.shortlisted}</div>
+              <p className="text-xs text-stone-400">Shortlisted</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-stone-900/50 border-stone-800">
-          <CardContent className="pt-4 pb-4">
+        <Card className="bg-stone-800 border-stone-700">
+          <CardContent className="p-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">{stats.winners}</div>
-              <p className="text-xs text-stone-500">Winners</p>
+              <div className="text-xl font-bold text-green-400">{stats.winners}</div>
+              <p className="text-xs text-stone-400">Winners</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-stone-900/50 border-stone-800">
-          <CardContent className="pt-4 pb-4">
+        <Card className="bg-stone-800 border-stone-700">
+          <CardContent className="p-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-stone-500">{stats.drafts}</div>
-              <p className="text-xs text-stone-500">Drafts</p>
+              <div className="text-xl font-bold text-stone-400">{stats.drafts}</div>
+              <p className="text-xs text-stone-400">Drafts</p>
             </div>
           </CardContent>
         </Card>
