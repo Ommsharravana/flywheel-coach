@@ -435,6 +435,49 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
     );
   }
 
+  // No active event - show helpful message
+  if (!activeEvent) {
+    return (
+      <div className="space-y-6">
+        <Card className="glass-card border-amber-500/30">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center text-center py-8">
+              <div className="w-20 h-20 rounded-full bg-stone-800/50 flex items-center justify-center mb-4">
+                <Trophy className="w-10 h-10 text-stone-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-stone-300 mb-2">No Active Event</h2>
+              <p className="text-stone-400 max-w-md mb-6">
+                Step 9 is for submitting your app to an Appathon event. There&apos;s currently no active event to submit to.
+              </p>
+              <div className="bg-stone-800/50 border border-stone-700 rounded-lg p-4 text-left max-w-md">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-stone-300">
+                    <p className="font-medium text-amber-400 mb-1">What can you do?</p>
+                    <ul className="space-y-1 text-stone-400">
+                      <li>• Your cycle progress is saved and ready</li>
+                      <li>• When the next event opens, you&apos;ll be able to submit</li>
+                      <li>• Keep building and refining your solution!</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => router.push(`/cycle/${cycle.id}/step/8`)}>
+            Back to Impact Discovery
+          </Button>
+          <Button variant="outline" onClick={() => router.push('/dashboard')}>
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Already submitted view
   if (submissionStatus === 'submitted' || submissionStatus === 'under_review') {
     return (
