@@ -49,7 +49,7 @@ export async function getUserBugs(email: string): Promise<BugReport[]> {
       limit: '1000',
     })
     const response = await fetch(
-      `${BUG_REPORTER_URL}/api/v1/public/bug-reports?${params.toString()}`,
+      `${BUG_REPORTER_URL}/api/v1/public/bug-reports/me?${params.toString()}`,
       {
         headers: {
           'X-API-Key': API_KEY,
@@ -87,7 +87,7 @@ export async function getAllBugs(): Promise<BugReport[]> {
       limit: '1000',
     })
     const response = await fetch(
-      `${BUG_REPORTER_URL}/api/v1/public/bug-reports?${params.toString()}`,
+      `${BUG_REPORTER_URL}/api/v1/public/bug-reports/me?${params.toString()}`,
       {
         headers: {
           'X-API-Key': API_KEY,
