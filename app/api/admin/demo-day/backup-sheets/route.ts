@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     const trackId = searchParams.get('track_id');
     const submissionId = searchParams.get('submission_id');
 
-    // Fetch all submissions with track info
+    // Fetch all submissions with track info, filtered by event
     let query = supabase
       .from('submission_track_assignments')
       .select(`
@@ -68,7 +68,8 @@ export async function GET(request: NextRequest) {
         judging_tracks!inner (
           id,
           name,
-          theme
+          theme,
+          event_id
         ),
         appathon_submissions!inner (
           id,
@@ -78,13 +79,14 @@ export async function GET(request: NextRequest) {
           description,
           app_url,
           user_id,
-          users!inner (
+          users (
             id,
             name,
             institution
           )
         )
       `)
+      .eq('judging_tracks.event_id', APPATHON_EVENT_ID)
       .order('demo_slot', { ascending: true, nullsFirst: false });
 
     if (trackId) {
@@ -134,7 +136,7 @@ export async function GET(request: NextRequest) {
       html += generateMasterGrids(submissions, tracks);
     }
 
-    const fullHtml = wrapInHtmlDocument(html, type);
+    const fullHtml = wrapInHtmlDocument(html);
 
     return new NextResponse(fullHtml, {
       headers: {
@@ -409,7 +411,7 @@ function generateMasterGrids(submissions: SubmissionData[], tracks: { id: string
   }).join('\n');
 }
 
-function wrapInHtmlDocument(content: string, type: string): string {
+function wrapInHtmlDocument(content: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
