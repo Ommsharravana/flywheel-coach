@@ -349,7 +349,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
   // Check for issues that need attention
   const issues: Array<{ type: 'warning' | 'error'; message: string; action?: string; href?: string }> = [];
 
-  if (trackStats.some(t => t.track_judges.length === 0)) {
+  if (trackStats.some(t => (t.track_judges?.length ?? 0) === 0)) {
     issues.push({
       type: 'warning',
       message: 'Some tracks have no judges assigned',
@@ -543,7 +543,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
                       </span>
                       <span className="flex items-center gap-1 text-zinc-500">
                         <Users className="h-3 w-3" />
-                        {track.track_judges.length}
+                        {track.track_judges?.length ?? 0}
                       </span>
                     </div>
                     {track.room_location && (
