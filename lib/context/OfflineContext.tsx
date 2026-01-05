@@ -119,8 +119,14 @@ export function OfflineProvider({ children }: OfflineProviderProps) {
     }
   }, [network.isOnline, network.wasOffline, processQueue]);
 
-  // Show toast when going offline/online
+  // Show toast when going offline/online - but ONLY after initialization
+  // This prevents false "offline" toasts during page load/hydration
   useEffect(() => {
+    // Don't show any toasts until network status is properly initialized
+    if (!network.isInitialized) {
+      return;
+    }
+
     if (!network.isOnline) {
       toast.error('You are offline', {
         description: 'Some features may not work. Actions will be saved and synced when you reconnect.',
@@ -132,17 +138,22 @@ export function OfflineProvider({ children }: OfflineProviderProps) {
         duration: 3000,
       });
     }
-  }, [network.isOnline, network.wasOffline, pendingActions]);
+  }, [network.isOnline, network.wasOffline, network.isInitialized, pendingActions]);
 
-  // Show warning for slow connections
+  // Show warning for slow connections - but ONLY after initialization
   useEffect(() => {
+    // Don't show warnings until network status is properly initialized
+    if (!network.isInitialized) {
+      return;
+    }
+
     if (network.isOnline && network.isSlowConnection) {
       toast.warning('Slow connection detected', {
         description: 'Loading may take longer than usual.',
         duration: 4000,
       });
     }
-  }, [network.isOnline, network.isSlowConnection]);
+  }, [network.isOnline, network.isSlowConnection, network.isInitialized]);
 
   // Memoize context value to prevent unnecessary re-renders of consumers
   const value = useMemo(

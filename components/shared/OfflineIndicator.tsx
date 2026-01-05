@@ -23,6 +23,12 @@ export function OfflineIndicator({
 }: OfflineIndicatorProps) {
   const { network, pendingActions, isProcessingQueue, processQueue } = useOffline();
 
+  // Don't show until network status is properly initialized
+  // This prevents false "offline" indicator during page load/hydration
+  if (!network.isInitialized) {
+    return null;
+  }
+
   // Don't show if online and no issues
   if (network.isOnline && !network.isSlowConnection && pendingActions === 0) {
     return null;
@@ -159,6 +165,11 @@ export function OfflineIndicator({
  */
 export function OfflineBadge({ className }: { className?: string }) {
   const { network } = useOffline();
+
+  // Don't show until network status is properly initialized
+  if (!network.isInitialized) {
+    return null;
+  }
 
   if (network.isOnline && !network.isSlowConnection) {
     return null;
