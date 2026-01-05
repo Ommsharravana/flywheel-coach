@@ -25,8 +25,8 @@ interface SubmissionData {
   submission_number: string;
   app_name: string;
   category: string;
-  description: string | null;
-  app_url: string | null;
+  problem_statement: string | null;
+  live_url: string | null;
   demo_slot: number | null;
   track_name: string;
   track_id: string;
@@ -76,8 +76,8 @@ export async function GET(request: NextRequest) {
           submission_number,
           app_name,
           category,
-          description,
-          app_url,
+          problem_statement,
+          live_url,
           user_id,
           users!appathon_submissions_user_id_fkey (
             id,
@@ -116,8 +116,8 @@ export async function GET(request: NextRequest) {
       submission_number: a.appathon_submissions.submission_number,
       app_name: a.appathon_submissions.app_name,
       category: a.appathon_submissions.category || 'General',
-      description: a.appathon_submissions.description,
-      app_url: a.appathon_submissions.app_url,
+      problem_statement: a.appathon_submissions.problem_statement,
+      live_url: a.appathon_submissions.live_url,
       demo_slot: a.demo_slot,
       track_name: a.judging_tracks.name,
       track_id: a.track_id,
