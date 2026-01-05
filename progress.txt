@@ -1,6 +1,65 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Session: 2026-01-05 (Latest) - Event Admin Page Redirect FIX COMPLETE ✅
+## Session: 2026-01-05 (Latest) - Dashboard Flickering & Offline Detection FIXES ✅
+
+### Issue 1: Dashboard Flickering
+User reported continuous flickering on the Solution Studio dashboard.
+
+### Root Causes Found (5 Issues)
+| File | Problem |
+|------|---------|
+| BugReporterWrapper.tsx | `[supabase.auth]` in deps created infinite auth loop |
+| EventSwitcher.tsx | `[supabase]` in deps (new client every render) |
+| PromptGenerator.tsx | `[supabase]` should be `[]` for one-time check |
+| EventContext.tsx | `eventConfig` not memoized → cascading re-renders |
+| OfflineContext.tsx | Context value not memoized → consumer re-renders |
+
+### Fixes Applied
+- BugReporterWrapper.tsx: Changed `[supabase.auth]` to `[]`, added proper Supabase types
+- EventSwitcher.tsx: Changed deps to `[userId]` only
+- PromptGenerator.tsx: Changed `[supabase]` to `[]`
+- EventContext.tsx: Wrapped `eventConfig` in `useMemo()`
+- OfflineContext.tsx: Wrapped context value in `useMemo()`
+
+### Commit
+- `5658c7a` - fix(perf): Stop infinite re-render loops causing dashboard flickering
+
+---
+
+### Issue 2: False "No Internet Connection" Message
+User reported "No Internet Connection" toast appearing when actually online.
+
+### Root Cause
+- `navigator.onLine` unreliable during SSR/hydration
+- App immediately showed "offline" without verification
+- Toast effect fired before proper connectivity check
+
+### Fixes Applied
+| File | Change |
+|------|--------|
+| useNetworkStatus.ts | Added `isInitialized` flag, `verifyConnectivity()` function, optimistic initial state |
+| OfflineContext.tsx | Added `isInitialized` check before showing toasts |
+| OfflineIndicator.tsx | Added `isInitialized` check for OfflineIndicator and OfflineBadge |
+
+### How It Works Now
+1. Page loads with optimistic `isOnline: true`, `isInitialized: false`
+2. No toasts/indicators shown (not initialized yet)
+3. After 100ms delay (hydration complete), actual connectivity verified via fetch
+4. Only after verification does `isInitialized` become `true`
+5. Toasts/indicators now show correctly based on real status
+
+### Commit
+- `99f834b` - fix: Prevent false 'No Internet Connection' on page load
+
+### Verification
+- ✅ Admin events page loads without false offline warning
+- ✅ Dashboard loads cleanly
+- ✅ Build passes
+- ✅ Deployed to production
+
+---
+
+## Session: 2026-01-05 (Previous) - Event Admin Page Redirect FIX COMPLETE ✅
 
 ### Issue
 Superadmin (director@jkkn.ac.in) couldn't access `/admin/events/appathon-2` - page kept redirecting to `/admin/events` list.

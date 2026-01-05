@@ -60,9 +60,9 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
       .select('id', { count: 'exact', head: true })
       .eq('event_id', event.id)
       .neq('status', 'completed'),
-    // Total submissions
+    // Total submissions (appathon_submissions table)
     supabase
-      .from('submissions')
+      .from('appathon_submissions')
       .select('id', { count: 'exact', head: true })
       .eq('event_id', event.id),
     // Completed cycles
