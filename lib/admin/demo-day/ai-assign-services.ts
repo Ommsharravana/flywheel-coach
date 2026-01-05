@@ -26,9 +26,9 @@ export async function getSubmissionsForAssignment(
       submission_number,
       app_name,
       category,
-      description,
+      problem_statement,
       user_id,
-      users!inner (
+      users!appathon_submissions_user_id_fkey (
         name,
         institution
       ),
@@ -58,7 +58,7 @@ export async function getSubmissionsForAssignment(
       submission_number: typedSub.submission_number,
       app_name: typedSub.app_name,
       category: typedSub.category,
-      description: typedSub.description,
+      description: typedSub.problem_statement,
       user_name: typedSub.users?.name || null,
       institution: typedSub.users?.institution || null,
       current_track_id: assignment?.track_id || null,
