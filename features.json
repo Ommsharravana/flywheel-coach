@@ -277,6 +277,31 @@
       "dependencies": []
     },
     {
+      "id": "P04B",
+      "name": "NIF Incubation Hub Unification",
+      "description": "Replace two-tab NIF admin page with unified list view. Single list showing all NIF items from both Applications and Problem Bank sources with inline stage changes, mentor assignment, and filtering.",
+      "priority": "P0",
+      "deadline": "2026-01-10",
+      "status": "not-started",
+      "test_steps": [
+        "Navigate to /admin/nif-incubation - see unified list (no tabs)",
+        "Verify list shows projects from BOTH Application and Problem Bank sources",
+        "Each row shows: Project name, Applicant, Stage dropdown, Source badge, Mentor",
+        "Change stage using inline dropdown - updates immediately",
+        "Click mentor cell - popover opens with mentor picker",
+        "Expand row - see full details (problem statement, motivation, project URL, metrics)",
+        "Filter by stage - only matching stages shown",
+        "Filter by source - toggle between Application/Problem Bank/All",
+        "Filter by mentor status - show only unassigned items",
+        "Search by project name - results filter correctly",
+        "Stats bar shows: Total, Startups, Pending, Active, Jobs, Graduated",
+        "Remove button shows confirmation then soft-deletes item",
+        "Mobile responsive - columns stack vertically"
+      ],
+      "dependencies": ["P02"],
+      "spec_file": "SPECS.md"
+    },
+    {
       "id": "P05",
       "name": "Cycle Retrospective",
       "description": "Self-report questionnaire + data inference + mismatch detection for completed/abandoned cycles. Routes to next action.",

@@ -1,6 +1,110 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Current Session: 2026-01-04 - Demo Day UI Redesign COMPLETE ✅
+## Session: 2026-01-05 (End) - NIF Unification Planning + Production Fix
+
+### Accomplished
+- Fixed production server-side exception on `/admin/events/appathon-2`
+- Applied missing migrations (061, 089, 090) to production Supabase
+- Completed ultrathink interview for NIF Incubation Hub merge
+- Created SPECS.md with full requirements for unified NIF view
+- Added P04B feature to features.json with 13 test_steps
+- Documented interview findings and design decisions
+
+### Current Status
+- **Feature P04B (NIF Hub Unification)**: Planning complete, ready to implement
+- **Build**: ✅ Passing
+- **Production**: ✅ Working (admin event page fixed)
+
+### Next Session
+- Implement P04B: Create unified NIF list view
+  1. Create database VIEW unifying nif_applications + nif_pipeline
+  2. Build UnifiedNIFList component with inline controls
+  3. Add filtering (stage, source, mentor status)
+  4. Replace tab-based page
+  5. Test all 13 test_steps
+
+---
+
+## Previous Session: 2026-01-05 - Production Error Fix
+
+### Fixed: Server-side Exception on Admin Event Page
+
+**Issue:** Production error at `/admin/events/appathon-2` - "Application error: a server-side exception has occurred" (Digest: 3152496465)
+
+**Root Cause:** Missing `get_event_institution_stats` database function in production. The migration `090_event_institution_stats.sql` existed locally but wasn't pushed to production Supabase.
+
+**Fix Applied:**
+1. Linked Supabase CLI to production: `npx supabase link --project-ref ktbbpgvguqzzqukgehgu`
+2. Repaired migration history mismatch: `npx supabase migration repair --status reverted 061`
+3. Pushed pending migrations: `npx supabase db push --include-all`
+4. Applied 3 migrations: 061, 089, 090
+
+**Verification:** HTTP 200 from production, page loads correctly (redirects to login for unauthenticated users).
+
+---
+
+## Previous Session: 2026-01-05 - NIF Incubation Hub Unification Planning
+
+### Interview Completed: NIF Page Merge Analysis
+
+**User Request:** Analyze whether `/admin/nif-incubation` and `/admin/nif-incubation?tab=applications` can be merged.
+
+**First Principles Analysis:**
+The current implementation already uses a single page with two tabs (Pipeline Board + Applications). The question was really about **eliminating the tab-based navigation** because the same projects appear in BOTH tabs at different lifecycle stages.
+
+**Interview Findings (Ultrathink Session):**
+
+| Question | Answer |
+|----------|--------|
+| Core friction | Tabs feel redundant - same info in both |
+| Redundancy type | Same project appears in BOTH tabs at different stages |
+| Ideal journey | Track BOTH person (apply → mentor → incubate) AND problem (identify → validate → startup) |
+| Primary entity | Depends on context (sometimes person-first, sometimes problem-first) |
+| Key actions | Review applications, Assign mentors, Track stage progress, Monitor metrics |
+| Preferred UX | **List with inline stages** (not Kanban) |
+| Entry paths | BOTH Application + Problem Bank paths exist, merge later |
+| Mentoring scope | Applies to ALL pipeline items, not just formal applicants |
+| Filtering needs | All (stage, source, mentor status) |
+| Metrics priority | All 6 current stats matter equally |
+| Data migration | Early stage - can restructure freely |
+
+**Root Cause of Friction:**
+```
+User mental model:  ONE continuous journey per project
+Current UI:         TWO separate tabs
+Result:             Tab switching to follow same project through lifecycle
+```
+
+**Decision: Unified List View**
+- Replace two-tab interface with SINGLE list view
+- Each row shows: Project, Applicant, Stage (dropdown), Source (badge), Mentor
+- Inline actions: Change stage, Assign mentor, Expand details, Remove
+- Filters: By stage, By source, By mentor status
+- Keep all 6 stat cards
+
+**Documents Created:**
+- `SPECS.md` - Full specification with data model, UI layout, and success criteria
+
+**Feature Added to features.json:**
+- P04B: NIF Incubation Hub Unification (P0, deadline 2026-01-10)
+
+**Data Model Approach:**
+Create `unified_nif_items` database VIEW (not table) that UNIONs:
+1. nif_applications (Application path)
+2. nif_pipeline (Problem Bank path)
+
+Both paths converge at "active" stage and share "incubating" → "graduated" stages.
+
+### Next Steps (When Ready to Implement)
+1. Create database VIEW to unify both sources
+2. Build UnifiedNIFList component with inline stage/mentor controls
+3. Add filtering system (stage, source, mentor status)
+4. Replace current tab-based page
+5. Test all 13 test_steps from features.json
+
+---
+
+## Previous Session: 2026-01-04 - Demo Day UI Redesign COMPLETE ✅
 
 ### Session End Summary
 
