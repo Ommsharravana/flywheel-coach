@@ -121,8 +121,19 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     redirect('/admin/events');
   }
 
-  // Get methodology
-  const methodology = getMethodologyForEvent(event.config);
+  // Get methodology with error handling
+  let methodology;
+  try {
+    methodology = getMethodologyForEvent(event.config);
+  } catch (err) {
+    console.error('[EventAdminPage] getMethodologyForEvent error:', err);
+    redirect('/admin/events');
+  }
+
+  if (!methodology) {
+    console.error('[EventAdminPage] methodology is null for event:', eventId, 'config:', event.config);
+    redirect('/admin/events');
+  }
 
   // Get statistics with error handling
   let builderCount: number | null = 0;
@@ -395,14 +406,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
   }, null, 2));
 
   // Validate critical data before render to catch issues
-  if (!event) {
-    console.error('[EventAdminPage] FATAL: event is null/undefined');
-    throw new Error('Event data is missing');
-  }
-  if (!methodology) {
-    console.error('[EventAdminPage] FATAL: methodology is null/undefined');
-    throw new Error('Methodology data is missing');
-  }
+  // Note: event and methodology are already validated earlier with redirect
   if (!Array.isArray(trackStats)) {
     console.error('[EventAdminPage] FATAL: trackStats is not an array', trackStats);
     throw new Error('Track stats is not an array');
