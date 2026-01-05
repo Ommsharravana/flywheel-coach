@@ -3,32 +3,28 @@ import { createClient } from '@/lib/supabase/server';
 import { getEffectiveUserId } from '@/lib/supabase/effective-user';
 import { checkEventAdminAccess } from '@/lib/methodologies/helpers';
 import Link from 'next/link';
-// DIAGNOSTIC: No lucide imports, using Tailwind only
+import { Users, FileText, Rocket, Trophy, Settings, Award } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface EventAdminPageProps {
   params: Promise<{ slug: string }>;
 }
 
 export default async function EventAdminPage({ params }: EventAdminPageProps) {
-  // DIAGNOSTIC: Test Step 4 - Tailwind classes only (no Lucide icons)
-
-  // Get params
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
 
-  // Create Supabase client
   const supabase = await createClient();
 
-  // Get user ID
   const userId = await getEffectiveUserId();
   if (!userId) {
     redirect('/login');
   }
 
-  // Get event
+  // Get event with full details
   const { data: eventData, error } = await supabase
     .from('events')
-    .select('id, name, slug')
+    .select('id, name, slug, methodology, status, start_date, end_date')
     .eq('slug', slug)
     .single();
 
@@ -36,83 +32,167 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     redirect('/admin/events');
   }
 
-  // Cast to expected type after validation
-  const event = eventData as { id: string; name: string; slug: string };
+  const event = eventData as {
+    id: string;
+    name: string;
+    slug: string;
+    methodology: string;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+  };
 
-  // Check admin access
   const { isAdmin, role } = await checkEventAdminAccess(userId, event.id);
   if (!isAdmin) {
     redirect('/admin/events');
   }
 
-  // STATIC DATA for testing
-  const staticStats = {
-    totalBuilders: 42,
-    activeCycles: 15,
-    submissions: 28,
-    completedCycles: 7
+  // Fetch stats - using individual queries for reliability
+  const [buildersResult, cyclesResult, submissionsResult, completedResult] = await Promise.all([
+    // Total builders in this event
+    supabase
+      .from('event_participants')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', event.id),
+    // Active cycles
+    supabase
+      .from('cycles')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', event.id)
+      .neq('status', 'completed'),
+    // Total submissions
+    supabase
+      .from('submissions')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', event.id),
+    // Completed cycles
+    supabase
+      .from('cycles')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', event.id)
+      .eq('status', 'completed'),
+  ]);
+
+  const stats = {
+    totalBuilders: buildersResult.count ?? 0,
+    activeCycles: cyclesResult.count ?? 0,
+    submissions: submissionsResult.count ?? 0,
+    completedCycles: completedResult.count ?? 0,
   };
+
+  const isLive = event.status === 'active';
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{event.name} - Admin Dashboard</h1>
-        <p className="text-muted-foreground">
-          Role: {role || 'unknown'} | Event ID: {event.id}
-        </p>
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">{event.name}</h1>
+            {isLive && (
+              <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                <span className="mr-1.5 h-2 w-2 rounded-full bg-white animate-pulse" />
+                Live
+              </Badge>
+            )}
+          </div>
+          <p className="text-muted-foreground mt-1">
+            {role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Event Admin' : 'Organizer'}
+          </p>
+        </div>
       </div>
 
-      {/* Metrics Grid - No icons, just Tailwind */}
+      {/* Stats Grid - Inline implementation (no MetricCard import) */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-[#0b6d41]/30 bg-[#0b6d41]/5 p-4">
-          <p className="text-sm text-muted-foreground">Total Builders</p>
-          <p className="text-2xl font-bold">{staticStats.totalBuilders}</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">Total Builders</p>
+              <p className="text-2xl font-bold tracking-tight">{stats.totalBuilders}</p>
+            </div>
+            <div className="p-2 rounded-lg bg-muted/50 text-[#0b6d41]">
+              <Users className="h-5 w-5" />
+            </div>
+          </div>
         </div>
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-          <p className="text-sm text-muted-foreground">Active Cycles</p>
-          <p className="text-2xl font-bold">{staticStats.activeCycles}</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">Active Cycles</p>
+              <p className="text-2xl font-bold tracking-tight">{stats.activeCycles}</p>
+            </div>
+            <div className="p-2 rounded-lg bg-muted/50 text-amber-500">
+              <Rocket className="h-5 w-5" />
+            </div>
+          </div>
         </div>
         <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
-          <p className="text-sm text-muted-foreground">Submissions</p>
-          <p className="text-2xl font-bold">{staticStats.submissions}</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">Submissions</p>
+              <p className="text-2xl font-bold tracking-tight">{stats.submissions}</p>
+            </div>
+            <div className="p-2 rounded-lg bg-muted/50 text-blue-500">
+              <FileText className="h-5 w-5" />
+            </div>
+          </div>
         </div>
         <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-4">
-          <p className="text-sm text-muted-foreground">Completed</p>
-          <p className="text-2xl font-bold">{staticStats.completedCycles}</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">Completed</p>
+              <p className="text-2xl font-bold tracking-tight">{stats.completedCycles}</p>
+            </div>
+            <div className="p-2 rounded-lg bg-muted/50 text-green-500">
+              <Trophy className="h-5 w-5" />
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Link
           href={`/admin/events/${slug}/submissions`}
-          className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+          className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent transition-colors"
         >
-          Submissions
+          <FileText className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <p className="font-medium">Submissions</p>
+            <p className="text-sm text-muted-foreground">Review & grade</p>
+          </div>
         </Link>
         <Link
           href={`/admin/events/${slug}/builders`}
-          className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+          className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent transition-colors"
         >
-          Builders
+          <Users className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <p className="font-medium">Builders</p>
+            <p className="text-sm text-muted-foreground">Manage participants</p>
+          </div>
         </Link>
         <Link
           href={`/admin/events/${slug}/demo-day`}
-          className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+          className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent transition-colors"
         >
-          Demo Day
+          <Award className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <p className="font-medium">Demo Day</p>
+            <p className="text-sm text-muted-foreground">Command center</p>
+          </div>
         </Link>
         <Link
           href={`/admin/events/${slug}/settings`}
-          className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+          className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent transition-colors"
         >
-          Settings
+          <Settings className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <p className="font-medium">Settings</p>
+            <p className="text-sm text-muted-foreground">Event configuration</p>
+          </div>
         </Link>
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        Diagnostic: Step 4 - Tailwind only (no Lucide icons)
-      </p>
     </div>
   );
 }
