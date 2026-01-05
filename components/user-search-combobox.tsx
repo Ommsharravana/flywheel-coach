@@ -223,7 +223,11 @@ export function UserSearchCombobox({
                 <div className="p-3 text-sm text-red-500">{error}</div>
               ) : results.length === 0 ? (
                 <div className="p-3 text-sm text-muted-foreground">
-                  {isLoading ? 'Searching...' : 'No users found'}
+                  {isLoading ? 'Searching...' : (
+                    categoryFilter === 'senior_learner'
+                      ? 'No Senior Learners found. Ask your Senior Learner to register first or check the spelling.'
+                      : 'No users found'
+                  )}
                 </div>
               ) : (
                 <ul className="py-1">

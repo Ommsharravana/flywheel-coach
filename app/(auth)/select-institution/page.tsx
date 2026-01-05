@@ -68,7 +68,10 @@ function SelectInstitutionContent() {
 
       if (response.ok) {
         toast.success(`Welcome to ${institution.short_name}!`);
+        // Small delay to let the toast show before navigating
+        await new Promise(resolve => setTimeout(resolve, 500));
         router.push('/dashboard');
+        router.refresh(); // Force refresh to update session state
       } else {
         const errorData = await response.json();
         console.error('Institution set error:', errorData);
@@ -76,13 +79,25 @@ function SelectInstitutionContent() {
         // Extract error message from various possible response formats
         const errorMessage = errorData.error || errorData.message || 'Failed to set institution';
 
-        // Show toast with appropriate duration for the message
-        toast.error(errorMessage, {
-          duration: 5000,
-          description: response.status === 400
-            ? 'You can request a change through Settings.'
-            : undefined,
-        });
+        // Check if user already has an institution
+        if (response.status === 400 && errorMessage.includes('already')) {
+          toast.error('You already have an institution assigned', {
+            duration: 8000,
+            description: 'Go to Settings > Institution to request a change.',
+            action: {
+              label: 'Go to Settings',
+              onClick: () => router.push('/settings'),
+            },
+          });
+        } else {
+          // Show toast with appropriate duration for the message
+          toast.error(errorMessage, {
+            duration: 5000,
+            description: response.status === 400
+              ? 'You can request a change through Settings.'
+              : undefined,
+          });
+        }
         setSelectedId(null);
       }
     } catch (err) {
