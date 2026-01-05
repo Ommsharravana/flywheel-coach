@@ -1160,3 +1160,47 @@ In `components/steps/AppathonSubmission.tsx`, the submitted view (lines 421-498)
 
 ### Note
 Bug Reporter API doesn't support public status updates - mark as resolved manually in dashboard.
+
+## 5 Jan 2026 - Session 3 (Bug Fixes)
+
+### BUG-188 Fixed ✅
+- **Issue**: "No active Appathon event found" error when saving on Step 9
+- **Root Cause**: Users without an active event reached Step 9, but the form tried to query an event that didn't exist
+- **Fix**: Added early check for `activeEvent` - shows "No Active Event" message with link to dashboard instead of broken form
+- **Commit**: Previous session commit (pushed this session)
+- **Deployed**: ✅ Verified on production
+
+### BUG-189 Fixed ✅
+- **Issue**: "After college selection no page opens" on flywheel-coach.vercel.app
+- **Root Cause**: Users on old domain (flywheel-coach.vercel.app) had different auth cookies than canonical domain (jkkn-solution-studio.vercel.app). After selecting institution, auth session didn't persist correctly across domains.
+- **Fix**: Added 301 permanent redirect in middleware from old domain to canonical domain
+- **File Changed**: `middleware.ts` - Added OLD_DOMAINS check with 301 redirect to CANONICAL_DOMAIN
+- **Commit**: fix(routing): Redirect old flywheel-coach domain to canonical domain
+- **Deployed**: ✅ Verified - navigating to flywheel-coach.vercel.app now redirects to jkkn-solution-studio.vercel.app
+- **Verification**: Screenshot shows institution selection page loads correctly on canonical domain with all 6 JKKN colleges visible
+
+### Current State
+- Build passing ✅
+- Both bugs resolved
+- Production deployed via Vercel auto-deploy
+- Old domain properly redirects to new canonical domain
+
+---
+
+## 5 Jan 2026 - Session 2
+
+### BUG-179 Fixed ✅
+- **Issue**: Users couldn't submit Step 9 (Appathon) - button disabled with no feedback
+- **Root Cause**: Submit button showed no indication of what fields were missing
+- **Fix**: Added `getValidationErrors()` function and visible error list showing exactly which required fields need completion
+- **Commit**: 921e4ad
+- **Status**: Resolved in Bug Reporter API
+
+### BUG-178 - Out of Scope
+- Support request for institution change, not a code bug
+- Belongs to different application (different API key scope)
+
+### Current State
+- Build passing ✅
+- All bugs resolved
+- Production deployed via Vercel auto-deploy
