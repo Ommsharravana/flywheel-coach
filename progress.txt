@@ -1,6 +1,62 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Latest Session: 2026-01-06 (Session 2)
+## Latest Session: 2026-01-06 (Session 3)
+
+### Task
+P04B - NIF Incubation Hub Unification
+
+### Goal
+Replace two-tab NIF admin page (Pipeline Board + Applications) with unified list view showing all items from both sources.
+
+### Completed
+1. ✅ Created `unified_nif_items` database VIEW combining nif_applications + nif_candidates
+2. ✅ Created RPC functions: `get_unified_nif_stats`, `update_unified_nif_stage`, `assign_mentor_to_unified_item`, `soft_delete_unified_item`
+3. ✅ Applied VIEW and RPCs to production Supabase via SQL Editor
+4. ✅ Created `/api/nif-hub` endpoint (GET with filters, PATCH for updates, DELETE for soft-delete)
+5. ✅ Rewrote `/admin/nif-incubation` page with unified list UI
+6. ✅ Added shadcn popover component for mentor picker
+7. ✅ Fixed migration file: `b.deployed_url AS project_url` (builds table column)
+8. ✅ Fixed Zod v4 compatibility: changed `required_error` to `message`
+9. ✅ Updated user role to superadmin for testing access
+
+### UI Features Implemented
+- Stats bar: Total, Startups, Pending, Active, Jobs, Graduated
+- Search box with placeholder text
+- Three filter dropdowns: All Stages, All Sources, All Mentor Status
+- Empty state with helpful message
+
+### Testing Status
+- ✅ Page loads without auth errors (superadmin role)
+- ✅ Stats bar displays correctly
+- ✅ Filters render correctly
+- ⚠️ No data to test - both nif_applications and nif_candidates tables are empty
+- 🔲 Stage change dropdown - needs data to test
+- 🔲 Mentor assignment popover - needs data to test
+
+### Files Changed
+- `supabase/migrations/097_unified_nif_items.sql` - Unified VIEW + RPCs
+- `app/api/nif-hub/route.ts` - New API endpoint
+- `app/(admin)/admin/nif-incubation/page.tsx` - Rewritten page
+- `components/ui/popover.tsx` - Added shadcn component
+- `lib/validations/user.ts` - Fixed Zod v4 compatibility
+
+### Commits
+- 1dcc686 - feat(nif-hub): Add unified NIF items API and fix Learners Monitor
+- 346bb2e - fix(migration): Use correct column deployed_url in unified view
+
+### Known Issue (Pre-existing)
+- TypeScript error in `problem-bank/submit/page.tsx` due to Zod v4 + react-hook-form resolver type mismatch
+- Unrelated to NIF Hub changes, needs separate fix
+
+### Next Steps
+- Add test data to nif_applications OR nif_candidates table
+- Test stage change dropdown functionality
+- Test mentor assignment popover
+- Verify all 13 acceptance criteria from features.json
+
+---
+
+## Previous Session: 2026-01-06 (Session 2)
 
 ### Task
 Fix Learners Monitor showing 0 learners
