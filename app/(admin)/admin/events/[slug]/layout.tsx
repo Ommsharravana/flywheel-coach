@@ -8,19 +8,25 @@ interface EventLayoutProps {
 
 // Verify event exists
 async function getEvent(slug: string) {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const { data: event, error } = await supabase
-    .from('events')
-    .select('id, name, slug')
-    .eq('slug', slug)
-    .single();
+    const { data: event, error } = await supabase
+      .from('events')
+      .select('id, name, slug')
+      .eq('slug', slug)
+      .single();
 
-  if (error || !event) {
+    if (error) {
+      console.error('[EventLayout] getEvent error:', error);
+      return null;
+    }
+
+    return event;
+  } catch (err) {
+    console.error('[EventLayout] getEvent exception:', err);
     return null;
   }
-
-  return event;
 }
 
 export default async function EventLayout({
