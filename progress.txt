@@ -1,27 +1,44 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Session: 2026-01-05 (End) - NIF Unification Planning + Production Fix
+## Session: 2026-01-05 (Latest) - Production Database Fix ACTUALLY Applied
+
+### Issue Revisited
+User reported `/admin/events/appathon-2` still broken despite previous "fix" claim.
+
+### Root Cause Found
+Previous session only "marked" migrations as applied but the actual SQL was NOT executed in production. The `supabase migration repair` command marks migrations in the tracking table but doesn't run them.
+
+### Fix Actually Applied
+1. Repaired migration status to "reverted" for 061, 089, 090
+2. Ran `npx supabase db push --linked --include-all` to ACTUALLY execute SQL
+3. Output confirmed: "Applying migration 061...089...090... Finished supabase db push."
+
+### Migrations Now Active in Production
+- `061_add_cluster_increment_function.sql`
+- `089_fix_registered_builder_count.sql` (get_event_registered_builder_count)
+- `090_event_institution_stats.sql` (get_event_institution_stats)
+
+### Status
+- **Build**: Already deployed (dpl_AyJAMyXy8KsuR8BWrH6nGuss5ke4)
+- **Database**: Functions NOW actually exist
+- **Test**: User should verify `/admin/events/appathon-2` loads
+
+---
+
+## Previous Session: 2026-01-05 - NIF Unification Planning
 
 ### Accomplished
-- Fixed production server-side exception on `/admin/events/appathon-2`
-- Applied missing migrations (061, 089, 090) to production Supabase
 - Completed ultrathink interview for NIF Incubation Hub merge
 - Created SPECS.md with full requirements for unified NIF view
 - Added P04B feature to features.json with 13 test_steps
 - Documented interview findings and design decisions
 
-### Current Status
-- **Feature P04B (NIF Hub Unification)**: Planning complete, ready to implement
-- **Build**: ✅ Passing
-- **Production**: ✅ Working (admin event page fixed)
-
-### Next Session
-- Implement P04B: Create unified NIF list view
-  1. Create database VIEW unifying nif_applications + nif_pipeline
-  2. Build UnifiedNIFList component with inline controls
-  3. Add filtering (stage, source, mentor status)
-  4. Replace tab-based page
-  5. Test all 13 test_steps
+### Next Feature: P04B (NIF Hub Unification)
+1. Create database VIEW unifying nif_applications + nif_pipeline
+2. Build UnifiedNIFList component with inline controls
+3. Add filtering (stage, source, mentor status)
+4. Replace tab-based page
+5. Test all 13 test_steps
 
 ---
 

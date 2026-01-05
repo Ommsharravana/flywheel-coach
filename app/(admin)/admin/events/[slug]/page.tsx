@@ -202,7 +202,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
     };
   }) || [];
 
-  // Get recent activity
+  // Get recent activity (removed institutions join - table doesn't exist)
   const { data: recentCycles } = await supabase
     .from('cycles')
     .select(`
@@ -215,7 +215,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
       users!cycles_user_id_fkey (
         name,
         email,
-        institutions (short_name)
+        institution
       )
     `)
     .eq('event_id', eventId)
@@ -230,7 +230,7 @@ export default async function EventAdminPage({ params }: EventAdminPageProps) {
       users: {
         name: string;
         email: string;
-        institutions: { short_name: string } | null;
+        institution: string | null;
       } | null;
     }> | null };
 
