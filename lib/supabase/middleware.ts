@@ -40,9 +40,17 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null
+  try {
+    const { data, error: userError } = await supabase.auth.getUser()
+    if (userError) {
+      console.error('[Middleware] getUser error:', userError)
+    } else {
+      user = data.user
+    }
+  } catch (err) {
+    console.error('[Middleware] getUser exception:', err)
+  }
 
   // Protected routes - require authentication only
   // Institution selection is handled at UI level, not middleware
@@ -62,13 +70,29 @@ export async function updateSession(request: NextRequest) {
   // Admin routes require superadmin or institution_admin role
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
   if (isAdminRoute && user) {
-    const { data: roleData } = await supabase
-      .rpc('get_user_role', { user_id: user.id })
+    try {
+      const { data: roleData, error: roleError } = await supabase
+        .rpc('get_user_role', { user_id: user.id })
 
-    const profile = roleData?.[0] || null
-    const allowedRoles = ['superadmin', 'institution_admin', 'event_admin']
+      if (roleError) {
+        console.error('[Middleware] get_user_role error:', roleError)
+        // On error, redirect to dashboard for safety
+        const url = request.nextUrl.clone()
+        url.pathname = '/dashboard'
+        return NextResponse.redirect(url)
+      }
 
-    if (!profile || !allowedRoles.includes(profile.role)) {
+      const profile = roleData?.[0] || null
+      const allowedRoles = ['superadmin', 'institution_admin', 'event_admin']
+
+      if (!profile || !allowedRoles.includes(profile.role)) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/dashboard'
+        return NextResponse.redirect(url)
+      }
+    } catch (err) {
+      console.error('[Middleware] admin role check exception:', err)
+      // On exception, redirect to dashboard for safety
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)
