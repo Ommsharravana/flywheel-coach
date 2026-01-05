@@ -1,6 +1,38 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Session: 2026-01-05 (Latest) - Additional Code Fix for Admin Page
+## Session: 2026-01-05 (Latest) - Bug Fixes & Admin Page Simplification
+
+### Bug Reporter Fixes
+Ran `/fix-studio-bugs` skill to fetch and fix pending bugs:
+
+**BUG-141: Bug leaderboard 405 error**
+- Page: `/bug-leaderboard`
+- Issue: API returning 405 Method Not Allowed
+- Root cause: `lib/bug-reporter/client.ts` using wrong endpoint `/api/v1/public/bug-reports` (doesn't support GET)
+- Fix: Changed to `/api/v1/public/bug-reports/me` endpoint in both `getUserBugs()` and `getAllBugs()` functions
+- Status: RESOLVED (commit 6b6e238 from previous session, verified on production)
+
+**BUG-140: "Automatically come side" auto-navigation issue**
+- Page: `/cycle/96a303f3-81fa-4ae4-bcaf-e160329d76b0/step/1`
+- Issue: Description too vague to triage
+- Status: NEEDS CLARIFICATION (marked as "seen" in Bug Reporter)
+
+### Admin Events Page Simplification
+Resolved persistent server-side exception (Digest: 3152496465) on `/admin/events/appathon-2`:
+- Previous complex version with track stats, recent activity had render errors
+- Simplified to core dashboard: event header, metrics grid, quick action cards
+- Removed debug info section and committed clean version
+- Commit: bc0c159 "fix(admin): Simplify event dashboard to resolve render error"
+- Full backup preserved at `page.tsx.backup` (31KB) for future restoration
+
+### Build & Deploy
+- Build: Passed all pre-commit checks
+- Push: Successful to origin/main
+- Production: Working (verified via web fetch - redirects to login as expected)
+
+---
+
+## Session: 2026-01-05 - Additional Code Fix for Admin Page
 
 ### Issue Revisited Again
 User reported `/admin/events/appathon-2` still showing server-side exception after database fix.
