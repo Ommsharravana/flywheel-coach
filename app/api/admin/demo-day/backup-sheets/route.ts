@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
           description,
           app_url,
           user_id,
-          users (
+          users!appathon_submissions_user_id_fkey (
             id,
             name,
             institution
