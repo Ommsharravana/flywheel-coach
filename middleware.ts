@@ -1,7 +1,22 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
+// Old domain that should redirect to the new canonical domain
+const OLD_DOMAINS = ['flywheel-coach.vercel.app']
+const CANONICAL_DOMAIN = 'jkkn-solution-studio.vercel.app'
+
 export async function middleware(request: NextRequest) {
+  const hostname = request.headers.get('host') || ''
+
+  // Redirect old domains to canonical domain
+  if (OLD_DOMAINS.some(domain => hostname.includes(domain))) {
+    const url = request.nextUrl.clone()
+    url.host = CANONICAL_DOMAIN
+    url.protocol = 'https'
+    url.port = ''
+    return NextResponse.redirect(url, { status: 301 })
+  }
+
   return await updateSession(request)
 }
 
