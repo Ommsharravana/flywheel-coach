@@ -1,15 +1,17 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { FLYWHEEL_STEPS, StepStatus, Cycle, getStepStatus, canAccessStep } from '@/lib/types/cycle';
+import { getFlywheelSteps, StepStatus, Cycle, getStepStatus, canAccessStep } from '@/lib/types/cycle';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useMemo } from 'react';
 
 interface FlywheelNavigatorProps {
   cycle: Cycle;
   currentStep?: number;
   onStepClick?: (stepId: number) => void;
   compact?: boolean;
+  isAppathonMode?: boolean;
 }
 
 const statusColors: Record<StepStatus, { bg: string; border: string; text: string; glow: string }> = {

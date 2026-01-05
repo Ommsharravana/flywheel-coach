@@ -133,6 +133,33 @@ export default async function StepPage({ params }: StepPageProps) {
 
     if (rawContextData) {
       const contextData = asAny(rawContextData);
+
+      // Fetch interviews for this context
+      const { data: rawInterviewsData } = await supabase
+        .from('interviews')
+        .select('*')
+        .eq('context_id', contextData.id);
+
+      // Map database interviews to Cycle.Interview type
+      const interviews = (rawInterviewsData || []).map((interview: {
+        id: string;
+        interviewee_name: string;
+        interviewee_role: string;
+        key_quote: string;
+        pain_level: number;
+        conducted_at: string;
+        referrals?: string[];
+      }) => ({
+        id: interview.id,
+        personName: interview.interviewee_name || '',
+        role: interview.interviewee_role || '',
+        date: interview.conducted_at || '',
+        notes: interview.key_quote || '',
+        painLevel: interview.pain_level || 5,
+        wouldPay: false, // Not stored in DB, default to false
+        referrals: interview.referrals || [],
+      }));
+
       cycle.context = {
         id: contextData.id,
         who: contextData.primary_users || '',
@@ -140,7 +167,7 @@ export default async function StepPage({ params }: StepPageProps) {
         where: '',
         howPainful: contextData.pain_level || 5,
         currentSolution: contextData.current_workaround || '',
-        interviews: [],
+        interviews,
       };
     }
   }
