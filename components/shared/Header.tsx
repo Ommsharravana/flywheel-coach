@@ -135,9 +135,6 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
               <NavLink href="/metrics" active={pathname === '/metrics'}>
                 Metrics
               </NavLink>
-              <NavLink href="/february-challenge" active={pathname === '/february-challenge'}>
-                February Challenge
-              </NavLink>
             </nav>
           )}
 

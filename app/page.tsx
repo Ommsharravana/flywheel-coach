@@ -248,7 +248,6 @@ export default function Home() {
               <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-stone-500">
                 <Link href="/showcase" className="hover:text-amber-400 font-medium">Showcase</Link>
                 <Link href="/metrics" className="hover:text-amber-400 font-medium">Platform Metrics</Link>
-                <Link href="/february-challenge" className="hover:text-amber-400 font-medium">February Challenge</Link>
                 <span className="text-stone-700">|</span>
                 <Link href="/about" className="hover:text-stone-300">{t('landing.about')}</Link>
                 <Link href="/privacy" className="hover:text-stone-300">{t('landing.privacy')}</Link>
