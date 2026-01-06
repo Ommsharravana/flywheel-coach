@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getEffectiveUserId } from '@/lib/supabase/effective-user';
 import { checkEventAdminAccess } from '@/lib/methodologies/helpers';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, UserCheck, Users, TrendingUp, Award } from 'lucide-react';
+import { ArrowLeft, UserCheck, Users, TrendingUp, Award, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { SeniorLearnersTable } from './SeniorLearnersTable';
 
@@ -26,6 +26,7 @@ interface SeniorLearnerStats {
   senior_learner_name: string;
   senior_learner_email: string;
   institution_name: string | null;
+  department_name: string | null;
   team_count: number;
   teams: Team[];
 }
@@ -77,6 +78,10 @@ export default async function SeniorLearnersPage({ params }: SeniorLearnersPageP
 
   const totalMentorships = seniorLearners?.reduce((sum, sl) => sum + sl.team_count, 0) || 0;
 
+  // Calculate accountability stats
+  const belowTargetCount = (seniorLearners || []).filter(sl => sl.team_count < 5).length;
+  const meetingTargetCount = (seniorLearners || []).filter(sl => sl.team_count >= 5).length;
+
   const stats = {
     totalSeniorLearners: seniorLearners?.length || 0,
     uniqueTeams: uniqueTeamIds.size,  // Actual unique teams
@@ -87,6 +92,8 @@ export default async function SeniorLearnersPage({ params }: SeniorLearnersPageP
     maxTeams: seniorLearners?.length
       ? Math.max(...seniorLearners.map(sl => sl.team_count))
       : 0,
+    belowTargetCount,
+    meetingTargetCount,
   };
 
   return (
@@ -109,7 +116,7 @@ export default async function SeniorLearnersPage({ params }: SeniorLearnersPageP
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
         <Card className="bg-gradient-to-br from-emerald-900/40 to-emerald-950/40 border-emerald-800/50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -161,6 +168,39 @@ export default async function SeniorLearnersPage({ params }: SeniorLearnersPageP
               <div>
                 <div className="text-2xl font-bold text-stone-100">{stats.maxTeams}</div>
                 <p className="text-xs text-stone-400">Most Teams</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Accountability Alert Card */}
+        <Card className={`bg-gradient-to-br ${
+          stats.belowTargetCount > 0
+            ? 'from-red-900/40 to-red-950/40 border-red-800/50'
+            : 'from-green-900/40 to-green-950/40 border-green-800/50'
+        }`}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${
+                stats.belowTargetCount > 0
+                  ? 'bg-red-500/20'
+                  : 'bg-green-500/20'
+              }`}>
+                <AlertTriangle className={`h-5 w-5 ${
+                  stats.belowTargetCount > 0
+                    ? 'text-red-400'
+                    : 'text-green-400'
+                }`} />
+              </div>
+              <div>
+                <div className={`text-2xl font-bold ${
+                  stats.belowTargetCount > 0
+                    ? 'text-red-400'
+                    : 'text-green-400'
+                }`}>
+                  {stats.belowTargetCount}
+                </div>
+                <p className="text-xs text-stone-400">Below 5 Teams</p>
               </div>
             </div>
           </CardContent>

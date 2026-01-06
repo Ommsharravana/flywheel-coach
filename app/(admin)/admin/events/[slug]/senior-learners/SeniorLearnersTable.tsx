@@ -19,6 +19,8 @@ import {
   Mail,
   Building2,
   ExternalLink,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -36,6 +38,7 @@ interface SeniorLearnerData {
   senior_learner_name: string;
   senior_learner_email: string;
   institution_name: string | null;
+  department_name: string | null;
   team_count: number;
   teams: Team[];
 }
@@ -66,6 +69,8 @@ const statusLabels: Record<string, string> = {
 export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
+  const [accountabilityFilter, setAccountabilityFilter] = useState<string>('all');
 
   const toggleRow = (id: string) => {
     const newExpanded = new Set(expandedRows);
@@ -77,31 +82,71 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
     setExpandedRows(newExpanded);
   };
 
-  // Filter data based on search
+  // Filter data based on search, department, and accountability
   const filteredData = data.filter(sl => {
     const query = searchQuery.toLowerCase();
-    return (
+    const matchesSearch =
       sl.senior_learner_name?.toLowerCase().includes(query) ||
       sl.senior_learner_email?.toLowerCase().includes(query) ||
       sl.institution_name?.toLowerCase().includes(query) ||
+      sl.department_name?.toLowerCase().includes(query) ||
       sl.teams.some(t =>
         t.team_name?.toLowerCase().includes(query) ||
         t.app_name?.toLowerCase().includes(query)
-      )
-    );
+      );
+
+    const matchesDepartment = departmentFilter === 'all' || sl.department_name === departmentFilter;
+
+    const matchesAccountability =
+      accountabilityFilter === 'all' ||
+      (accountabilityFilter === 'below' && sl.team_count < 5) ||
+      (accountabilityFilter === 'meeting' && sl.team_count >= 5);
+
+    return matchesSearch && matchesDepartment && matchesAccountability;
   });
+
+  // Get unique departments from data
+  const uniqueDepartments = [...new Set(data.map(sl => sl.department_name).filter(Boolean))] as string[];
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
-        <Input
-          placeholder="Search by name, email, institution, or team..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 bg-stone-800 border-stone-700"
-        />
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 items-center">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500" />
+          <Input
+            placeholder="Search by name, email, department, or team..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-stone-800 border-stone-700"
+          />
+        </div>
+
+        {/* Department Filter */}
+        {uniqueDepartments.length > 0 && (
+          <select
+            value={departmentFilter}
+            onChange={(e) => setDepartmentFilter(e.target.value)}
+            className="px-3 py-2 bg-stone-800 border border-stone-700 rounded-md text-sm text-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            <option value="all">All Departments</option>
+            {uniqueDepartments.sort().map(dept => (
+              <option key={dept} value={dept}>{dept}</option>
+            ))}
+          </select>
+        )}
+
+        {/* Accountability Filter */}
+        <select
+          value={accountabilityFilter}
+          onChange={(e) => setAccountabilityFilter(e.target.value)}
+          className="px-3 py-2 bg-stone-800 border border-stone-700 rounded-md text-sm text-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        >
+          <option value="all">All Senior Learners</option>
+          <option value="below">⚠️ Below 5 Teams</option>
+          <option value="meeting">✓ Meeting Target (5+)</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -111,7 +156,7 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
             <TableRow className="border-stone-800 hover:bg-transparent">
               <TableHead className="w-10 text-stone-400"></TableHead>
               <TableHead className="text-stone-400">Senior Learner</TableHead>
-              <TableHead className="text-stone-400">Institution</TableHead>
+              <TableHead className="text-stone-400">Department</TableHead>
               <TableHead className="text-stone-400 text-center">Teams</TableHead>
               <TableHead className="text-stone-400">Team Status Summary</TableHead>
             </TableRow>
@@ -162,18 +207,35 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
                       </div>
                     </TableCell>
                     <TableCell className="py-3">
-                      {sl.institution_name ? (
+                      {sl.department_name ? (
                         <div className="flex items-center gap-1 text-sm text-stone-300">
                           <Building2 className="h-3 w-3 text-stone-500" />
-                          {sl.institution_name}
+                          {sl.department_name}
                         </div>
                       ) : (
                         <span className="text-stone-500 text-sm">—</span>
                       )}
                     </TableCell>
                     <TableCell className="py-3 text-center">
-                      <div className="inline-flex items-center justify-center min-w-[2rem] h-7 px-2 bg-emerald-500/20 text-emerald-400 font-semibold text-sm rounded-full border border-emerald-500/30">
-                        {sl.team_count}
+                      <div className="flex items-center justify-center gap-2">
+                        <div className={cn(
+                          "inline-flex items-center justify-center min-w-[2rem] h-7 px-2 font-semibold text-sm rounded-full border",
+                          sl.team_count >= 5
+                            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                            : "bg-red-500/20 text-red-400 border-red-500/30"
+                        )}>
+                          {sl.team_count}
+                        </div>
+                        {sl.team_count < 5 && (
+                          <div className="flex items-center gap-1 text-xs text-amber-400" title="Below 5 teams minimum">
+                            <AlertTriangle className="h-3.5 w-3.5" />
+                          </div>
+                        )}
+                        {sl.team_count >= 5 && (
+                          <div className="flex items-center gap-1 text-xs text-emerald-400" title="Meeting 5+ teams requirement">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="py-3">
@@ -245,8 +307,8 @@ export function SeniorLearnersTable({ data, eventSlug }: SeniorLearnersTableProp
             {filteredData.length === 0 && (
               <TableRow className="border-stone-800">
                 <TableCell colSpan={5} className="py-8 text-center text-stone-500">
-                  {searchQuery
-                    ? 'No senior learners match your search'
+                  {searchQuery || departmentFilter !== 'all' || accountabilityFilter !== 'all'
+                    ? 'No senior learners match your filters'
                     : 'No senior learners found'}
                 </TableCell>
               </TableRow>

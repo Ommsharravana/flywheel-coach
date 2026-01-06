@@ -15,7 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Shield, Database, Bug, Trophy, Menu, Home, Briefcase, Settings } from 'lucide-react'
+import { Shield, Database, Bug, Trophy, Menu, Home, Briefcase, Settings, Users } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import { LanguageToggle } from '@/components/shared/LanguageToggle'
 import {
@@ -210,6 +210,14 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
                         Problem Bank
                       </MobileNavLink>
                       <MobileNavLink
+                        href="/dashboard/mentoring"
+                        active={pathname === '/dashboard/mentoring'}
+                        onClick={() => setMobileMenuOpen(false)}
+                        icon={<Users className="h-4 w-4" />}
+                      >
+                        My Mentoring
+                      </MobileNavLink>
+                      <MobileNavLink
                         href="/settings"
                         active={pathname === '/settings'}
                         onClick={() => setMobileMenuOpen(false)}
@@ -311,6 +319,12 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
                       <Link href="/dashboard/problem-bank" className="flex items-center gap-2">
                         <Database className="h-4 w-4 text-purple-400" />
                         <span>Problem Bank</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
+                      <Link href="/dashboard/mentoring" className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-emerald-400" />
+                        <span>My Mentoring</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
