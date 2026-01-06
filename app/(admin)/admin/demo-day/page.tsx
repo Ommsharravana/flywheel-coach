@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LayoutGrid, Trophy, Sparkles } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, Trophy, Sparkles, Users } from 'lucide-react';
 import Link from 'next/link';
 import {
   TrackCard,
@@ -17,7 +17,6 @@ import type {
   DemoDayState,
   TrackSubmission,
   LeaderboardEntry,
-  TrackOverview,
 } from '@/lib/admin/demo-day/types';
 
 export default function DemoDayPage() {
@@ -251,16 +250,28 @@ export default function DemoDayPage() {
         <h1 className="text-2xl font-display font-bold text-stone-100">
           Demo Day Command Center
         </h1>
-        <Link href="/admin/demo-day/content-generator">
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-amber-600/50 text-amber-400 hover:bg-amber-600/20"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            AI Content
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/demo-day/track-assignment">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-blue-600/50 text-blue-400 hover:bg-blue-600/20"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Assign to Tracks
+            </Button>
+          </Link>
+          <Link href="/admin/demo-day/content-generator">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-amber-600/50 text-amber-400 hover:bg-amber-600/20"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI Content
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Global Controls & Stats */}
