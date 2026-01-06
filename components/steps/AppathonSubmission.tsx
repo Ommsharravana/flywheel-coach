@@ -54,10 +54,12 @@ interface Event {
 }
 
 const CATEGORIES = [
-  { value: 'healthcare', label: 'Healthcare + AI', icon: '🏥' },
   { value: 'education', label: 'Education + AI', icon: '📚' },
-  { value: 'operations', label: 'Operations + AI', icon: '⚙️' },
-  { value: 'productivity', label: 'Productivity + AI', icon: '📈' },
+  { value: 'healthcare', label: 'Healthcare + AI', icon: '🏥' },
+  { value: 'agriculture', label: 'Agriculture + AI', icon: '🌾' },
+  { value: 'environment', label: 'Environment + AI', icon: '🌍' },
+  { value: 'community', label: 'Community + AI', icon: '👥' },
+  { value: 'my_jkkn', label: 'My JKKN + AI', icon: '🎓' },
   { value: 'other', label: 'Other', icon: '✨' },
 ];
 

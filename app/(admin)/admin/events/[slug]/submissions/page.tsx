@@ -248,10 +248,12 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
               className="bg-stone-800 border border-stone-700 text-stone-200 rounded-md px-3 py-2 text-sm"
             >
               <option value="">All Categories</option>
-              <option value="healthcare">Healthcare</option>
               <option value="education">Education</option>
-              <option value="operations">Operations</option>
-              <option value="productivity">Productivity</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="agriculture">Agriculture</option>
+              <option value="environment">Environment</option>
+              <option value="community">Community</option>
+              <option value="my_jkkn">My JKKN</option>
               <option value="other">Other</option>
             </select>
             <select
