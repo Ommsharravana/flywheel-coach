@@ -92,7 +92,7 @@ export function ActiveCycleCard({
       </div>
 
       {/* Progress Steps */}
-      <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
         {flywheelSteps.map((step) => {
           const isCompleted = step.number < currentStep;
           const isCurrent = step.number === currentStep;

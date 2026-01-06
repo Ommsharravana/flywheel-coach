@@ -15,9 +15,16 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Shield, Database, Bug, Trophy } from 'lucide-react'
+import { Shield, Database, Bug, Trophy, Menu, Home, Briefcase, Settings } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import { LanguageToggle } from '@/components/shared/LanguageToggle'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 
 // Simplified user type that works with both auth user and effective user (impersonation)
 interface HeaderUser {
@@ -41,6 +48,7 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
   const router = useRouter()
   const supabase = createClient()
   const [mounted, setMounted] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { t } = useTranslation()
 
   // Prevent hydration mismatch with Radix UI
@@ -136,6 +144,134 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
                 Metrics
               </NavLink>
             </nav>
+          )}
+
+          {/* Mobile Menu */}
+          {!isAuthPage && (
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild className="md:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 text-stone-300 hover:text-stone-100 hover:bg-stone-800/50"
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="w-[280px] bg-stone-950 border-stone-800 p-0"
+              >
+                <SheetHeader className="border-b border-stone-800 p-4">
+                  <SheetTitle className="text-stone-100 flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4 text-stone-950"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                      >
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 2v4" />
+                        <path d="M12 18v4" />
+                      </svg>
+                    </div>
+                    Menu
+                  </SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col p-4 gap-1">
+                  {user ? (
+                    <>
+                      <MobileNavLink
+                        href="/dashboard"
+                        active={pathname === '/dashboard'}
+                        onClick={() => setMobileMenuOpen(false)}
+                        icon={<Home className="h-4 w-4" />}
+                      >
+                        {t('nav.home')}
+                      </MobileNavLink>
+                      <MobileNavLink
+                        href="/portfolio"
+                        active={pathname === '/portfolio'}
+                        onClick={() => setMobileMenuOpen(false)}
+                        icon={<Briefcase className="h-4 w-4" />}
+                      >
+                        {t('nav.portfolio')}
+                      </MobileNavLink>
+                      <MobileNavLink
+                        href="/dashboard/problem-bank"
+                        active={pathname.startsWith('/dashboard/problem-bank')}
+                        onClick={() => setMobileMenuOpen(false)}
+                        icon={<Database className="h-4 w-4" />}
+                      >
+                        Problem Bank
+                      </MobileNavLink>
+                      <MobileNavLink
+                        href="/settings"
+                        active={pathname === '/settings'}
+                        onClick={() => setMobileMenuOpen(false)}
+                        icon={<Settings className="h-4 w-4" />}
+                      >
+                        {t('nav.settings')}
+                      </MobileNavLink>
+                      {(role === 'superadmin' || role === 'institution_admin' || role === 'event_admin' || isEventAdmin) && (
+                        <MobileNavLink
+                          href="/admin"
+                          active={pathname.startsWith('/admin')}
+                          onClick={() => setMobileMenuOpen(false)}
+                          icon={<Shield className="h-4 w-4" />}
+                        >
+                          {role === 'superadmin' ? t('nav.superAdmin') : t('nav.admin') || 'Admin'}
+                        </MobileNavLink>
+                      )}
+                      <div className="my-2 border-t border-stone-800" />
+                      <MobileNavLink
+                        href="/my-bugs"
+                        active={pathname === '/my-bugs'}
+                        onClick={() => setMobileMenuOpen(false)}
+                        icon={<Bug className="h-4 w-4" />}
+                      >
+                        My Bug Reports
+                      </MobileNavLink>
+                      <MobileNavLink
+                        href="/bug-leaderboard"
+                        active={pathname === '/bug-leaderboard'}
+                        onClick={() => setMobileMenuOpen(false)}
+                        icon={<Trophy className="h-4 w-4" />}
+                      >
+                        Bug Leaderboard
+                      </MobileNavLink>
+                    </>
+                  ) : (
+                    <>
+                      <MobileNavLink
+                        href="/showcase"
+                        active={pathname === '/showcase'}
+                        onClick={() => setMobileMenuOpen(false)}
+                        icon={<Trophy className="h-4 w-4" />}
+                      >
+                        Showcase
+                      </MobileNavLink>
+                      <MobileNavLink
+                        href="/metrics"
+                        active={pathname === '/metrics'}
+                        onClick={() => setMobileMenuOpen(false)}
+                        icon={<Briefcase className="h-4 w-4" />}
+                      >
+                        Metrics
+                      </MobileNavLink>
+                    </>
+                  )}
+                </nav>
+                {/* Mobile Language Toggle */}
+                <div className="absolute bottom-4 left-4 right-4">
+                  <LanguageToggle showLabel={true} className="w-full justify-center" />
+                </div>
+              </SheetContent>
+            </Sheet>
           )}
 
           {/* Auth / User Menu */}
@@ -265,6 +401,39 @@ function NavLink({
       {active && (
         <span className="absolute bottom-0 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-gradient-to-r from-amber-400 to-orange-500" />
       )}
+    </Link>
+  )
+}
+
+function MobileNavLink({
+  href,
+  active,
+  children,
+  onClick,
+  icon,
+}: {
+  href: string
+  active: boolean
+  children: React.ReactNode
+  onClick: () => void
+  icon?: React.ReactNode
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
+        active
+          ? 'bg-amber-500/10 text-amber-400'
+          : 'text-stone-300 hover:bg-stone-800/50 hover:text-stone-100'
+      }`}
+    >
+      {icon && (
+        <span className={active ? 'text-amber-400' : 'text-stone-500'}>
+          {icon}
+        </span>
+      )}
+      {children}
     </Link>
   )
 }

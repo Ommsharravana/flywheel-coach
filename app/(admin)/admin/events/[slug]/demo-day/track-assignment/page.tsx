@@ -269,7 +269,7 @@ export default function TrackAssignmentPage() {
 
       {/* Stats Overview */}
       {currentState && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-stone-800/50 border border-stone-700 rounded-lg p-4">
             <p className="text-stone-500 text-sm">Total Submissions</p>
             <p className="text-2xl font-bold text-stone-100">{currentState.total}</p>
@@ -359,7 +359,7 @@ export default function TrackAssignmentPage() {
           <div className="text-center py-12 text-stone-500">
             <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>Run AI analysis to get track suggestions based on app descriptions</p>
-            <p className="text-sm mt-2">Or use "Auto-Assign All" to quickly assign high-confidence matches</p>
+            <p className="text-sm mt-2">Or use &quot;Auto-Assign All&quot; to quickly assign high-confidence matches</p>
           </div>
         ) : (
           <div className="space-y-4">

@@ -190,7 +190,7 @@ export default function CommandCenterPage() {
         isLive ? 'border-green-500/50 bg-green-500/5' : 'border-stone-700'
       )}>
         <CardContent className="py-4">
-          <div className="grid grid-cols-6 gap-4 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 text-center">
             <div>
               <div className="text-3xl font-bold text-stone-100">{state.total_submissions}</div>
               <div className="text-xs text-stone-500">Total Apps</div>

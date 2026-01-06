@@ -280,7 +280,7 @@ export default async function PublicMetricsPage() {
             Our methodology guides learners through 8 steps from problem discovery to measurable impact
           </p>
 
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-3 sm:gap-4">
             {[
               { step: 1, name: 'Problem Discovery', desc: 'Identify a real problem worth solving' },
               { step: 2, name: 'Context Discovery', desc: 'Understand who, when, and how painful' },

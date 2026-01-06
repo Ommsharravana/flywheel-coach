@@ -32,9 +32,9 @@ export default function VibeStudioOnboarding() {
 
   return (
     <div className="min-h-screen vibe-grid-background vibe-corner-brackets vibe-corner-brackets-bottom">
-      <div className="min-h-screen flex flex-col items-center justify-center p-8">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8">
         {/* Main content */}
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-2xl px-2 sm:px-0">
           {renderStep()}
         </div>
 

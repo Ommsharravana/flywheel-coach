@@ -95,10 +95,10 @@ export default function RevealPage() {
           >
             <Trophy className="w-32 h-32 text-[#ffde59] mx-auto drop-shadow-[0_0_30px_rgba(255,222,89,0.5)]" />
           </motion.div>
-          <h1 className="font-display text-6xl font-bold text-white">
+          <h1 className="font-display text-4xl sm:text-6xl font-bold text-white">
             Congratulations!
           </h1>
-          <p className="text-2xl text-stone-300">
+          <p className="text-xl sm:text-2xl text-stone-300">
             All winners revealed
           </p>
           <div className="mt-8 px-6 py-3 rounded-full bg-[#0b6d41]/20 border border-[#0b6d41]/40 inline-block">
@@ -123,21 +123,21 @@ export default function RevealPage() {
 
       <Confetti active={showConfetti} />
 
-      <div className="relative max-w-7xl mx-auto px-8 py-12">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="text-center mb-8 sm:mb-12"
         >
-          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-[#0b6d41]/20 border border-[#0b6d41]/40 mb-6">
-            <Sparkles className="w-5 h-5 text-[#ffde59]" />
-            <span className="text-lg font-semibold text-[#ffde59]">
+          <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-full bg-[#0b6d41]/20 border border-[#0b6d41]/40 mb-4 sm:mb-6">
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-[#ffde59]" />
+            <span className="text-sm sm:text-lg font-semibold text-[#ffde59]">
               Appathon 2.0 Grand Finale
             </span>
           </div>
 
-          <h1 className="font-display text-5xl font-bold text-white mb-4">
+          <h1 className="font-display text-3xl sm:text-5xl font-bold text-white mb-4">
             {currentTrackName}
           </h1>
 
@@ -187,9 +187,9 @@ export default function RevealPage() {
         )}
 
         {isRevealing && trackWinners.length > 0 && (
-          <div className="grid grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* 3rd Place */}
-            <div className="flex items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 max-w-6xl mx-auto">
+            {/* 3rd Place - Show third on mobile, first on desktop */}
+            <div className="flex items-end order-3 sm:order-1">
               <div className="w-full">
                 {trackWinners[2] && (
                   <WinnerCard
@@ -201,8 +201,8 @@ export default function RevealPage() {
               </div>
             </div>
 
-            {/* 1st Place (Center, larger) */}
-            <div className="flex items-end -mt-8">
+            {/* 1st Place (Center, larger) - Show first on mobile */}
+            <div className="flex items-end sm:-mt-8 order-1 sm:order-2">
               <div className="w-full">
                 {trackWinners[0] && (
                   <WinnerCard
@@ -214,8 +214,8 @@ export default function RevealPage() {
               </div>
             </div>
 
-            {/* 2nd Place */}
-            <div className="flex items-end">
+            {/* 2nd Place - Show second on mobile */}
+            <div className="flex items-end order-2 sm:order-3">
               <div className="w-full">
                 {trackWinners[1] && (
                   <WinnerCard

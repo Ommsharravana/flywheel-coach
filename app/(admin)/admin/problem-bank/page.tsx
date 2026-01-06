@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,6 @@ import {
   Medal,
   RefreshCw,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import {
   Select,
   SelectContent,
@@ -809,7 +808,7 @@ export default function ProblemBankPage() {
               ) : (
                 <div className="space-y-4">
                   {/* Summary Stats */}
-                  <div className="grid grid-cols-4 gap-4 p-4 rounded-lg bg-stone-800/50 border border-stone-700">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-stone-800/50 border border-stone-700">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-stone-100">{leaderboard.totals.institutions}</div>
                       <div className="text-xs text-stone-500">Institutions</div>

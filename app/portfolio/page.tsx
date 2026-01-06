@@ -208,19 +208,19 @@ export default function PortfolioPage() {
 
       <main className="container mx-auto px-4 pt-24 pb-8 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-stone-100 flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-amber-400" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-stone-100 flex items-center gap-2 sm:gap-3">
+              <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400" />
               My Portfolio
             </h1>
-            <p className="text-stone-400 mt-1">
+            <p className="text-stone-400 mt-1 text-sm sm:text-base">
               Track your journey from problems to impact
             </p>
           </div>
           <Button
             onClick={() => router.push('/cycle/new')}
-            className="bg-amber-500 hover:bg-amber-600 text-stone-900"
+            className="bg-amber-500 hover:bg-amber-600 text-stone-900 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Cycle
@@ -228,7 +228,7 @@ export default function PortfolioPage() {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
           <Card className="glass-card">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -307,7 +307,7 @@ export default function PortfolioPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {cycles.map((cycle, index) => (
               <motion.div
                 key={cycle.id}
