@@ -311,13 +311,14 @@ export async function applyTrackAssignments(
       }
     } else {
       // Get the next demo slot for this track
+      // Use maybeSingle() instead of single() - single() throws when 0 rows exist
       const { data: lastSlot } = await supabase
         .from('submission_track_assignments')
         .select('demo_slot')
         .eq('track_id', assignment.track_id)
         .order('demo_slot', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       const nextSlot = (lastSlot?.demo_slot || 0) + 1;
 

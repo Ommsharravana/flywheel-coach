@@ -142,11 +142,17 @@ export default function TrackAssignmentPage() {
         body: JSON.stringify({ assignments }),
       });
       const data = await response.json();
+
+      // Check for HTTP errors or API errors
+      if (!response.ok || data.error) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
       if (data.data) {
-        setMessage({
-          type: 'success',
-          text: `Applied ${data.data.applied} track assignments`,
-        });
+        const resultText = data.data.errors?.length > 0
+          ? `Applied ${data.data.applied} assignments (${data.data.errors.length} errors)`
+          : `Applied ${data.data.applied} track assignments`;
+        setMessage({ type: 'success', text: resultText });
         // Refresh state
         setAIResult(null);
         setSelectedSubmissions(new Set());
@@ -154,7 +160,7 @@ export default function TrackAssignmentPage() {
       }
     } catch (error) {
       console.error('Failed to apply assignments:', error);
-      setMessage({ type: 'error', text: 'Failed to apply assignments' });
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to apply assignments' });
     } finally {
       setIsApplying(false);
     }
@@ -170,18 +176,24 @@ export default function TrackAssignmentPage() {
         body: JSON.stringify({ apply_all_high_confidence: true }),
       });
       const data = await response.json();
+
+      // Check for HTTP errors or API errors
+      if (!response.ok || data.error) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
       if (data.data) {
-        setMessage({
-          type: 'success',
-          text: `Applied ${data.data.applied} high-confidence assignments`,
-        });
+        const resultText = data.data.errors?.length > 0
+          ? `Applied ${data.data.applied} assignments (${data.data.errors.length} errors)`
+          : `Applied ${data.data.applied} high-confidence assignments`;
+        setMessage({ type: 'success', text: resultText });
         setAIResult(null);
         setSelectedSubmissions(new Set());
         fetchCurrentState();
       }
     } catch (error) {
       console.error('Failed to apply assignments:', error);
-      setMessage({ type: 'error', text: 'Failed to apply assignments' });
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to apply assignments' });
     } finally {
       setIsApplying(false);
     }
