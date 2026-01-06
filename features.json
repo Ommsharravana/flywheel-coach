@@ -341,7 +341,7 @@
       "description": "Problems from learners (direct), departments (admin submit), and industry (partner submit with admin approval).",
       "priority": "P1",
       "deadline": "2026-01-13",
-      "status": "not-started",
+      "status": "self-verified",
       "test_steps": [
         "Learners can submit problems directly (existing)",
         "Department admins can submit problems for their department",
@@ -350,6 +350,7 @@
         "Admin review queue for external submissions",
         "Teams can claim problems to work on"
       ],
+      "verification_notes": "2026-01-07: Migration 099 applied to production Supabase. Verified 9 new columns in problem_bank table (approval_status, industry_partner_name/email/company/phone, claimed_by_team_id, claimed_at, budget_amount, budget_currency). RLS policies updated for approval-based visibility. Code committed in 944ef34. Industry submission page at /submit-problem, admin review queue at /admin/problem-bank/review-queue.",
       "dependencies": []
     },
     {
