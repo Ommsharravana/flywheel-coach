@@ -103,7 +103,21 @@ export default function TrackAssignmentPage() {
     setMessage(null);
     try {
       const response = await fetch('/api/admin/demo-day/ai-assign');
+
+      // Check for HTTP errors before parsing JSON
+      if (!response.ok) {
+        const text = await response.text();
+        if (response.status === 504 || response.status === 502 || text.includes('FUNCTION_INVOCATION_TIMEOUT')) {
+          throw new Error('AI analysis timed out. This may happen with 600+ submissions. Try refreshing and running again.');
+        }
+        throw new Error(text || `HTTP ${response.status}`);
+      }
+
       const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
       if (data.data) {
         setAIResult(data.data);
         // Pre-select high confidence suggestions
@@ -118,7 +132,7 @@ export default function TrackAssignmentPage() {
       }
     } catch (error) {
       console.error('Failed to run AI analysis:', error);
-      setMessage({ type: 'error', text: 'Failed to run AI analysis' });
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to run AI analysis' });
     } finally {
       setIsAnalyzing(false);
     }
@@ -141,11 +155,20 @@ export default function TrackAssignmentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assignments }),
       });
-      const data = await response.json();
 
-      // Check for HTTP errors or API errors
-      if (!response.ok || data.error) {
-        throw new Error(data.error || `HTTP ${response.status}`);
+      // Check for HTTP errors before parsing JSON
+      if (!response.ok) {
+        const text = await response.text();
+        // Check if it's a timeout or gateway error
+        if (response.status === 504 || response.status === 502 || text.includes('FUNCTION_INVOCATION_TIMEOUT')) {
+          throw new Error('Request timed out. Try applying fewer assignments at once.');
+        }
+        throw new Error(text || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
       }
 
       if (data.data) {
@@ -175,11 +198,20 @@ export default function TrackAssignmentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apply_all_high_confidence: true }),
       });
-      const data = await response.json();
 
-      // Check for HTTP errors or API errors
-      if (!response.ok || data.error) {
-        throw new Error(data.error || `HTTP ${response.status}`);
+      // Check for HTTP errors before parsing JSON
+      if (!response.ok) {
+        const text = await response.text();
+        // Check if it's a timeout or gateway error
+        if (response.status === 504 || response.status === 502 || text.includes('FUNCTION_INVOCATION_TIMEOUT')) {
+          throw new Error('Request timed out. For 600+ submissions, use "Run AI Analysis" first, then apply in smaller batches.');
+        }
+        throw new Error(text || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
       }
 
       if (data.data) {
