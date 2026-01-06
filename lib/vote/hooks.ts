@@ -45,11 +45,14 @@ export function useUserTrack(userId: string | null) {
 
 /**
  * Hook to get and subscribe to currently presenting submission
+ * Includes aggressive polling fallback when waiting for presentations to ensure
+ * UI updates even if real-time subscription fails to trigger
  */
 export function useCurrentPresentation(trackId: string | null) {
   const [presenting, setPresenting] = useState<PresentingSubmission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const refetch = useCallback(async () => {
     if (!trackId) return;
@@ -113,6 +116,38 @@ export function useCurrentPresentation(trackId: string | null) {
       supabase.removeChannel(channel);
     };
   }, [trackId]);
+
+  // Polling fallback: When no presentation is active, poll aggressively (every 2s)
+  // This ensures the UI updates even if real-time subscription fails
+  useEffect(() => {
+    // Only poll when we're waiting for a presentation (not currently showing one)
+    if (!trackId || presenting !== null) {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Poll every 2 seconds while waiting for presentation to start
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const current = await getCurrentlyPresenting(trackId);
+        if (current) {
+          setPresenting(current);
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }, 2000);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [trackId, presenting]);
 
   return { presenting, loading, error, refetch };
 }

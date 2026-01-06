@@ -66,8 +66,9 @@ export async function getJudgeAccess(): Promise<JudgeAccessResult> {
   const isTrialMode = await checkTrialMode(supabase)
 
   // Check if user is assigned as a judge in any track
+  // NOTE: A judge can be assigned to multiple tracks, so we use .select() not .maybeSingle()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: judgeAssignment, error: judgeError } = await (supabase as any)
+  const { data: judgeAssignments, error: judgeError } = await (supabase as any)
     .from('track_judges')
     .select(`
       id,
@@ -90,7 +91,9 @@ export async function getJudgeAccess(): Promise<JudgeAccessResult> {
     `)
     .eq('user_id', effectiveUser.id)
     .eq('track.event_id', APPATHON_EVENT_ID)
-    .maybeSingle()
+
+  // Handle multiple track assignments - use first track (judges can switch later if needed)
+  const judgeAssignment = judgeAssignments?.[0] || null
 
   if (judgeError) {
     console.error('Error checking judge assignment:', judgeError)

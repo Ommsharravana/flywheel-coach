@@ -94,15 +94,22 @@ export function GlobalControls({
       }
     }
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleTrialModeToggle = async () => {
     setTrialModeLoading(true);
+    setJudgeMessage(null);
     try {
       const result = await setTrialMode(!isTrialMode);
       if (result.success) {
         setIsTrialMode(!isTrialMode);
+        setJudgeMessage({ type: 'success', text: `Trial mode ${!isTrialMode ? 'enabled' : 'disabled'}` });
+      } else {
+        setJudgeMessage({ type: 'error', text: result.error || 'Failed to toggle trial mode' });
       }
+    } catch {
+      setJudgeMessage({ type: 'error', text: 'Failed to toggle trial mode' });
     } finally {
       setTrialModeLoading(false);
     }
@@ -132,13 +139,19 @@ export function GlobalControls({
 
   const handleRemoveJudge = async (email: string, trackTheme: string) => {
     setJudgeActionLoading(true);
+    setJudgeMessage(null);
     try {
       const result = await removeJudge(email, trackTheme);
       if (result.success) {
+        setJudgeMessage({ type: 'success', text: result.message || 'Judge removed successfully' });
         // Refresh judges list
         const judgesResult = await getEventJudges();
         setJudges(judgesResult.judges);
+      } else {
+        setJudgeMessage({ type: 'error', text: result.error || 'Failed to remove judge' });
       }
+    } catch {
+      setJudgeMessage({ type: 'error', text: 'Failed to remove judge' });
     } finally {
       setJudgeActionLoading(false);
     }
@@ -156,12 +169,18 @@ export function GlobalControls({
 
   const handleRevealResults = async () => {
     setRevealLoading(true);
+    setJudgeMessage(null);
     try {
       const result = await revealResults();
       if (result.success) {
         setIsResultsRevealed(true);
+        setJudgeMessage({ type: 'success', text: 'Results revealed successfully!' });
         onRefresh();
+      } else {
+        setJudgeMessage({ type: 'error', text: result.error || 'Failed to reveal results' });
       }
+    } catch {
+      setJudgeMessage({ type: 'error', text: 'Failed to reveal results' });
     } finally {
       setRevealLoading(false);
       setConfirmDialog(null);
@@ -170,12 +189,18 @@ export function GlobalControls({
 
   const handleHideResults = async () => {
     setRevealLoading(true);
+    setJudgeMessage(null);
     try {
       const result = await hideResults();
       if (result.success) {
         setIsResultsRevealed(false);
+        setJudgeMessage({ type: 'success', text: 'Results hidden' });
         onRefresh();
+      } else {
+        setJudgeMessage({ type: 'error', text: result.error || 'Failed to hide results' });
       }
+    } catch {
+      setJudgeMessage({ type: 'error', text: 'Failed to hide results' });
     } finally {
       setRevealLoading(false);
     }
