@@ -1,6 +1,45 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Latest Session: 2026-01-07 (Session 8)
+## Latest Session: 2026-01-07 (Session 9)
+
+### Task
+Bug Fix: Track Assignment "Failed to apply assignments" error
+
+### Goal
+Fix the "Failed to apply assignments" bug on track-assignment page and improve error handling.
+
+### Status: COMPLETED ✅
+
+### Root Causes Found & Fixed
+1. **`.single()` throwing 406 error** (`lib/admin/demo-day/ai-assign-services.ts:314-321`)
+   - When a track had 0 existing assignments, `.single()` threw because it expects exactly 1 row
+   - Fixed by changing to `.maybeSingle()` which returns null for 0 rows
+
+2. **JSON parsing error on timeout** (`track-assignment/page.tsx`)
+   - The `response.json()` was called BEFORE checking `response.ok`
+   - If Vercel returns HTML timeout page, JSON.parse fails with cryptic error
+   - Fixed by checking `response.ok` first and showing helpful error message
+
+### Files Modified
+- `lib/admin/demo-day/ai-assign-services.ts` - `.single()` → `.maybeSingle()`
+- `app/(admin)/admin/events/[slug]/demo-day/track-assignment/page.tsx` - Improved error handling in 3 functions
+
+### Commits
+- 53bb263 - fix(track-assignment): Fix 'Failed to apply assignments' bug
+- 8f8631a - fix(track-assignment): Handle timeout errors and improve error messages
+
+### Test Evidence
+- Before: "Unexpected token 'A', "An error o"... is not valid JSON"
+- After: "Request timed out. For 600+ submissions, use "Run AI Analysis" first, then apply in smaller batches."
+
+### Technical Notes
+- 630 submissions × 20 per batch = 32 Claude API calls
+- Vercel Pro has 60s function timeout - not enough for full batch
+- User should use "Run AI Analysis" first, then manually select and apply smaller batches
+
+---
+
+## Previous Session: 2026-01-07 (Session 8)
 
 ### Task
 P07 - Multi-Source Problem Bank - Complete Migration
