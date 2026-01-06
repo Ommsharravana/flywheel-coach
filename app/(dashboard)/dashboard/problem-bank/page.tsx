@@ -33,9 +33,11 @@ import type {
 } from '@/lib/types/problem-bank';
 import {
   PROBLEM_THEMES,
+  PROBLEM_SOURCE_TYPES,
   getSeverityLabel,
   getSeverityColor,
   VALIDATION_STATUSES,
+  type ProblemSourceType,
 } from '@/lib/types/problem-bank';
 
 // Type for admin events
@@ -414,18 +416,26 @@ export default function DashboardProblemBankPage() {
 function ProblemCard({ problem }: { problem: ProblemCardData }) {
   const themeInfo = problem.theme ? PROBLEM_THEMES[problem.theme] : null;
   const validationInfo = VALIDATION_STATUSES[problem.validation_status];
+  const sourceInfo = problem.source_type ? PROBLEM_SOURCE_TYPES[problem.source_type as ProblemSourceType] : null;
 
   return (
     <Link href={`/dashboard/problem-bank/${problem.id}`}>
       <Card className="bg-stone-900/50 border-stone-800 hover:border-purple-500/50 hover:bg-stone-900/70 transition-all cursor-pointer h-full">
         <CardContent className="pt-6 flex flex-col h-full">
-          {/* Theme Badge */}
+          {/* Source & Theme Badges */}
           <div className="flex items-start justify-between mb-3">
-            {themeInfo && (
-              <Badge variant="outline" className={`${themeInfo.color} border-current/30`}>
-                {themeInfo.emoji} {themeInfo.label}
-              </Badge>
-            )}
+            <div className="flex flex-wrap gap-1">
+              {sourceInfo && (
+                <Badge variant="outline" className={`${sourceInfo.color} border-current/30 text-xs`}>
+                  {sourceInfo.emoji}
+                </Badge>
+              )}
+              {themeInfo && (
+                <Badge variant="outline" className={`${themeInfo.color} border-current/30`}>
+                  {themeInfo.emoji} {themeInfo.label}
+                </Badge>
+              )}
+            </div>
             {problem.attempt_count > 0 && (
               <Badge variant="outline" className="text-blue-400 border-blue-400/30">
                 <GitBranch className="h-3 w-3 mr-1" />

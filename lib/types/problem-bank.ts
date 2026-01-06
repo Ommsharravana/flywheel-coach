@@ -22,7 +22,9 @@ export type ValidationStatus =
   | 'desperate_user_confirmed'
   | 'market_validated';
 
-export type ProblemSourceType = 'cycle' | 'manual' | 'import' | 'appathon';
+export type ProblemSourceType = 'cycle' | 'manual' | 'import' | 'appathon' | 'department' | 'industry';
+
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 export type ProblemFrequency = 'daily' | 'weekly' | 'monthly' | 'rarely';
 
@@ -83,6 +85,23 @@ export interface ProblemBankEntry {
   // Lifecycle
   status: ProblemStatus;
   is_open_for_attempts: boolean;
+
+  // Approval workflow (for industry submissions)
+  approval_status: ApprovalStatus;
+
+  // Industry partner info (for industry source_type)
+  industry_partner_name: string | null;
+  industry_partner_email: string | null;
+  industry_partner_company: string | null;
+  industry_partner_phone: string | null;
+
+  // Budget info
+  budget_amount: number | null;
+  budget_currency: string;
+
+  // Team claiming
+  claimed_by_team_id: string | null;
+  claimed_at: string | null;
 
   // Solution reference
   best_solution_cycle_id: string | null;
@@ -320,6 +339,10 @@ export interface ProblemCardData {
   created_at: string;
   attempt_count: number;
 
+  // Source info
+  source_type?: ProblemSourceType;
+  approval_status?: ApprovalStatus;
+
   institution_name?: string;
   institution_short?: string;
   submitter_name?: string;
@@ -544,6 +567,27 @@ export const PROBLEM_THEMES: Record<ProblemTheme, { label: string; emoji: string
   community: { label: 'Community + AI', emoji: '👥', color: 'text-purple-500' },
   myjkkn: { label: 'MyJKKN Apps', emoji: '📱', color: 'text-cyan-500' },
   other: { label: 'Other', emoji: '💡', color: 'text-yellow-500' },
+};
+
+/**
+ * Source type display info
+ */
+export const PROBLEM_SOURCE_TYPES: Record<ProblemSourceType, { label: string; emoji: string; color: string; description: string }> = {
+  cycle: { label: 'Flywheel Cycle', emoji: '🔄', color: 'text-blue-500', description: 'Discovered through flywheel practice' },
+  manual: { label: 'Direct Submit', emoji: '✍️', color: 'text-purple-500', description: 'Submitted directly by learner' },
+  import: { label: 'Imported', emoji: '📥', color: 'text-stone-500', description: 'Imported from external source' },
+  appathon: { label: 'Appathon', emoji: '🏆', color: 'text-amber-500', description: 'Submitted for Appathon event' },
+  department: { label: 'Department', emoji: '🏢', color: 'text-cyan-500', description: 'Submitted by department admin' },
+  industry: { label: 'Industry Partner', emoji: '🤝', color: 'text-emerald-500', description: 'Submitted by industry partner' },
+};
+
+/**
+ * Approval status display info
+ */
+export const APPROVAL_STATUSES: Record<ApprovalStatus, { label: string; color: string; bgColor: string }> = {
+  pending: { label: 'Pending Review', color: 'text-amber-400', bgColor: 'bg-amber-500/20' },
+  approved: { label: 'Approved', color: 'text-green-400', bgColor: 'bg-green-500/20' },
+  rejected: { label: 'Rejected', color: 'text-red-400', bgColor: 'bg-red-500/20' },
 };
 
 /**

@@ -144,6 +144,8 @@ export async function GET(request: NextRequest) {
       desperate_user_score: p.desperate_user_score,
       created_at: p.created_at,
       attempt_count: attemptsMap[p.id] || 0,
+      source_type: p.source_type || undefined,
+      approval_status: p.approval_status || undefined,
       institution_name: p.institution_name || undefined,
       institution_short: p.institution_short_name || undefined,
     }));

@@ -21,16 +21,31 @@ import {
   Clock,
   Target,
   Sparkles,
+  Mail,
+  Phone,
+  IndianRupee,
+  Handshake,
+  UserCheck,
+  XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
   PROBLEM_THEMES,
+  PROBLEM_SOURCE_TYPES,
   VALIDATION_STATUSES,
   getSeverityLabel,
   getSeverityColor,
   type ProblemWithDetails,
   type ProblemTheme,
+  type ProblemSourceType,
 } from '@/lib/types/problem-bank';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -44,6 +59,11 @@ interface SimilarProblem {
   similarity_score: number;
 }
 
+interface UserTeam {
+  id: string;
+  name: string;
+}
+
 export default function ProblemDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const router = useRouter();
@@ -53,6 +73,10 @@ export default function ProblemDetailPage({ params }: PageProps) {
   const [forking, setForking] = useState(false);
   const [similarProblems, setSimilarProblems] = useState<SimilarProblem[]>([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
+  const [userTeams, setUserTeams] = useState<UserTeam[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [claiming, setClaiming] = useState(false);
+  const [releasing, setReleasing] = useState(false);
 
   const fetchProblem = useCallback(async () => {
     setLoading(true);
@@ -98,6 +122,73 @@ export default function ProblemDetailPage({ params }: PageProps) {
     };
     fetchSimilar();
   }, [id]);
+
+  // Fetch user's teams for claiming
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const response = await fetch('/api/teams');
+        if (response.ok) {
+          const data = await response.json();
+          setUserTeams(data.teams || []);
+          if (data.teams?.length === 1) {
+            setSelectedTeamId(data.teams[0].id);
+          }
+        }
+      } catch {
+        // Non-critical
+      }
+    };
+    fetchTeams();
+  }, []);
+
+  const handleClaim = async () => {
+    if (!selectedTeamId || !problem) return;
+
+    setClaiming(true);
+    try {
+      const response = await fetch(`/api/problems/${problem.id}/claim`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team_id: selectedTeamId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to claim problem');
+      }
+
+      // Refresh problem data
+      fetchProblem();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to claim problem');
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  const handleRelease = async () => {
+    if (!problem) return;
+
+    setReleasing(true);
+    try {
+      const response = await fetch(`/api/problems/${problem.id}/claim`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to release claim');
+      }
+
+      // Refresh problem data
+      fetchProblem();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to release claim');
+    } finally {
+      setReleasing(false);
+    }
+  };
 
   const handleFork = async () => {
     if (!problem) return;
@@ -167,6 +258,9 @@ export default function ProblemDetailPage({ params }: PageProps) {
 
   const themeInfo = problem.theme ? PROBLEM_THEMES[problem.theme as ProblemTheme] : null;
   const validationInfo = VALIDATION_STATUSES[problem.validation_status];
+  const sourceInfo = problem.source_type ? PROBLEM_SOURCE_TYPES[problem.source_type as ProblemSourceType] : null;
+  const isIndustryProblem = problem.source_type === 'industry';
+  const isClaimed = !!problem.claimed_by_team_id;
 
   return (
     <div className="space-y-6">
@@ -208,6 +302,11 @@ export default function ProblemDetailPage({ params }: PageProps) {
           <Card className="bg-stone-900/50 border-stone-800">
             <CardHeader>
               <div className="flex items-start gap-3 flex-wrap mb-2">
+                {sourceInfo && (
+                  <Badge variant="outline" className={`${sourceInfo.color} border-current/30`}>
+                    {sourceInfo.emoji} {sourceInfo.label}
+                  </Badge>
+                )}
                 {themeInfo && (
                   <Badge variant="outline" className={`${themeInfo.color} border-current/30`}>
                     {themeInfo.emoji} {themeInfo.label}
@@ -219,6 +318,12 @@ export default function ProblemDetailPage({ params }: PageProps) {
                 {problem.severity_rating && (
                   <Badge variant="outline" className={getSeverityColor(problem.severity_rating)}>
                     {getSeverityLabel(problem.severity_rating)} Severity
+                  </Badge>
+                )}
+                {isClaimed && (
+                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                    <UserCheck className="h-3 w-3 mr-1" />
+                    Claimed
                   </Badge>
                 )}
               </div>
@@ -282,6 +387,59 @@ export default function ProblemDetailPage({ params }: PageProps) {
               )}
             </CardContent>
           </Card>
+
+          {/* Industry Partner Info (for industry submissions) */}
+          {isIndustryProblem && (problem.industry_partner_name || problem.industry_partner_company) && (
+            <Card className="bg-emerald-900/20 border-emerald-500/30">
+              <CardHeader>
+                <CardTitle className="text-lg text-stone-100 flex items-center gap-2">
+                  <Handshake className="h-5 w-5 text-emerald-400" />
+                  Industry Partner
+                </CardTitle>
+                <CardDescription>
+                  This problem was submitted by an industry partner
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {problem.industry_partner_company && (
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-stone-500" />
+                      <span className="text-stone-200">{problem.industry_partner_company}</span>
+                    </div>
+                  )}
+                  {problem.industry_partner_name && (
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-stone-500" />
+                      <span className="text-stone-200">{problem.industry_partner_name}</span>
+                    </div>
+                  )}
+                  {problem.industry_partner_email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-stone-500" />
+                      <span className="text-stone-200">{problem.industry_partner_email}</span>
+                    </div>
+                  )}
+                  {problem.industry_partner_phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-stone-500" />
+                      <span className="text-stone-200">{problem.industry_partner_phone}</span>
+                    </div>
+                  )}
+                </div>
+                {problem.budget_amount && (
+                  <div className="mt-4 pt-4 border-t border-emerald-500/20">
+                    <div className="flex items-center gap-2">
+                      <IndianRupee className="h-4 w-4 text-emerald-400" />
+                      <span className="text-emerald-400 font-semibold">
+                        Budget: {problem.budget_currency} {problem.budget_amount.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Evidence Section */}
           {problem.evidence && problem.evidence.length > 0 && (
@@ -359,6 +517,93 @@ export default function ProblemDetailPage({ params }: PageProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Team Claim Card */}
+          {problem.status === 'open' && !isClaimed && userTeams.length > 0 && (
+            <Card className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border-blue-500/30">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <UserCheck className="h-10 w-10 text-blue-400 mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold text-stone-100 mb-2">
+                    Claim for Your Team
+                  </h3>
+                  <p className="text-sm text-stone-400 mb-4">
+                    Reserve this problem for your team to work on. Others won&apos;t be able to claim it while you work.
+                  </p>
+
+                  {userTeams.length > 1 && (
+                    <div className="mb-4">
+                      <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                        <SelectTrigger className="bg-stone-800 border-stone-700">
+                          <SelectValue placeholder="Select your team" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {userTeams.map((team) => (
+                            <SelectItem key={team.id} value={team.id}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={handleClaim}
+                    disabled={claiming || !selectedTeamId}
+                    className="w-full bg-blue-600 text-white hover:bg-blue-500"
+                  >
+                    {claiming ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Claiming...
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck className="h-4 w-4 mr-2" />
+                        Claim Problem
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Release Claim Card (if claimed by user's team) */}
+          {isClaimed && (
+            <Card className="bg-stone-900/50 border-stone-800">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <UserCheck className="h-10 w-10 text-blue-400 mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold text-stone-100 mb-2">
+                    Problem Claimed
+                  </h3>
+                  <p className="text-sm text-stone-400 mb-4">
+                    This problem is currently claimed by a team. If this is your team, you can release the claim.
+                  </p>
+                  <Button
+                    onClick={handleRelease}
+                    disabled={releasing}
+                    variant="outline"
+                    className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
+                  >
+                    {releasing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Releasing...
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Release Claim
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Validation Stats */}
           <Card className="bg-stone-900/50 border-stone-800">
