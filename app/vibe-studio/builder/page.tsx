@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { MessageSquare, Code2, Monitor } from 'lucide-react';
 import { useOnboardingStore } from '@/lib/stores/vibeOnboardingStore';
 import { useBuilderStore } from '@/lib/stores/vibeBuilderStore';
 import { ChatPanel } from '@/components/vibe-studio/builder/ChatPanel';
@@ -9,8 +10,11 @@ import { CodeViewer } from '@/components/vibe-studio/builder/CodeViewer';
 import { PreviewPanel } from '@/components/vibe-studio/builder/PreviewPanel';
 import { BYOSStatusBar } from '@/components/vibe-studio/builder/BYOSStatusBar';
 
+type MobileTab = 'chat' | 'code' | 'preview';
+
 export default function VibeStudioBuilder() {
   const router = useRouter();
+  const [mobileTab, setMobileTab] = useState<MobileTab>('chat');
   const { appName, appIdea, features, platform } = useOnboardingStore();
   const {
     setProject,
@@ -217,6 +221,12 @@ export default function VibeStudioBuilder() {
 
   const projectName = useBuilderStore.getState().projectName || appName || 'New Project';
 
+  const mobileTabItems = [
+    { id: 'chat' as MobileTab, icon: MessageSquare, label: 'Chat' },
+    { id: 'code' as MobileTab, icon: Code2, label: 'Code' },
+    { id: 'preview' as MobileTab, icon: Monitor, label: 'Preview' },
+  ];
+
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a]">
       {/* Top bar with BYOS status */}
@@ -226,26 +236,54 @@ export default function VibeStudioBuilder() {
         isDeploying={isDeploying}
       />
 
-      {/* Main content - Three columns */}
+      {/* Mobile Tab Bar */}
+      <div className="md:hidden flex border-b border-[#333]">
+        {mobileTabItems.map(({ id, icon: Icon, label }) => (
+          <button
+            key={id}
+            onClick={() => setMobileTab(id)}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 transition-colors ${
+              mobileTab === id
+                ? 'bg-orange-500/10 text-orange-500 border-b-2 border-orange-500'
+                : 'text-gray-500 hover:text-white'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            <span className="text-xs font-mono">{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Main content - Mobile: Single panel with tabs, Desktop: Three columns */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Chat Panel - 30% */}
-        <div className="w-[30%] min-w-[300px]">
-          <ChatPanel onSendMessage={handleSendMessage} />
+        {/* Mobile View */}
+        <div className="md:hidden w-full">
+          {mobileTab === 'chat' && <ChatPanel onSendMessage={handleSendMessage} />}
+          {mobileTab === 'code' && <CodeViewer />}
+          {mobileTab === 'preview' && <PreviewPanel />}
         </div>
 
-        {/* Code Viewer - 35% */}
-        <div className="w-[35%] min-w-[350px]">
-          <CodeViewer />
-        </div>
+        {/* Desktop View - Three columns */}
+        <div className="hidden md:flex flex-1">
+          {/* Chat Panel - 30% */}
+          <div className="w-[30%] min-w-[300px]">
+            <ChatPanel onSendMessage={handleSendMessage} />
+          </div>
 
-        {/* Preview Panel - 35% */}
-        <div className="flex-1">
-          <PreviewPanel />
+          {/* Code Viewer - 35% */}
+          <div className="w-[35%] min-w-[350px]">
+            <CodeViewer />
+          </div>
+
+          {/* Preview Panel - 35% */}
+          <div className="flex-1">
+            <PreviewPanel />
+          </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="px-4 py-2 border-t border-[#333] text-center">
+      {/* Footer - Hidden on mobile for more space */}
+      <div className="hidden sm:block px-4 py-2 border-t border-[#333] text-center">
         <p className="text-xs text-gray-600 font-mono tracking-wider">
           JKKN VIBE STUDIO • APPATHON 2.0 • POWERED BY CLAUDE
         </p>
