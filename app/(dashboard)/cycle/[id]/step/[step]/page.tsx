@@ -269,21 +269,30 @@ export default async function StepPage({ params }: StepPageProps) {
 
   if (stepNumber >= 8) {
     const { data: rawImpactData } = await supabase
-      .from('impacts')
+      .from('impact_assessments')  // Fixed: was 'impacts', correct table is 'impact_assessments'
       .select('*')
       .eq('cycle_id', id)
       .single();
 
     if (rawImpactData) {
       const impactData = asAny(rawImpactData);
+      // Parse time saved from time_before and time_after TEXT fields
+      const parseMinutes = (text: string | null) => {
+        if (!text) return 0;
+        const match = text.match(/(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+      const timeBefore = parseMinutes(impactData.time_before);
+      const timeAfter = parseMinutes(impactData.time_after);
+
       cycle.impact = {
         id: impactData.id,
-        usersReached: impactData.users_reached,
-        timeSavedMinutes: impactData.time_saved_minutes,
-        satisfactionScore: impactData.satisfaction_score,
-        feedback: impactData.feedback,
-        lessonsLearned: impactData.lessons_learned,
-        newProblems: impactData.new_problems || [],
+        usersReached: impactData.total_users || 0,                    // Fixed: was users_reached
+        timeSavedMinutes: Math.max(0, timeBefore - timeAfter),        // Fixed: calculate from TEXT fields
+        satisfactionScore: impactData.nps_score || 0,                 // Fixed: was satisfaction_score
+        feedback: '',                                                  // Field doesn't exist in impact_assessments
+        lessonsLearned: '',                                            // Field doesn't exist in impact_assessments
+        newProblems: impactData.new_problems_discovered || [],        // Fixed: was new_problems
       };
     }
   }

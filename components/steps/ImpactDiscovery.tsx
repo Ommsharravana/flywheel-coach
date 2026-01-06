@@ -56,7 +56,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
     }
   };
 
-  const saveImpact = async (complete = false) => {
+  const saveImpact = async (complete = false, shouldNavigate = true) => {
     setIsPending(true);
     try {
       // Map UI fields to actual DB column names
@@ -124,7 +124,10 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
         if (cycleError) throw cycleError;
 
         toast.success(t('stepUI.cycleCompleted'));
-        router.push(`/cycle/${cycle.id}`);
+        // Only navigate if shouldNavigate is true (prevents double navigation in startNewCycle)
+        if (shouldNavigate) {
+          router.push(`/cycle/${cycle.id}`);
+        }
       } else {
         toast.success(t('stepUI.impactSaved'));
         router.refresh();
@@ -183,8 +186,8 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
 
     setIsPending(true);
     try {
-      // First complete this cycle
-      await saveImpact(true);
+      // First complete this cycle (don't navigate - we'll navigate to new cycle instead)
+      await saveImpact(true, false);
 
       // Create new cycle with the new problem
       const { data: { user } } = await supabase.auth.getUser();
