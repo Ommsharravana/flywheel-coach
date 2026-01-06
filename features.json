@@ -324,7 +324,7 @@
       "description": "Track that every Senior Learner mentors 5+ teams with dashboard visibility for department heads.",
       "priority": "P1",
       "deadline": "2026-01-13",
-      "status": "not-started",
+      "status": "self-verified",
       "test_steps": [
         "Senior Learner dashboard shows: teams mentored count",
         "Warning appears if below 5 teams",
@@ -332,6 +332,7 @@
         "Mentorship relationship tracked in database",
         "Admin can see all Senior Learner stats"
       ],
+      "verification_notes": "All 5 acceptance criteria verified on production. Admin page (/admin/events/[slug]/senior-learners) shows: 5 stats cards including 'Below 5 Teams' accountability card showing 49 SLs need more teams, department column in table, accountability filter dropdown, red badge + warning triangle for SLs <5 teams (verified Bhavadharani G with 4 teams). Self-dashboard at /dashboard/mentoring shows mentoring stats or 'Not Yet a Senior Learner' empty state. 'My Mentoring' link added to Header dropdown. Migration 098_senior_learner_accountability.sql applied with get_senior_learner_stats (includes department) and get_my_mentoring_stats RPCs. Verified 2026-01-06.",
       "dependencies": []
     },
     {
