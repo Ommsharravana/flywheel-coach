@@ -158,10 +158,12 @@ export default async function EventSubmissionsPage({ params, searchParams }: Sub
             {stats.total} submissions for {event.name}
           </p>
         </div>
-        <Button variant="outline" className="border-stone-700">
-          <Download className="h-4 w-4 mr-2" />
-          Export CSV
-        </Button>
+        <a href={`/api/admin/events/${slug}/submissions/export`} download>
+          <Button variant="outline" className="border-stone-700">
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+        </a>
       </div>
 
       {/* Stats */}

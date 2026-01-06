@@ -28,9 +28,9 @@ import {
   Check,
   AlertTriangle,
   RefreshCw,
-  Download,
   ChevronDown,
   ChevronUp,
+  // Note: Download icon not used here - export functionality is on submissions page
 } from 'lucide-react';
 import Link from 'next/link';
 import type {
@@ -78,7 +78,8 @@ export default function TrackAssignmentPage() {
   const [tracks, setTracks] = useState<TrackInfo[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionForAssignment[]>([]);
   const [expandedTracks, setExpandedTracks] = useState<Set<string>>(new Set());
-  const [filterConfidence, setFilterConfidence] = useState<ConfidenceLevel | 'all'>('all');
+  // Filter confidence - currently showing all, UI for filtering to be added later
+  const filterConfidence: ConfidenceLevel | 'all' = 'all';
 
   // Load initial data
   useEffect(() => {
@@ -207,21 +208,20 @@ export default function TrackAssignmentPage() {
     });
   }
 
-  function getFilteredSuggestions(): TrackSuggestion[] {
+  // Helper for future filter UI - currently all suggestions shown
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function _getFilteredSuggestions(): TrackSuggestion[] {
     if (!result) return [];
     if (filterConfidence === 'all') return result.suggestions;
     return result.suggestions.filter(s => getConfidenceLevel(s.confidence) === filterConfidence);
   }
-
-  const filteredSuggestions = getFilteredSuggestions();
-  const needsPanelSplit = tracks.filter(t => t.submission_count > 50);
 
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard">
+          <Link href="/admin/demo-day">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>

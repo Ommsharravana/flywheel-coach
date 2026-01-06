@@ -628,7 +628,7 @@ export function AppathonSubmission({ cycle }: AppathonSubmissionProps) {
             <UserMultiSelect
               placeholder="Search for Senior Learners..."
               categoryFilter="senior_learner"
-              eventId={activeEvent?.id}
+              // Note: Don't filter senior learners by eventId - they're mentors who can guide across events
               value={seniorLearners}
               onChange={setSeniorLearners}
               excludeIds={teamMembers.map(m => m.id)}
