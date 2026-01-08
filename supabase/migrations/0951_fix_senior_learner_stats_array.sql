@@ -8,6 +8,9 @@
 -- This function handles BOTH formats using UNION ALL
 -- Now joins with users table to get institution info
 
+-- Drop existing function to allow changing return type
+DROP FUNCTION IF EXISTS get_senior_learner_stats(UUID);
+
 CREATE OR REPLACE FUNCTION get_senior_learner_stats(
   target_event_id UUID
 )

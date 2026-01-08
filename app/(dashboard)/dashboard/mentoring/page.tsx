@@ -66,10 +66,11 @@ export default async function MentoringPage() {
     .eq('id', userId)
     .single() as { data: { user_category: string | null; name: string | null } | null };
 
-  // Fetch mentoring stats using RPC
+  // Fetch mentoring stats using RPC (pass userId to support impersonation)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: mentoringStats, error } = await (supabase as any).rpc(
-    'get_my_mentoring_stats'
+    'get_my_mentoring_stats',
+    { target_user_id: userId }
   ) as { data: MentoringStats[] | null; error: unknown };
 
   if (error) {

@@ -1,6 +1,46 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Latest Session: 2026-01-07 (Session 9)
+## Latest Session: 2026-01-08 (Session 10)
+
+### Task
+P04B - NIF Incubation Hub - Fix Spec Gaps
+
+### Goal
+Address gaps identified by subagent verification of SPECS.md implementation.
+
+### Status: IN PROGRESS ⏳
+
+### Gaps Found by Subagent Verification
+1. **Problem bank items can't store mentor** - nif_candidates.mentor_id column missing
+2. **Source badge shows "App/Bank"** - Should show "Application/Problem Bank"
+3. **Incubating stage missing** - Not in STAGE_CONFIG or filters
+
+### Fixes Applied
+1. ✅ Created migration `100_fix_nif_candidates_mentor.sql`:
+   - Add `mentor_id UUID` column to nif_candidates
+   - Update unified VIEW to use real mentor data
+   - Fix `assign_mentor_to_unified_item()` to store mentor
+   - Add incubating stage to stats function
+2. ✅ Updated page.tsx:
+   - Changed "App" → "Application", "Bank" → "Problem Bank"
+   - Added incubating stage to UNIFIED_STAGES and STAGE_CONFIG
+
+### Commits
+- 64e7173 - fix(nif-hub): Add mentor support for problem bank items
+
+### Deployment
+- ✅ Vercel deployment READY at jkkn-solution-studio.vercel.app
+- ⏳ **PENDING: Apply migration 100 to production Supabase**
+
+### Next Step
+Apply migration via Supabase SQL Editor:
+1. Go to https://supabase.com/dashboard → SQL Editor
+2. Paste contents of `supabase/migrations/100_fix_nif_candidates_mentor.sql`
+3. Execute
+
+---
+
+## Previous Session: 2026-01-07 (Session 9)
 
 ### Task
 Bug Fix: Track Assignment "Failed to apply assignments" error
