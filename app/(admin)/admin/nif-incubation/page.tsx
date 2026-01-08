@@ -113,6 +113,7 @@ const UNIFIED_STAGES = [
   { value: 'pending_review', label: 'Pending Review', color: 'text-yellow-400' },
   { value: 'mentor_selection', label: 'Mentor Selection', color: 'text-orange-400' },
   { value: 'active', label: 'Active', color: 'text-emerald-400' },
+  { value: 'incubating', label: 'Incubating', color: 'text-cyan-400' },
   { value: 'graduated', label: 'Graduated', color: 'text-purple-400' },
   { value: 'rejected', label: 'Rejected', color: 'text-red-400' },
   { value: 'dropped', label: 'Dropped', color: 'text-stone-500' },
@@ -134,6 +135,7 @@ const STAGE_CONFIG: Record<string, { label: string; color: string; bgColor: stri
   pending_review: { label: 'Pending', color: 'text-yellow-400', bgColor: 'bg-yellow-500/10 border-yellow-500/30' },
   mentor_selection: { label: 'Mentor Selection', color: 'text-orange-400', bgColor: 'bg-orange-500/10 border-orange-500/30' },
   active: { label: 'Active', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10 border-emerald-500/30' },
+  incubating: { label: 'Incubating', color: 'text-cyan-400', bgColor: 'bg-cyan-500/10 border-cyan-500/30' },
   graduated: { label: 'Graduated', color: 'text-purple-400', bgColor: 'bg-purple-500/10 border-purple-500/30' },
   rejected: { label: 'Rejected', color: 'text-red-400', bgColor: 'bg-red-500/10 border-red-500/30' },
   dropped: { label: 'Dropped', color: 'text-stone-500', bgColor: 'bg-stone-500/10 border-stone-500/30' },
@@ -670,7 +672,7 @@ function NIFItemRow({
                     : 'text-amber-400 border-amber-500/30'
                 )}
               >
-                {item.source === 'application' ? 'App' : 'Bank'}
+                {item.source === 'application' ? 'Application' : 'Problem Bank'}
               </Badge>
             </div>
             <div className="flex items-center gap-2 mt-1 text-sm text-stone-400">
