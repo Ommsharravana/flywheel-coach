@@ -67,7 +67,7 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
   return (
     <header className={`fixed left-0 right-0 z-50 border-b border-amber-100/20 bg-gradient-to-r from-stone-950/95 via-stone-900/95 to-stone-950/95 backdrop-blur-xl ${isImpersonating ? 'top-10' : 'top-0'}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex min-h-16 items-center justify-between">
           {/* Logo */}
           <Link href={user ? '/dashboard' : '/'} className="group flex items-center gap-3">
             {/* Flywheel Icon */}
