@@ -1,6 +1,63 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Latest Session: 2026-01-08 (Session 10)
+## Latest Session: 2026-01-08 (Session 11)
+
+### Task
+BUG-213 - Dr. Vijay Cannot See His 28 Mentees
+
+### Goal
+Fix mentoring dashboard to show all 28 teams for Dr. J. Vijay Thiyagarajan when viewing via impersonation.
+
+### Status: COMPLETED ✅
+
+### Root Cause
+RPC function `get_my_mentoring_stats()` used `auth.uid()` internally, which returns NULL during impersonation sessions. Frontend passed no parameters, so function couldn't determine which user's data to return.
+
+### Solution Applied
+1. ✅ **Database Migration** - Created `fix-missing-rpc-final.sql`
+   - Dropped existing function versions (both parameterless and UUID versions)
+   - Created new function with optional `target_user_id UUID DEFAULT NULL` parameter
+   - Function uses `COALESCE(target_user_id, auth.uid())` pattern for flexibility
+   - Supports both impersonation (explicit user_id) and normal use (auth.uid())
+   - Handles both JSONB array and single object formats in `senior_learner` field
+
+2. ✅ **Frontend Update** - Modified `app/(dashboard)/dashboard/mentoring/page.tsx`
+   - Updated RPC call at lines 69-74 to pass `{ target_user_id: userId }` parameter
+   - Ensures impersonated user's ID is explicitly provided to RPC function
+
+3. ✅ **Production Deployment**
+   - Applied migration to production Supabase via SQL Editor
+   - Code deployed via GitHub push → Vercel auto-deploy
+   - Verified fix works with Dr. Vijay's impersonation session
+
+### Test Evidence
+Tested on production with impersonation URL:
+`https://jkkn-solution-studio.vercel.app/dashboard/mentoring?impersonate=c3bef7cb-b4b7-449e-966e-c37b4993c0fc`
+
+**Results:**
+- ✅ Dashboard shows **28 Total Teams** (previously showed 0 or 2)
+- ✅ "Great Work!" banner (meeting 5-team target)
+- ✅ Event breakdown: Appathon 2.0 with 28/5 ratio
+- ✅ All 28 team cards load and display correctly
+- ✅ Each team shows: name, app name, status badge, submission number
+- ✅ Team links work (navigation to submission details)
+
+### Files Modified
+- `supabase/migrations/fix-missing-rpc-final.sql` (created and applied)
+- `app/(dashboard)/dashboard/mentoring/page.tsx` (RPC parameter added)
+
+### Commits
+- fix(mentoring): Add impersonation support to get_my_mentoring_stats RPC
+
+### Technical Notes
+- Dr. Vijay's user ID: `c3bef7cb-b4b7-449e-966e-c37b4993c0fc`
+- RPC function is SECURITY DEFINER - runs with elevated privileges
+- GRANT EXECUTE only on UUID signature (not parameterless version)
+- Function correctly handles mentor data in both array and object JSONB formats
+
+---
+
+## Previous Session: 2026-01-08 (Session 10)
 
 ### Task
 P04B - NIF Incubation Hub - Fix Spec Gaps
