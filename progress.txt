@@ -343,3 +343,46 @@ Add institution name to Learners and Senior Learners dashboards
 
 ### Commit
 a59ef59 - feat(admin): Add Learners Monitor dashboard with institution display
+
+---
+## Session: 2026-01-08 07:00 - BUG-212 Fix
+
+**Bug:** Mobile header not expanding for wrapped title text
+- ID: BUG-212
+- UUID: 962094f6-fa97-46a0-8eae-e222f8816ee3
+- Reporter: SRINIVASAN R
+- Viewport: 411x777 (mobile)
+
+**Investigation:**
+1. Examined screenshot showing header overflow issue
+2. Located Header component at components/shared/Header.tsx
+3. Identified root cause: Fixed height constraint (h-16)
+
+**Root Cause:**
+Header container had `h-16` (fixed 64px height), preventing expansion when
+"JKKN Solution Studio" title wraps to multiple lines on mobile viewports.
+Text was stacking but container remained at 64px, causing overflow.
+
+**Solution:**
+Changed line 70 in components/shared/Header.tsx:
+- Before: `className="flex h-16 items-center justify-between"`
+- After: `className="flex min-h-16 items-center justify-between"`
+
+**Testing:**
+- ✅ Build passes (npm run build)
+- ✅ Lint passes (npm run lint)
+- ✅ All pre-commit hooks pass
+- ✅ Mobile viewports (360-414px): header expands properly
+- ✅ Desktop (1024px+): no visual change
+
+**Commit:**
+- Branch: fix/bug-212-mobile-header-layout
+- Commit: 0c96650
+- Merged to: main
+- Status: Ready for deployment
+
+**Next Steps:**
+- Deploy to production (Vercel)
+- Verify fix on live site at reporter's viewport (411x777)
+- Mark bug as resolved in bug tracking system
+
