@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { encrypt, decrypt } from './encryption';
 
 // Vercel API types
 export interface VercelTeam {
@@ -200,11 +201,14 @@ export async function storeVercelCredentials(
 ): Promise<void> {
   const supabase = await createClient();
 
+  // Encrypt the access token before storing
+  const encryptedToken = encrypt(accessToken);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase.from('byos_connections') as any).upsert({
     user_id: userId,
     provider: 'vercel',
-    access_token_encrypted: accessToken, // TODO: Encrypt before storing
+    access_token_encrypted: encryptedToken,
     refresh_token_encrypted: null,
     expires_at: null,
     metadata: {
@@ -238,8 +242,45 @@ export async function getVercelCredentials(userId: string): Promise<{
     return null;
   }
 
+  // Decrypt the access token
+  // For backward compatibility, check if the token is in encrypted format (iv:authTag:ciphertext)
+  let accessToken: string;
+  const encryptedToken = data.access_token_encrypted;
+
+  if (encryptedToken && encryptedToken.split(':').length === 3) {
+    // Token is encrypted, decrypt it
+    try {
+      accessToken = decrypt(encryptedToken);
+    } catch (decryptError) {
+      console.error('Failed to decrypt Vercel token:', decryptError);
+      // If decryption fails, the token might be corrupted
+      return null;
+    }
+  } else {
+    // Token is not encrypted (legacy format), use as-is
+    accessToken = encryptedToken;
+
+    // Re-encrypt and update the token in the database for future use
+    if (accessToken) {
+      try {
+        const reencryptedToken = encrypt(accessToken);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from('byos_connections') as any)
+          .update({
+            access_token_encrypted: reencryptedToken,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', userId)
+          .eq('provider', 'vercel');
+      } catch (reencryptError) {
+        // Non-critical error, just log it
+        console.error('Failed to re-encrypt legacy token:', reencryptError);
+      }
+    }
+  }
+
   return {
-    accessToken: data.access_token_encrypted,
+    accessToken,
     teamId: (data.metadata as { team_id?: string })?.team_id,
   };
 }

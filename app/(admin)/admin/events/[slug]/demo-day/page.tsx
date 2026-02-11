@@ -44,6 +44,10 @@ import type {
   LeaderboardEntry,
   TrackOverview,
 } from '@/lib/admin/demo-day/types';
+import type {
+  JudgeActivity,
+  JudgeScorePattern,
+} from '@/lib/admin/demo-day/command-center-types';
 import { cn } from '@/lib/utils';
 
 // NASA Mission Control Track Card
@@ -183,25 +187,23 @@ function MissionControlTrackCard({
 }
 
 // Judge Activity Monitor Side Panel
-function JudgeActivityMonitor({ state }: { state: DemoDayState }) {
-  // Get all judges across all tracks with their activity
-  const allJudges = state.tracks.flatMap(track =>
-    track.judges.map(judge => ({
-      ...judge,
-      trackName: track.name,
-      trackId: track.id,
-    }))
-  );
+function JudgeActivityMonitor({ judgeActivities }: { judgeActivities: JudgeActivity[] }) {
+  const formatLastActivity = (activity: JudgeActivity): string => {
+    if (activity.status === 'never-scored') return 'No scores';
+    if (activity.minutes_since_last_activity === null) return 'Unknown';
+    const mins = activity.minutes_since_last_activity;
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+  };
 
-  // Deterministic activity status based on judge ID (mock implementation)
-  // In real implementation, this would come from the API with actual timestamps
-  const getActivityStatus = (judgeId: string): 'active' | 'idle' | 'inactive' => {
-    // Use simple hash of ID for deterministic but varied results
-    const hash = judgeId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const normalized = (hash % 100) / 100;
-    if (normalized > 0.7) return 'inactive';
-    if (normalized > 0.4) return 'idle';
-    return 'active';
+  const getStatusLight = (status: JudgeActivity['status']): 'success' | 'warning' | 'error' | 'inactive' => {
+    switch (status) {
+      case 'active': return 'success';
+      case 'idle': return 'warning';
+      case 'inactive': return 'error';
+      case 'never-scored': return 'inactive';
+    }
   };
 
   return (
@@ -213,36 +215,46 @@ function JudgeActivityMonitor({ state }: { state: DemoDayState }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
-        {allJudges.length === 0 ? (
+        {judgeActivities.length === 0 ? (
           <div className="text-center py-4 text-zinc-500 text-sm">
             No judges assigned yet
           </div>
         ) : (
-          allJudges.slice(0, 10).map((judge) => {
-            const status = getActivityStatus(judge.id);
-            return (
-              <div
-                key={`${judge.id}-${judge.trackId}`}
-                className="flex items-center justify-between p-2 rounded bg-zinc-800/50"
-              >
-                <div className="flex items-center gap-2">
-                  <StatusLight
-                    status={status === 'active' ? 'success' : status === 'idle' ? 'warning' : 'error'}
-                    size="sm"
-                  />
-                  <div>
-                    <div className="text-xs text-zinc-100">
-                      {judge.user?.name || judge.user?.email?.split('@')[0] || 'Judge'}
-                    </div>
-                    <div className="text-[10px] text-zinc-500">{judge.trackName}</div>
+          judgeActivities.slice(0, 10).map((activity) => (
+            <div
+              key={`${activity.judge_id}-${activity.track_id}`}
+              className="flex items-center justify-between p-2 rounded bg-zinc-800/50"
+            >
+              <div className="flex items-center gap-2">
+                <StatusLight
+                  status={getStatusLight(activity.status)}
+                  size="sm"
+                />
+                <div>
+                  <div className="text-xs text-zinc-100 flex items-center gap-1">
+                    {activity.judge_name || activity.judge_email.split('@')[0]}
+                    {activity.is_lead && (
+                      <Badge variant="outline" className="text-[8px] px-1 py-0 bg-amber-500/10 text-amber-400 border-amber-500/30">
+                        Lead
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-zinc-500">
+                    {activity.track_name} &middot; {activity.total_scores_submitted} scored
                   </div>
                 </div>
-                <div className="text-[10px] text-zinc-500">
-                  {status === 'active' ? '< 5m' : status === 'idle' ? '5-15m' : '> 15m'}
-                </div>
               </div>
-            );
-          })
+              <div className={cn(
+                "text-[10px]",
+                activity.status === 'active' ? 'text-green-400' :
+                activity.status === 'idle' ? 'text-amber-400' :
+                activity.status === 'inactive' ? 'text-red-400' :
+                'text-zinc-500'
+              )}>
+                {formatLastActivity(activity)}
+              </div>
+            </div>
+          ))
         )}
       </CardContent>
     </Card>
@@ -250,16 +262,10 @@ function JudgeActivityMonitor({ state }: { state: DemoDayState }) {
 }
 
 // Score Anomaly Detection Side Panel
-function ScoreAnomalyDetection({ state }: { state: DemoDayState }) {
-  // Generate mock anomalies based on state - in real implementation, this would come from API
-  const trackNames = state.tracks.map(t => t.name);
-  const anomalies = state.is_live ? [
-    { id: '1', type: 'all-same', judge: 'Judge A', track: trackNames[0] || 'Track', description: 'All scores are 10/10' },
-    { id: '2', type: 'outlier', judge: 'Judge B', track: trackNames[1] || 'Track', description: 'Score 30% below average' },
-    { id: '3', type: 'rapid', judge: 'Judge C', track: trackNames[2] || 'Track', description: 'Scored 5 teams in 2 mins' },
-  ] : [];
-
+function ScoreAnomalyDetection({ scorePatterns }: { scorePatterns: JudgeScorePattern[] }) {
+  const anomalies = scorePatterns.filter(p => p.is_anomaly);
   const hasAnomalies = anomalies.length > 0;
+  const hasAnyScores = scorePatterns.length > 0;
 
   return (
     <Card className={cn(
@@ -278,7 +284,12 @@ function ScoreAnomalyDetection({ state }: { state: DemoDayState }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 max-h-[250px] overflow-y-auto">
-        {anomalies.length === 0 ? (
+        {!hasAnyScores ? (
+          <div className="text-center py-4 text-zinc-500 text-sm flex flex-col items-center gap-2">
+            <Clock className="w-6 h-6 text-zinc-600" />
+            No scoring data yet
+          </div>
+        ) : anomalies.length === 0 ? (
           <div className="text-center py-4 text-zinc-500 text-sm flex flex-col items-center gap-2">
             <CheckCircle2 className="w-6 h-6 text-green-500" />
             No anomalies detected
@@ -286,14 +297,19 @@ function ScoreAnomalyDetection({ state }: { state: DemoDayState }) {
         ) : (
           anomalies.map((anomaly) => (
             <div
-              key={anomaly.id}
+              key={`${anomaly.judge_id}-${anomaly.track_name}`}
               className="p-2 rounded bg-amber-500/10 border border-amber-500/20"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-xs text-amber-400 font-medium">{anomaly.judge}</div>
-                  <div className="text-[10px] text-zinc-400">{anomaly.track}</div>
-                  <div className="text-[10px] text-zinc-500 mt-1">{anomaly.description}</div>
+                  <div className="text-xs text-amber-400 font-medium">
+                    {anomaly.judge_name || anomaly.judge_email.split('@')[0]}
+                  </div>
+                  <div className="text-[10px] text-zinc-400">{anomaly.track_name}</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">{anomaly.anomaly_reason}</div>
+                  <div className="text-[10px] text-zinc-600 mt-0.5">
+                    Avg: {anomaly.avg_score.toFixed(1)} | Range: {anomaly.min_score.toFixed(0)}-{anomaly.max_score.toFixed(0)} | {anomaly.scores_given} scored
+                  </div>
                 </div>
                 <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-amber-400 hover:bg-amber-500/20">
                   <Eye className="w-3 h-3 mr-1" />
@@ -321,6 +337,8 @@ export default function EventDemoDayPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isTrackLoading, setIsTrackLoading] = useState(false);
+  const [judgeActivities, setJudgeActivities] = useState<JudgeActivity[]>([]);
+  const [scorePatterns, setScorePatterns] = useState<JudgeScorePattern[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update current time every second
@@ -372,10 +390,24 @@ export default function EventDemoDayPage() {
     }
   }, []);
 
+  const fetchCommandCenterData = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/demo-day/command-center');
+      const data = await response.json();
+      if (data.data) {
+        setJudgeActivities(data.data.judge_activities || []);
+        setScorePatterns(data.data.score_patterns || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch command center data:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchState();
     fetchLeaderboard();
-  }, [fetchState, fetchLeaderboard]);
+    fetchCommandCenterData();
+  }, [fetchState, fetchLeaderboard, fetchCommandCenterData]);
 
   useEffect(() => {
     if (selectedTrack) {
@@ -392,10 +424,11 @@ export default function EventDemoDayPage() {
           fetchTrackSubmissions(selectedTrack);
         }
         fetchLeaderboard();
+        fetchCommandCenterData();
       }, 30000);
       return () => clearInterval(interval);
     }
-  }, [state?.is_live, selectedTrack, fetchState, fetchTrackSubmissions, fetchLeaderboard]);
+  }, [state?.is_live, selectedTrack, fetchState, fetchTrackSubmissions, fetchLeaderboard, fetchCommandCenterData]);
 
   const handleRefresh = () => {
     fetchState(true);
@@ -403,6 +436,7 @@ export default function EventDemoDayPage() {
       fetchTrackSubmissions(selectedTrack);
     }
     fetchLeaderboard();
+    fetchCommandCenterData();
   };
 
   const handleSelectTrack = (trackId: string) => {
@@ -739,8 +773,8 @@ export default function EventDemoDayPage() {
 
           {/* Side Panel - 1 column */}
           <div className="space-y-4">
-            <JudgeActivityMonitor state={state} />
-            <ScoreAnomalyDetection state={state} />
+            <JudgeActivityMonitor judgeActivities={judgeActivities} />
+            <ScoreAnomalyDetection scorePatterns={scorePatterns} />
           </div>
         </div>
       )}

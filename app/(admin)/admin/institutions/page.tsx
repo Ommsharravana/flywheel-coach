@@ -190,6 +190,177 @@ export default function AdminInstitutionsPage() {
   );
 }
 
+function EditInstitutionModal({
+  institution,
+  onClose,
+  onUpdated
+}: {
+  institution: InstitutionWithStats;
+  onClose: () => void;
+  onUpdated: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    name: institution.name,
+    short_name: institution.short_name,
+    slug: institution.slug,
+    type: institution.type as 'college' | 'school' | 'external',
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  // Auto-regenerate slug from name
+  function handleNameChange(name: string) {
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+
+    setFormData({ ...formData, name, slug });
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!formData.name || !formData.short_name || !formData.slug) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/institutions/${institution.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        toast.success('Institution updated successfully');
+        onUpdated();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update institution');
+      }
+    } catch (err) {
+      console.error('Failed to update:', err);
+      toast.error('Something went wrong');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg rounded-2xl border border-stone-700 bg-stone-900 shadow-2xl">
+        <div className="flex items-center justify-between p-6 border-b border-stone-800">
+          <h2 className="font-display text-xl font-bold text-stone-100">
+            Edit Institution
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-stone-300 mb-1">
+              Full Name *
+            </label>
+            <Input
+              value={formData.name}
+              onChange={(e) => handleNameChange(e.target.value)}
+              placeholder="e.g., JKKN College of Engineering & Technology"
+              className="bg-stone-800 border-stone-700"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-stone-300 mb-1">
+              Short Name *
+            </label>
+            <Input
+              value={formData.short_name}
+              onChange={(e) => setFormData({ ...formData, short_name: e.target.value })}
+              placeholder="e.g., Engineering"
+              className="bg-stone-800 border-stone-700"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-stone-300 mb-1">
+              Slug * <span className="text-stone-500">(auto-generated)</span>
+            </label>
+            <Input
+              value={formData.slug}
+              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+              placeholder="e.g., jkkn-engineering"
+              className="bg-stone-800 border-stone-700 font-mono text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-stone-300 mb-1">
+              Type
+            </label>
+            <div className="flex gap-3">
+              {(['college', 'school', 'external'] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type })}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border transition-all ${
+                    formData.type === type
+                      ? type === 'college'
+                        ? 'bg-blue-500/20 border-blue-500 text-blue-400'
+                        : type === 'school'
+                        ? 'bg-orange-500/20 border-orange-500 text-orange-400'
+                        : 'bg-purple-500/20 border-purple-500 text-purple-400'
+                      : 'bg-stone-800 border-stone-700 text-stone-400 hover:border-stone-600'
+                  }`}
+                >
+                  {type === 'college' ? <GraduationCap className="h-4 w-4" /> :
+                   type === 'school' ? <School className="h-4 w-4" /> :
+                   <Globe className="h-4 w-4" />}
+                  <span className="capitalize">{type}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 border-stone-700 text-stone-300 hover:bg-stone-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 bg-amber-500 hover:bg-amber-600 text-stone-900"
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function InstitutionRow({
   institution,
   onUpdate
@@ -199,6 +370,7 @@ function InstitutionRow({
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const colors = getInstitutionColor(institution.slug);
   const icon = getInstitutionIcon(institution);
 
@@ -228,81 +400,93 @@ function InstitutionRow({
   }
 
   return (
-    <div className={`flex items-center justify-between p-4 rounded-xl border ${colors.border} ${colors.bg} transition-all hover:shadow-md`}>
-      <div className="flex items-center gap-4">
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${colors.bg} border ${colors.border}`}>
-          {icon}
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-stone-100">{institution.short_name}</h3>
-            <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${
-              institution.type === 'college'
-                ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                : institution.type === 'school'
-                ? 'bg-orange-500/10 text-orange-400 border-orange-500/30'
-                : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-            }`}>
-              {institution.type.charAt(0).toUpperCase() + institution.type.slice(1)}
-            </span>
+    <>
+      <div className={`flex items-center justify-between p-4 rounded-xl border ${colors.border} ${colors.bg} transition-all hover:shadow-md`}>
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${colors.bg} border ${colors.border}`}>
+            {icon}
           </div>
-          <p className="text-sm text-stone-500">{institution.name}</p>
-          <p className="text-xs text-stone-600 font-mono">{institution.slug}</p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-stone-100">{institution.short_name}</h3>
+              <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${
+                institution.type === 'college'
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                  : institution.type === 'school'
+                  ? 'bg-orange-500/10 text-orange-400 border-orange-500/30'
+                  : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+              }`}>
+                {institution.type.charAt(0).toUpperCase() + institution.type.slice(1)}
+              </span>
+            </div>
+            <p className="text-sm text-stone-500">{institution.name}</p>
+            <p className="text-xs text-stone-600 font-mono">{institution.slug}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-stone-400">
+            <Users className="h-4 w-4" />
+            <span className="text-sm">{institution.user_count ?? '—'} users</span>
+          </div>
+
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowMenu(!showMenu)}
+              className="h-8 w-8 p-0 text-stone-400 hover:text-stone-100"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+
+            {showMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowMenu(false)}
+                />
+                <div className="absolute right-0 top-full mt-1 z-20 w-40 py-1 rounded-lg bg-stone-800 border border-stone-700 shadow-xl">
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowEditModal(true);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-stone-300 hover:bg-stone-700 transition-colors"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-400 hover:bg-stone-700 transition-colors disabled:opacity-50"
+                  >
+                    {deleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    Deactivate
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-stone-400">
-          <Users className="h-4 w-4" />
-          <span className="text-sm">{institution.user_count ?? '—'} users</span>
-        </div>
-
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowMenu(!showMenu)}
-            className="h-8 w-8 p-0 text-stone-400 hover:text-stone-100"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-
-          {showMenu && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowMenu(false)}
-              />
-              <div className="absolute right-0 top-full mt-1 z-20 w-40 py-1 rounded-lg bg-stone-800 border border-stone-700 shadow-xl">
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    // TODO: Open edit modal
-                    toast.info('Edit coming soon');
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-stone-300 hover:bg-stone-700 transition-colors"
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-400 hover:bg-stone-700 transition-colors disabled:opacity-50"
-                >
-                  {deleting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                  Deactivate
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+      {showEditModal && (
+        <EditInstitutionModal
+          institution={institution}
+          onClose={() => setShowEditModal(false)}
+          onUpdated={() => {
+            onUpdate();
+            setShowEditModal(false);
+          }}
+        />
+      )}
+    </>
   );
 }
 

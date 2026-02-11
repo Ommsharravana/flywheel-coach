@@ -24,7 +24,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
   const [isPending, setIsPending] = useState(false);
   const supabase = createClient();
   const { t } = useTranslation();
-  const { isAppathonMode } = useAppathonMode();
+  const { isAppathonMode, activeEvent } = useAppathonMode();
 
   const [usersReached, setUsersReached] = useState(cycle.impact?.usersReached || 0);
   const [timeSavedMinutes, setTimeSavedMinutes] = useState(cycle.impact?.timeSavedMinutes || 0);
@@ -150,7 +150,7 @@ export function ImpactDiscovery({ cycle }: ImpactDiscoveryProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cycle_id: cycle.id,
-          source_event: 'Appathon 2.0', // TODO: Get from event context
+          source_event: activeEvent?.name || 'Independent Cycle',
         }),
       });
 
