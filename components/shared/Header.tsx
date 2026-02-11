@@ -114,7 +114,7 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
               <NavLink href="/dashboard/problem-bank" active={pathname.startsWith('/dashboard/problem-bank')}>
                 <span className="flex items-center gap-1.5">
                   <Database className="h-3.5 w-3.5" />
-                  Problem Bank
+                  {t('nav.problemBank')}
                 </span>
               </NavLink>
               <NavLink href="/settings" active={pathname === '/settings'}>
@@ -207,7 +207,7 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
                         onClick={() => setMobileMenuOpen(false)}
                         icon={<Database className="h-4 w-4" />}
                       >
-                        Problem Bank
+                        {t('nav.problemBank')}
                       </MobileNavLink>
                       <MobileNavLink
                         href="/dashboard/mentoring"
@@ -318,7 +318,7 @@ export function Header({ user, role, isImpersonating, isEventAdmin }: HeaderProp
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">
                       <Link href="/dashboard/problem-bank" className="flex items-center gap-2">
                         <Database className="h-4 w-4 text-purple-400" />
-                        <span>Problem Bank</span>
+                        <span>{t('nav.problemBank')}</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer hover:bg-stone-800 focus:bg-stone-800">

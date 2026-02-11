@@ -35,6 +35,7 @@ export const en: Dictionary = {
     admin: 'Admin',
     superAdmin: 'Super Admin',
     superAdminPanel: 'Super Admin Panel',
+    problemBank: 'Problem Bank',
   },
   landing: {
     heroTitle1: 'Turn Problems Into',

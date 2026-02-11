@@ -39,6 +39,7 @@ export interface Dictionary {
     admin: string;
     superAdmin: string;
     superAdminPanel: string;
+    problemBank: string;
   };
   landing: {
     heroTitle1: string;

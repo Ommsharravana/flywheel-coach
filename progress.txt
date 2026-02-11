@@ -1,6 +1,138 @@
 # JKKN Solution Studio - Progress Tracker
 
-## Latest Session: 2026-01-08 (Session 11)
+## Latest Session: 2026-02-11 (Session 14)
+
+### Task
+BUG FIX - `/portfolio` uses public layout when user is authenticated
+
+### Goal
+Fix the portfolio page to show authenticated dashboard navigation instead of public navigation (with "Log in" and "Get Started" buttons) when a logged-in user visits the page.
+
+### Status: COMPLETED ✅
+
+### Root Cause
+The `/portfolio` page was located at `/app/portfolio/page.tsx` (root level, not in any route group). This meant it was using the root layout which doesn't include the dashboard navigation or authentication banners. The page manually imported and rendered the `<Header />` component, but this showed the public navigation state.
+
+### Solution Applied
+✅ **Moved portfolio page into dashboard route group**
+   - Created new location: `/app/(dashboard)/portfolio/page.tsx`
+   - Removed manual `<Header />` import and usage (dashboard layout provides it)
+   - Removed wrapping divs and manual background styling (dashboard layout provides this)
+   - Kept all functionality intact (impersonation support, stats, cycles loading)
+   - Removed old directory: `/app/portfolio/` → `/app/portfolio.old/` (backup)
+
+### Benefits
+- Portfolio now inherits dashboard layout's authenticated navigation
+- Event banner shows if user is in an active event
+- Impersonation banner shows if admin is impersonating
+- Language switcher available
+- User dropdown menu with proper auth state
+- Consistent navigation across dashboard pages
+
+### Files Modified
+- Created: `app/(dashboard)/portfolio/page.tsx` - New location with cleaned up code
+- Removed: `app/portfolio/page.tsx` - Old location moved to backup
+
+### Testing Evidence
+✅ Browser tested with dev login (builder role):
+- Event Banner: "February Challenge 2026" with countdown
+- Dashboard navigation: Home, Portfolio, Problem Bank, Settings
+- User dropdown menu (ID: radix-_r_2_)
+- Language switcher (EN / தமிழ்)
+- Page content loads correctly (stats cards, cycles grid)
+- No "Log in" or "Get Started" buttons (public nav removed)
+
+### Build Status
+✅ `npm run build` passes successfully
+- Portfolio route shows as `ƒ (Dynamic)` - server-rendered with dashboard layout
+- No TypeScript errors
+- No build warnings related to portfolio
+
+---
+
+## Previous Session: 2026-02-11 (Session 13)
+
+### Task
+BUG FIX - `/judge` page renders completely blank
+
+### Goal
+Fix the blank page issue when non-judge users navigate to `/judge`. Page should show meaningful content (either "Not a Judge" message, waiting screen, or submissions list) instead of rendering empty.
+
+### Status: COMPLETED ✅
+
+### Root Cause
+The `JudgeWaitingScreen` component (line 16-19 in `components/judge/JudgeWaitingScreen.tsx`) was returning `null` if the panel reveal time had passed (`isExpired === true`). Since we're now past the January 7, 2026 reveal date, and non-judge users have `isJudge = false`, the component would:
+1. Receive `isJudge = false` and `revealTime = "2026-01-07T09:30:00+05:30"`
+2. Calculate `isExpired = true` (current date is past reveal date)
+3. Return `null` unconditionally (line 18)
+4. Result: completely blank page
+
+### Solution Applied
+✅ **Modified JudgeWaitingScreen early return logic** - Changed condition from `if (isExpired)` to `if (isExpired && isJudge)`
+   - Non-judges still see "Not a Judge" message even after reveal time
+   - Only judges get `null` return after reveal (they should see track data instead)
+   - File: `components/judge/JudgeWaitingScreen.tsx` (lines 16-22)
+
+### Affected Pages
+- `/judge` - Judge panel page
+
+Now properly shows "Not a Judge" message for non-judge users instead of blank page.
+
+### Files Modified
+- `components/judge/JudgeWaitingScreen.tsx` - Fixed early return logic
+
+### Testing Notes
+✅ Tested with browser automation:
+- Logged in as builder (non-judge role)
+- Navigated to `/judge`
+- Page correctly displays:
+  - "Appathon 2.0 Judge Panel" header
+  - "You are not assigned as a judge for this event" subtitle
+  - "Not a Judge" card with contact instructions
+- No more blank page
+
+---
+
+## Previous Session: 2026-02-11 (Session 12)
+
+### Task
+BUG FIX - Problem Bank "Forbidden - admin access required" for builders
+
+### Goal
+Fix permission issue where builders (regular users) couldn't view problems in the problem bank. Page headers/stats loaded but problem list showed "Forbidden - admin access required" error.
+
+### Status: COMPLETED ✅
+
+### Root Cause
+The `/api/problems` GET endpoint (line 17-21 in `app/api/problems/route.ts`) was checking for admin access using `getAdminEvents(user.id)`. If the user wasn't an admin of any event, it returned 403 Forbidden. This blocked all builders from browsing problems, even though they should have READ access.
+
+### Solution Applied
+1. ✅ **Removed admin check from GET endpoint** - Modified `app/api/problems/route.ts`
+   - Removed lines 17-21 that blocked non-admins from reading problems
+   - Added comment: "Builders can READ problems - no admin check needed"
+   - Admin check is only for POST/PUT/DELETE operations
+
+2. ✅ **Verified POST endpoint still protected** - Confirmed `POST /api/problems` still has admin check at lines 178-182, preventing builders from creating problems (correct behavior)
+
+3. ✅ **Build Verification** - `npm run build` passes successfully
+
+### Affected Pages
+- `/dashboard/problem-bank` - Dashboard problem bank page
+- `/appathon/problems` - Public appathon problems page
+
+Both pages now load problem lists correctly for builders.
+
+### Files Modified
+- `app/api/problems/route.ts` - Removed admin access check from GET handler
+
+### Testing Notes
+- Builders can now READ/browse problems (as intended)
+- Only admins can CREATE problems via POST endpoint (security maintained)
+- Build completes successfully with no errors
+
+---
+
+## Previous Session: 2026-01-08 (Session 11)
 
 ### Task
 BUG-213 - Dr. Vijay Cannot See His 28 Mentees

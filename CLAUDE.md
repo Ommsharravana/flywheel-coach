@@ -105,6 +105,56 @@ vercel
 - Set Site URL to your Vercel domain
 - Add Vercel URLs to Redirect URLs
 
+## Authentication & Accounts
+
+**Auth Method:** Google OAuth only (no email/password login)
+
+### User Roles
+| Role | Access | Auto-assigned |
+|------|--------|---------------|
+| `superadmin` | Full platform access | `director@jkkn.ac.in` |
+| `event_admin` | Manage specific events | Assigned by superadmin |
+| `institution_admin` | Manage institution users | Assigned by superadmin |
+| `builder` | Create cycles, submit to events | Default for new users |
+| `senior_learner` | Mentor other learners | Flag on user profile |
+
+### Key Accounts
+| Email | Role | Notes |
+|-------|------|-------|
+| `director@jkkn.ac.in` | superadmin | Auto-promoted on first login (production) |
+
+### Dev Test Accounts (Development Only)
+
+API endpoint: `GET/POST /api/auth/dev-login`
+
+| Account Key | Email | Role | Use Case |
+|-------------|-------|------|----------|
+| `superadmin` | `test.superadmin@jkkn.local` | superadmin | Full admin testing |
+| `admin` | `test.admin@jkkn.local` | event_admin | Event management testing |
+| `builder` | `test.builder@jkkn.local` | builder | Normal user testing |
+| `senior` | `test.senior@jkkn.local` | builder + senior_learner | Mentoring features |
+
+**Usage via API:**
+```bash
+# List available accounts
+curl http://localhost:3008/api/auth/dev-login
+
+# Login as specific role (returns magic link URL)
+curl -X POST http://localhost:3008/api/auth/dev-login \
+  -H "Content-Type: application/json" \
+  -d '{"account": "superadmin"}'
+```
+
+**Usage via UI:** In development mode, the login page shows dev login buttons.
+
+**Security:** This API only works when `NODE_ENV=development`. Returns 403 in production.
+
+**Supabase Setup Required:**
+Add `http://localhost:3000` (or your dev port) to Supabase Dashboard:
+1. Go to Authentication → URL Configuration
+2. Add to "Redirect URLs": `http://localhost:3000/**`
+3. (Optional) Set "Site URL" to `http://localhost:3000` for local testing
+
 ## Project Rules
 1. Use JKKN terminology (Learners, Senior Learners)
 2. Mobile-first design

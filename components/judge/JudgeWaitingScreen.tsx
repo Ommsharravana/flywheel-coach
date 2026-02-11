@@ -13,7 +13,10 @@ export function JudgeWaitingScreen({ revealTime, isJudge }: JudgeWaitingScreenPr
   const { timeLeft, isExpired } = useCountdown(revealTime)
   const revealDate = new Date(revealTime)
 
-  if (isExpired) {
+  // If reveal time has passed and user IS a judge, they should see track data
+  // So this component returning null is correct ONLY for judges after reveal
+  // For non-judges after reveal, we still need to show "Not a Judge" message
+  if (isExpired && isJudge) {
     // This shouldn't happen as we'd show the track data instead
     return null
   }

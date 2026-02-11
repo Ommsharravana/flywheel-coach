@@ -12,9 +12,9 @@ interface CycleRow {
   id: string;
   status: string;
   current_step: number;
-  workflow_type: string | null;
   created_at: string;
   user_id: string;
+  workflow_type?: string;
 }
 
 interface UserRow {
@@ -44,35 +44,102 @@ export default async function AdminAnalyticsPage() {
   const eventIds = isSuperadmin ? null : adminEvents.map(e => e.id);
 
   // Fetch cycles (filtered by event for non-superadmin)
+  // Use batch fetching to overcome Supabase's 1000 row limit
+  const CYCLES_BATCH_SIZE = 1000;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let cyclesQuery = (supabase as any)
-    .from('cycles')
-    .select('id, status, current_step, workflow_type, created_at, user_id');
+  let allCyclesData: any[] = [];
+  let cyclesOffset = 0;
+  let hasMoreCycles = true;
 
-  if (eventIds) {
-    cyclesQuery = cyclesQuery.in('event_id', eventIds);
+  while (hasMoreCycles) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let cyclesQuery = (supabase as any)
+      .from('cycles')
+      .select('id, status, current_step, user_id, created_at')
+      .range(cyclesOffset, cyclesOffset + CYCLES_BATCH_SIZE - 1);
+
+    if (eventIds) {
+      cyclesQuery = cyclesQuery.in('event_id', eventIds);
+    }
+
+    const { data: cyclesBatch } = await cyclesQuery;
+
+    if (!cyclesBatch || cyclesBatch.length === 0) {
+      hasMoreCycles = false;
+    } else {
+      allCyclesData = [...allCyclesData, ...cyclesBatch];
+      cyclesOffset += CYCLES_BATCH_SIZE;
+
+      // Stop if we've fetched less than batch size (last batch)
+      if (cyclesBatch.length < CYCLES_BATCH_SIZE) {
+        hasMoreCycles = false;
+      }
+    }
   }
 
-  const { data: cyclesData } = await cyclesQuery;
-  const cycles = (cyclesData || []) as unknown as CycleRow[];
+  const cycles = allCyclesData as CycleRow[];
 
   // Get unique user IDs from cycles for event admins
   const cycleUserIds = [...new Set(cycles.map((c) => c.user_id))];
 
-  // Fetch users (for superadmin: all users, for event admin: users with cycles in their events)
+  // Fetch users using RPC to bypass RLS (for superadmin) or filtered by cycle users (for event admins)
+  // Use batch fetching to overcome Supabase's 1000 row limit
   let users: UserRow[] = [];
 
   if (isSuperadmin) {
-    const { data: usersData } = await supabase.from('users').select('id, created_at, role');
-    users = (usersData || []) as unknown as UserRow[];
+    const BATCH_SIZE = 1000;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let allUsersData: any[] = [];
+    let offset = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: batch } = await (supabase as any).rpc('get_all_users_admin', {
+        caller_user_id: effectiveUser.id,
+        page_offset: offset,
+        page_limit: BATCH_SIZE
+      });
+
+      if (!batch || batch.length === 0) {
+        hasMore = false;
+      } else {
+        allUsersData = [...allUsersData, ...batch];
+        offset += BATCH_SIZE;
+
+        // Stop if we've fetched less than batch size (last batch)
+        if (batch.length < BATCH_SIZE) {
+          hasMore = false;
+        }
+      }
+    }
+
+    users = allUsersData.map(u => ({
+      id: u.id,
+      created_at: u.created_at,
+      role: u.role
+    })) as UserRow[];
   } else if (cycleUserIds.length > 0) {
     // For event admins, only show users who have cycles in their events
+    // Batch fetch in chunks of 1000 user IDs
+    const BATCH_SIZE = 1000;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: usersData } = await (supabase as any)
-      .from('users')
-      .select('id, created_at, role')
-      .in('id', cycleUserIds);
-    users = (usersData || []) as unknown as UserRow[];
+    let allUsersData: any[] = [];
+
+    for (let i = 0; i < cycleUserIds.length; i += BATCH_SIZE) {
+      const batchIds = cycleUserIds.slice(i, i + BATCH_SIZE);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: usersData } = await (supabase as any)
+        .from('users')
+        .select('id, created_at, role')
+        .in('id', batchIds);
+
+      if (usersData) {
+        allUsersData = [...allUsersData, ...usersData];
+      }
+    }
+
+    users = allUsersData as UserRow[];
   }
 
   // Step Funnel Data

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { ProblemFilters, ProblemSort, ProblemCardData } from '@/lib/types/problem-bank';
 import { getAdminEvents } from '@/lib/methodologies/helpers';
 
-// GET /api/problems - List all problems (admin access with event scoping)
+// GET /api/problems - List all problems (authenticated users can read)
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -14,11 +14,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check admin access
-    const adminEvents = await getAdminEvents(user.id);
-    if (adminEvents.length === 0) {
-      return NextResponse.json({ error: 'Forbidden - admin access required' }, { status: 403 });
-    }
+    // Builders can READ problems - no admin check needed
+    // Admin check is only for POST/PUT/DELETE operations
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;

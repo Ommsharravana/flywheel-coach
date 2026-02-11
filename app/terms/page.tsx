@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | Flywheel Coach',
-  description: 'Terms of Service for Flywheel Coach - AI-powered app building platform',
+  title: 'Terms of Service | JKKN Solution Studio',
+  description: 'Terms of Service for JKKN Solution Studio - AI-powered app building platform',
 };
 
 export default function TermsPage() {
@@ -17,7 +17,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-stone-200 mb-3">1. Acceptance of Terms</h2>
             <p>
-              By accessing and using Flywheel Coach (&quot;the Service&quot;), you agree to be bound by these
+              By accessing and using JKKN Solution Studio (&quot;the Service&quot;), you agree to be bound by these
               Terms of Service. If you do not agree to these terms, please do not use the Service.
             </p>
           </section>
@@ -25,7 +25,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-semibold text-stone-200 mb-3">2. Description of Service</h2>
             <p>
-              Flywheel Coach is an AI-powered platform that helps users build applications by
+              JKKN Solution Studio is an AI-powered platform that helps users build applications by
               generating structured prompts for AI code generation tools. The Service uses
               Google&apos;s Gemini AI to assist in creating app-building workflows.
             </p>
@@ -57,7 +57,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold text-stone-200 mb-3">5. Intellectual Property</h2>
             <p className="mb-3">
               <strong className="text-stone-300">Your Content:</strong> You retain ownership of the
-              ideas, problems, and app concepts you input into Flywheel Coach.
+              ideas, problems, and app concepts you input into JKKN Solution Studio.
             </p>
             <p>
               <strong className="text-stone-300">Generated Content:</strong> The prompts and outputs
@@ -135,7 +135,7 @@ export default function TermsPage() {
 
         <div className="mt-12 pt-8 border-t border-stone-800">
           <Link href="/" className="text-teal-400 hover:text-teal-300">
-            ← Back to Flywheel Coach
+            ← Back to JKKN Solution Studio
           </Link>
         </div>
       </div>

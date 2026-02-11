@@ -35,6 +35,7 @@ export const ta: Dictionary = {
     admin: 'நிர்வாகி',
     superAdmin: 'சூப்பர் நிர்வாகி',
     superAdminPanel: 'சூப்பர் நிர்வாகி பேனல்',
+    problemBank: 'சிக்கல் வங்கி',
   },
   landing: {
     heroTitle1: 'பிரச்சனைகளை மாற்றுங்கள்',

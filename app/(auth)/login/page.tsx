@@ -6,10 +6,20 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
+const DEV_ACCOUNTS = [
+  { key: 'superadmin', label: 'Superadmin', role: 'superadmin' },
+  { key: 'admin', label: 'Event Admin', role: 'event_admin' },
+  { key: 'builder', label: 'Builder', role: 'builder' },
+  { key: 'senior', label: 'Senior Learner', role: 'senior_learner' },
+  { key: 'judge', label: 'Judge', role: 'judge' },
+] as const
+
 function LoginContent() {
   const searchParams = useSearchParams()
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
+  const [devLoading, setDevLoading] = useState<string | null>(null)
+  const isDev = process.env.NODE_ENV === 'development'
 
   // Handle error messages from OAuth callback
   useEffect(() => {
@@ -36,6 +46,33 @@ function LoginContent() {
     } catch {
       toast.error('Something went wrong. Please try again.')
       setIsLoading(false)
+    }
+  }
+
+  const handleDevLogin = async (accountKey: string) => {
+    setDevLoading(accountKey)
+    try {
+      const response = await fetch('/api/auth/dev-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account: accountKey }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        toast.error(data.error || 'Dev login failed')
+        setDevLoading(null)
+        return
+      }
+
+      if (data.redirectUrl) {
+        toast.success(`Logging in as ${data.account.name}...`)
+        window.location.assign(data.redirectUrl)
+      }
+    } catch {
+      toast.error('Dev login failed')
+      setDevLoading(null)
     }
   }
 
@@ -101,6 +138,39 @@ function LoginContent() {
         <p className="mt-6 text-center text-sm text-stone-500">
           Sign in with any Google account to get started
         </p>
+
+        {/* Dev Login - Only in development */}
+        {isDev && (
+          <div className="mt-6 pt-6 border-t border-stone-700">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 rounded">
+                DEV
+              </span>
+              <span className="text-sm text-stone-500">Test Accounts</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {DEV_ACCOUNTS.map((account) => (
+                <Button
+                  key={account.key}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={devLoading !== null}
+                  onClick={() => handleDevLogin(account.key)}
+                  className="text-xs border-stone-600 hover:bg-stone-800"
+                >
+                  {devLoading === account.key ? (
+                    <svg className="animate-spin h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : null}
+                  {account.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

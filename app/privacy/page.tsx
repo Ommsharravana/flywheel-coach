@@ -2,8 +2,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Flywheel Coach',
-  description: 'Privacy Policy for Flywheel Coach - AI-powered app building platform',
+  title: 'Privacy Policy | JKKN Solution Studio',
+  description: 'Privacy Policy for JKKN Solution Studio - AI-powered app building platform',
 };
 
 export default function PrivacyPage() {
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-stone-200 mb-3">1. Introduction</h2>
             <p>
-              Flywheel Coach (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) is committed to protecting your privacy.
+              JKKN Solution Studio (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) is committed to protecting your privacy.
               This Privacy Policy explains how we collect, use, and safeguard your information when you use
               our AI-powered app building platform.
             </p>
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
               </li>
               <li>
                 <strong className="text-stone-300">App Building Data:</strong> The problems, ideas, and prompts
-                you create while using Flywheel Coach to build applications.
+                you create while using JKKN Solution Studio to build applications.
               </li>
               <li>
                 <strong className="text-stone-300">API Credentials:</strong> If you choose to connect your own
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-stone-200 mb-3">3. How We Use Your Information</h2>
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>To provide and maintain the Flywheel Coach service</li>
+              <li>To provide and maintain the JKKN Solution Studio service</li>
               <li>To authenticate you and personalize your experience</li>
               <li>To generate AI-powered prompts for building applications</li>
               <li>To improve our service based on usage patterns</li>
@@ -105,7 +105,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-stone-200 mb-3">8. Google API Services User Data Policy</h2>
             <p>
-              Flywheel Coach&apos;s use and transfer of information received from Google APIs adheres to the{' '}
+              JKKN Solution Studio&apos;s use and transfer of information received from Google APIs adheres to the{' '}
               <a
                 href="https://developers.google.com/terms/api-services-user-data-policy"
                 target="_blank"
@@ -139,7 +139,7 @@ export default function PrivacyPage() {
 
         <div className="mt-12 pt-8 border-t border-stone-800">
           <Link href="/" className="text-teal-400 hover:text-teal-300">
-            ← Back to Flywheel Coach
+            ← Back to JKKN Solution Studio
           </Link>
         </div>
       </div>
