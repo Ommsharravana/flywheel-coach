@@ -67,8 +67,11 @@ function LoginContent() {
       }
 
       if (data.redirectUrl) {
-        toast.success(`Logging in as ${data.account.name}...`)
+        toast.success(`Logging in as ${data.account?.name || accountKey}...`)
         window.location.assign(data.redirectUrl)
+      } else {
+        toast.error('No redirect URL received')
+        setDevLoading(null)
       }
     } catch {
       toast.error('Dev login failed')
