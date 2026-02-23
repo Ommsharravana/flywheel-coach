@@ -94,29 +94,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Check if test user exists in auth.users
-    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
-    let authUser = existingUsers?.users?.find(u => u.email === testAccount.email);
+    // Try to create the test user first (idempotent approach)
+    let authUser;
+    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+      email: testAccount.email,
+      email_confirm: true,
+      user_metadata: {
+        name: testAccount.name,
+        is_test_account: true,
+      },
+    });
 
-    // Create test user if doesn't exist
-    if (!authUser) {
-      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-        email: testAccount.email,
-        email_confirm: true,
-        user_metadata: {
-          name: testAccount.name,
-          is_test_account: true,
-        },
-      });
-
-      if (createError) {
-        console.error('Error creating test user:', createError);
-        return NextResponse.json(
-          { error: 'Failed to create test user', details: createError.message },
-          { status: 500 }
-        );
-      }
-
+    if (!createError && newUser?.user) {
+      // New user created successfully
       authUser = newUser.user;
 
       // Create user profile in public.users table
