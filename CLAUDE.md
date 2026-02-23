@@ -127,12 +127,13 @@ vercel
 
 API endpoint: `GET/POST /api/auth/dev-login`
 
-| Account Key | Email | Role | Use Case |
-|-------------|-------|------|----------|
-| `superadmin` | `test.superadmin@jkkn.local` | superadmin | Full admin testing |
-| `admin` | `test.admin@jkkn.local` | event_admin | Event management testing |
-| `builder` | `test.builder@jkkn.local` | builder | Normal user testing |
-| `senior` | `test.senior@jkkn.local` | builder + senior_learner | Mentoring features |
+| Account Key | Email | Role | Category | Use Case |
+|-------------|-------|------|----------|----------|
+| `superadmin` | `test.superadmin@jkkn.local` | superadmin | learner | Full admin testing |
+| `admin` | `test.admin@jkkn.local` | event_admin | learner | Event management testing |
+| `builder` | `test.builder@jkkn.local` | builder | learner | Normal user testing |
+| `senior` | `test.senior@jkkn.local` | builder | senior_learner | Mentoring features |
+| `judge` | `test.judge@jkkn.local` | builder | learner | Judging features (assign to track separately) |
 
 **Usage via API:**
 ```bash
