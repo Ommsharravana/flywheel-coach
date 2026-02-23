@@ -94,8 +94,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Try to create the test user first (idempotent approach)
-    let authUser;
+    // Try to create the test user (will fail gracefully if already exists)
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email: testAccount.email,
       email_confirm: true,
@@ -105,39 +104,48 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    let authUserId: string;
+
     if (!createError && newUser?.user) {
       // New user created successfully
-      authUser = newUser.user;
-
-      // Create user profile in public.users table
-      const { error: profileError } = await adminClient
-        .from('users')
-        .upsert({
-          id: authUser.id,
-          email: testAccount.email,
-          name: testAccount.name,
-          role: testAccount.role,
-          user_category: testAccount.user_category,
-        });
-
-      if (profileError) {
-        console.error('Error creating user profile:', profileError);
-      }
+      authUserId = newUser.user.id;
     } else {
-      // Ensure profile exists and role is up to date for existing users
-      const { error: profileError } = await adminClient
-        .from('users')
-        .upsert({
-          id: authUser.id,
-          email: testAccount.email,
-          name: testAccount.name,
-          role: testAccount.role,
-          user_category: testAccount.user_category,
-        });
+      // User already exists - look them up
+      const { data: existingUsers, error: listError } = await adminClient.auth.admin.listUsers({
+        perPage: 1000,
+      });
 
-      if (profileError) {
-        console.error('Error updating user profile:', profileError);
+      if (listError) {
+        return NextResponse.json(
+          { error: 'Failed to find existing user', details: listError.message },
+          { status: 500 }
+        );
       }
+
+      const existingUser = existingUsers?.users?.find(u => u.email === testAccount.email);
+      if (!existingUser) {
+        return NextResponse.json(
+          { error: 'Failed to create or find test user', details: createError?.message },
+          { status: 500 }
+        );
+      }
+
+      authUserId = existingUser.id;
+    }
+
+    // Upsert user profile in public.users table (works for both new and existing)
+    const { error: profileError } = await adminClient
+      .from('users')
+      .upsert({
+        id: authUserId,
+        email: testAccount.email,
+        name: testAccount.name,
+        role: testAccount.role,
+        user_category: testAccount.user_category,
+      });
+
+    if (profileError) {
+      console.error('Error upserting user profile:', profileError);
     }
 
     // Generate a magic link to get the token hash
