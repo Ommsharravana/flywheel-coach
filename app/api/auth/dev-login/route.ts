@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
           email: testAccount.email,
           name: testAccount.name,
           role: testAccount.role,
-          is_senior_learner: 'is_senior_learner' in testAccount ? testAccount.is_senior_learner : false,
+          user_category: testAccount.user_category,
         });
 
       if (profileError) {
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
           email: testAccount.email,
           name: testAccount.name,
           role: testAccount.role,
-          is_senior_learner: 'is_senior_learner' in testAccount ? testAccount.is_senior_learner : false,
+          user_category: testAccount.user_category,
         });
 
       if (profileError) {
