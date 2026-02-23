@@ -140,10 +140,11 @@ API endpoint: `GET/POST /api/auth/dev-login`
 # List available accounts
 curl http://localhost:3008/api/auth/dev-login
 
-# Login as specific role (returns magic link URL)
+# Login as specific role (sets session cookies, returns redirect URL)
 curl -X POST http://localhost:3008/api/auth/dev-login \
   -H "Content-Type: application/json" \
   -d '{"account": "superadmin"}'
+# Available: superadmin, admin, builder, senior, judge
 ```
 
 **Usage via UI:** In development mode, the login page shows dev login buttons.
