@@ -4,33 +4,39 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Test accounts for development - DO NOT USE IN PRODUCTION
+// Schema: role = permission level, user_category = identity (learner/senior_learner)
+// Note: is_senior_learner column was dropped in migration 056, replaced by user_category
+// Note: judges are assigned via track_judges table, not a user column
 const TEST_ACCOUNTS = {
   superadmin: {
     email: 'test.superadmin@jkkn.local',
     name: 'Test Superadmin',
     role: 'superadmin',
+    user_category: 'learner',
   },
   admin: {
     email: 'test.admin@jkkn.local',
     name: 'Test Admin',
     role: 'event_admin',
+    user_category: 'learner',
   },
   builder: {
     email: 'test.builder@jkkn.local',
     name: 'Test Builder',
     role: 'builder',
+    user_category: 'learner',
   },
   senior: {
     email: 'test.senior@jkkn.local',
     name: 'Test Senior Learner',
     role: 'builder',
-    is_senior_learner: true,
+    user_category: 'senior_learner',
   },
   judge: {
     email: 'test.judge@jkkn.local',
     name: 'Test Judge',
     role: 'builder',
-    is_judge: true,
+    user_category: 'learner',
   },
 } as const;
 
