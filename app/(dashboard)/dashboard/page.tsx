@@ -14,7 +14,13 @@ import { CompletedCyclesList } from './CompletedCyclesList'
 
 type Cycle = Database['public']['Tables']['cycles']['Row']
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams: Promise<{ no_event?: string }>
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const { no_event } = await searchParams
+  const showNoEventBanner = no_event === 'true'
   const supabase = await createClient()
 
   // Get effective user (respects impersonation)
@@ -81,6 +87,26 @@ export default async function DashboardPage() {
       {/* Institution Prompt - Show if user needs to select institution */}
       {needsInstitution && (
         <InstitutionPromptBanner userName={effectiveUser.name} />
+      )}
+
+      {/* No-event banner: user tried to start a cycle but no active event exists */}
+      {showNoEventBanner && !activeCycle && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
+              !
+            </div>
+            <div>
+              <h3 className="font-semibold text-amber-200">
+                You need an active competition to start a new cycle
+              </h3>
+              <p className="mt-1 text-sm text-stone-300">
+                Pick an event from <span className="font-medium text-amber-300">Active Competitions</span> below.
+                If no competitions are listed, none are running right now — browse the Problem Bank to practice or check back soon.
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Events Section - First thing users see */}

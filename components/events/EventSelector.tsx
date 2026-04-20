@@ -57,8 +57,35 @@ export function EventSelector() {
     );
   }
 
+  // Empty state: no live/upcoming events AND user is not in one.
+  // Previously returned null silently — but dashboard tells users to "select
+  // an event from the section above", so a blank section left them stranded.
   if (availableEvents.length === 0 && !activeEvent) {
-    return null; // No events to show
+    return (
+      <section className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-stone-500 to-stone-600 blur-lg opacity-30" />
+            <Trophy className="relative h-6 w-6 text-stone-500" />
+          </div>
+          <h2 className="font-display text-xl font-bold text-stone-300">
+            Active Competitions
+          </h2>
+        </div>
+        <div className="glass-card rounded-2xl p-6 sm:p-8 text-center border-stone-700/50">
+          <div className="mx-auto max-w-md">
+            <Calendar className="mx-auto h-10 w-10 text-stone-600 mb-3" />
+            <h3 className="font-display text-lg font-semibold text-stone-200">
+              No active competitions right now
+            </h3>
+            <p className="mt-2 text-sm text-stone-400">
+              You can still practice the Flywheel by browsing the Problem Bank.
+              Check back soon — new competitions launch regularly.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   return (
