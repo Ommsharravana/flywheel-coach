@@ -615,3 +615,29 @@ Changed line 70 in components/shared/Header.tsx:
 - Verify fix on live site at reporter's viewport (411x777)
 - Mark bug as resolved in bug tracking system
 
+
+---
+
+## Session: 2026-04-20 (afternoon, IST) — Bug Triage + PR #143
+
+### What shipped
+- **PR #143**: `fix(dashboard): make no-active-event state visible (BUG-272/273/274)`
+  - URL: https://github.com/Ommsharravana/flywheel-coach/pull/143
+  - Branch: `fix/empty-event-selector-ux`
+  - Commit: `09366db`
+  - 2 files, +55/-2 LOC. Vercel build green.
+  - Root cause: `/cycle/new` redirected users to `/dashboard?no_event=true` when profile had no active_event_id, but `EventSelector.tsx` returned `null` silently — leaving the "section above" (that dashboard text pointed users to) completely invisible.
+  - Fix: empty-state card in EventSelector + amber banner on dashboard reading `?no_event=true`.
+
+### Bug triage
+- 47 stale Jan 2026 demo-day-fire bugs batch-triaged via Bug Reporter API:
+  - 41 → `resolved` (step/submission/cycle bugs — fix commits e5fa523, 921e4ad, ab87c70, dcc8d20)
+  - 2 → `wont_fix` (BUG-178 institution-change support request; BUG-120 template spam; BUG-322 unclear)
+  - 4 → `seen` (admin track-assignment + vague demo-day reports awaiting re-report)
+- Queue state: 3 Solution Studio bugs currently `new` = the three BUG-272/273/274 that PR #143 fixes — intentionally held until merge+verify to allow closure with deploy SHA.
+
+### Deferred
+- **Merge PR #143** — user action, not auto-merged per CLAUDE.md
+- **Post-merge** — trigger Vercel deploy, browser-verify `/dashboard?no_event=true` renders banner + visible empty-state, then PATCH BUG-272/273/274 → resolved with commit SHA.
+- **BUG-208** (track-assignment) — commit 8f8631a likely covers it; verify on admin impersonation when next session has browser access.
+
